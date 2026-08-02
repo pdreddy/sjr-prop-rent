@@ -1,88 +1,52 @@
 import "server-only";
-import bcrypt from "bcryptjs";
-import { prisma } from "./prisma";
-import { getSession, setSessionCookie, clearSessionCookie } from "./session";
-import { MAX_FAILED_LOGIN_ATTEMPTS, LOCKOUT_DURATION_MINUTES } from "./constants";
+import { getDocument, listDocuments, newDocumentId, setDocument } from "./firebase";
+import { clearSessionCookie, getSession, setSessionCookie } from "./session";
+import { hashPassword, passwordsMatch, verifyPassword } from "./password";
+export { verifyPassword } from "./password";
 
-export interface AuthedAdmin {
-  id: string;
-  username: string;
+export interface AdminRecord { id: string; username: string; passwordHash: string; active: boolean }
+export interface AuthedAdmin { id: string; username: string }
+export type LoginResult = { ok: true } | { ok: false; error: string };
+
+export async function findAdmin(username: string) {
+  const normalized = username.trim().toLowerCase();
+  return (await listDocuments<Omit<AdminRecord, "id">>("admins")).find((admin) => admin.username.toLowerCase() === normalized) ?? null;
 }
 
-export type LoginResult =
-  | { ok: true }
-  | { ok: false; error: string };
+export async function saveAdminPassword(id: string, password: string) {
+  await setDocument(`admins/${id}`, { passwordHash: await hashPassword(password) }, true);
+}
 
-export async function login(
-  username: string,
-  password: string
-): Promise<LoginResult> {
-  const admin = await prisma.admin.findUnique({ where: { username } });
+export async function login(username: string, password: string): Promise<LoginResult> {
+  let admin = await findAdmin(username);
+  const configuredUsername = process.env.ADMIN_USERNAME;
+  const configuredPassword = process.env.ADMIN_PASSWORD;
+  const matchesBootstrapLogin = Boolean(
+    configuredUsername && configuredPassword &&
+    configuredUsername.trim().toLowerCase() === username.trim().toLowerCase() &&
+    passwordsMatch(configuredPassword, password)
+  );
 
-  // Always run a bcrypt compare, even for unknown usernames, so response
-  // timing doesn't reveal whether the username exists.
-  const passwordHash = admin?.passwordHash ?? "$2b$10$invalidsaltinvalidsaltinvalidsalu";
-  const passwordMatches = await bcrypt.compare(password, passwordHash);
-
-  if (!admin || !admin.active) {
-    return { ok: false, error: "Invalid username or password." };
-  }
-
-  if (admin.lockedUntil && admin.lockedUntil > new Date()) {
-    const minutesLeft = Math.ceil(
-      (admin.lockedUntil.getTime() - Date.now()) / 60000
-    );
-    return {
-      ok: false,
-      error: `Account temporarily locked. Try again in ${minutesLeft} minute(s).`,
-    };
-  }
-
-  if (!passwordMatches) {
-    const failedAttempts = admin.failedLoginAttempts + 1;
-    const shouldLock = failedAttempts >= MAX_FAILED_LOGIN_ATTEMPTS;
-    await prisma.admin.update({
-      where: { id: admin.id },
-      data: {
-        failedLoginAttempts: shouldLock ? 0 : failedAttempts,
-        lockedUntil: shouldLock
-          ? new Date(Date.now() + LOCKOUT_DURATION_MINUTES * 60 * 1000)
-          : null,
-      },
+  if (matchesBootstrapLogin && !admin) {
+    const id = newDocumentId();
+    const passwordHash = await hashPassword(password);
+    await setDocument(`admins/${id}`, {
+      username: configuredUsername!,
+      passwordHash,
+      active: true,
     });
-    return { ok: false, error: "Invalid username or password." };
+    admin = { id, username: configuredUsername!, passwordHash, active: true };
   }
 
-  await prisma.admin.update({
-    where: { id: admin.id },
-    data: { failedLoginAttempts: 0, lockedUntil: null },
-  });
-
-  await setSessionCookie({ adminId: admin.id, username: admin.username });
+  if (!admin?.active || !(await verifyPassword(password, admin.passwordHash))) return { ok: false, error: "Invalid username or password." };
+  await setSessionCookie(admin.id, admin.username);
   return { ok: true };
 }
 
-export async function logout(): Promise<void> {
-  await clearSessionCookie();
-}
-
-/**
- * Resolves the current authenticated admin from the session cookie,
- * re-checking the database so deactivated admins lose access immediately.
- * Returns null if there is no valid, active admin session.
- */
+export async function logout() { await clearSessionCookie(); }
 export async function getAuthedAdmin(): Promise<AuthedAdmin | null> {
   const session = await getSession();
   if (!session) return null;
-
-  const admin = await prisma.admin.findUnique({
-    where: { id: session.adminId },
-    select: { id: true, username: true, active: true },
-  });
-
-  if (!admin || !admin.active || admin.username !== session.username) {
-    return null;
-  }
-
-  return { id: admin.id, username: admin.username };
+  const admin = await getDocument<Omit<AdminRecord, "id">>(`admins/${session.adminId}`);
+  return admin?.active && admin.username === session.username ? { id: admin.id, username: admin.username } : null;
 }

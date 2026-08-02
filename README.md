@@ -1,235 +1,90 @@
 # SJR Rent Tracker
 
-A mobile-friendly rent tracking application for SJR Building. Anyone with the
-link can see, per plot, the tenant name, move-in date, and whether that
-month's rent is Paid or Unpaid — phone numbers, rent amounts, payment
-history and notes stay admin-only. Three admins can log in to manage
-tenants, rent, and monthly payment records.
+A mobile-friendly Next.js rent tracker with one simple username/password administrator login. All units, tenants, payments, audit history, and the securely hashed administrator password are saved in Firebase Realtime Database.
 
-## Tech stack
+## Firebase setup
 
-- Next.js 16 (App Router) + TypeScript
-- Tailwind CSS 4
-- PostgreSQL + Prisma 7 (driver adapter: `@prisma/adapter-pg`)
-- Signed, HTTP-only session cookies (`jose`, 12-hour expiry)
-- `bcryptjs` password hashing, `zod` request validation
-
-## Project layout
-
-```
-prisma/schema.prisma          Database schema (admins, units, payments, audit_logs)
-prisma/seed.ts                 Seeds the 3 admin accounts + sample plots
-scripts/set-admin-password.ts  CLI to (re)set an admin's password
-src/app/page.tsx               Public status page
-src/app/admin/login/page.tsx   Admin login page
-src/app/admin/page.tsx         Admin dashboard (server-protected)
-src/app/api/public/status      Public read-only API (no auth)
-src/app/api/auth/*             Login / logout / session / change-password
-src/app/api/admin/*            Protected admin APIs (units, payments, audit log)
-src/lib/*                      Auth, session, validation, audit log helpers
-```
-
-## Local development
-
-### 1. Prerequisites
-
-- Node.js 20+
-- A PostgreSQL 14+ server (local install, Docker, or a hosted instance)
-
-### 2. Install dependencies
+1. In the Firebase project, open **Build > Realtime Database**, click **Create Database**, select a location, and start in locked mode. Firebase Authentication is not required.
+2. The repository includes the supplied Firebase web configuration for project `koc2-20fb8`. Firebase App and Analytics load in the browser after the page becomes interactive.
+3. Open **Project settings > Service accounts** in that project and generate a private key. The browser configuration alone cannot authorize the protected server routes to write Realtime Database data.
+4. Rename the downloaded file to `firebase-service-account.json` and put it in the repository root. It is gitignored. Copy `.env.example` to `.env`; no private-key editing is needed locally.
+5. Choose `ADMIN_USERNAME`, `ADMIN_PASSWORD`, and a random `SESSION_SECRET` of at least 32 characters.
+6. Install and initialize the login, then import the supplied tenant register:
 
 ```bash
 npm install
+npm run setup:data
+npm run dev
 ```
 
-### 3. Configure environment variables
+`npm run setup:data` removes the old A-101…B-202 demo rows and loads the supplied plots 101–503 with their June 2026 payment figures. The admin dashboard has **Tenant details** and **Update rent** tabs. Click **Edit row** to change values directly in the table. Rent sum, balance, and status recalculate automatically, and paid amounts require a paid date. **Save** writes both the unit and monthly payment to Realtime Database. The public page shows status, amount paid, and paid date while keeping phone numbers, rent charges, and notes private.
+
+If an IDE reports that it cannot resolve `next/package.json` or
+`default-transpiled-packages.json`, run the commands from the repository root
+(the folder containing `package.json`). Then reset the local installation:
 
 ```bash
+rm -rf .next node_modules
+npm ci
+npm run dev
+```
+
+The project pins Turbopack's root in `next.config.ts`, so IDE launchers cannot
+incorrectly treat `src/app` as the workspace root.
+
+Copy/paste local setup after downloading the JSON:
+
+```bash
+mv ~/Downloads/YOUR-DOWNLOADED-FIREBASE-FILE.json ./firebase-service-account.json
 cp .env.example .env
+npm install
+npm run db:seed
+npm run dev
 ```
 
-Edit `.env`:
+Open `/admin/login` and enter `ADMIN_USERNAME` and `ADMIN_PASSWORD`. On the first successful login, the server automatically creates the administrator node with an scrypt password hash, so seeding is optional for login. `npm run db:seed` is still useful for loading sample plots. Password changes made from the dashboard are saved directly to Realtime Database.
 
-- `DATABASE_URL` — your Postgres connection string.
-- `SESSION_SECRET` — a long random string (`openssl rand -base64 48`). Required
-  for signing session cookies; the app refuses to start without one.
-- `BUILDING_NAME` — shown on the public page (defaults to "SJR Building").
-- `ADMIN1_PASSWORD`, `ADMIN2_PASSWORD`, `ADMIN3_PASSWORD` — initial passwords
-  used only when you run the seed script (usernames are fixed: `admin1`,
-  `admin2`, `admin3`).
+Browser-console messages from `contentScript.bundle.js` or `api2.amplitude.com` come from a browser extension (often an ad/privacy blocker integration), not this application. They can be ignored or confirmed by testing in a private window with extensions disabled.
 
-### 4. Create the database schema
+Likewise, hydration differences containing injected attributes such as `jd-enabled` or `data-sharkid`, or a stack trace beginning with `chrome-extension://`, are caused by password-manager/security extensions changing the page before React starts. The root suppresses harmless extension attributes, and the login form mounts after hydration so extensions cannot mutate its server-rendered inputs. Disable the extension for localhost if it continues trying to replace `window.location`.
 
-```bash
-npx prisma migrate dev
-```
+The application uses the service account only in server-side Next.js route handlers. Deploy the included deny-all client rules with `firebase deploy --only database`; service-account requests continue to work while browser clients cannot read private rent data.
 
-This applies `prisma/migrations` and generates the Prisma Client into
-`src/generated/prisma` (gitignored, regenerated automatically on install/build).
+### Firebase browser and server configuration
 
-### 5. Seed admins + sample plots
+The supplied `initializeApp()` and Analytics configuration is now loaded globally in the browser from Google's official Firebase module CDN. It provides browser analytics only. Tenant, payment, and login data still use protected server routes and the service account because the public web API key cannot authorize privileged Realtime Database writes.
+
+Like the reference KOC app, every public Firebase setting has a built-in fallback and can optionally be overridden in Netlify with `NEXT_PUBLIC_FIREBASE_API_KEY`, `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`, `NEXT_PUBLIC_FIREBASE_DATABASE_URL`, `NEXT_PUBLIC_FIREBASE_PROJECT_ID`, `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`, `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`, `NEXT_PUBLIC_FIREBASE_APP_ID`, and `NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID`. The included `koc2-20fb8` defaults mean none of these public variables are required for local testing.
+
+## Deploy to Netlify
+
+1. Push this repository to GitHub and select **Add new project > Import an existing project** in Netlify.
+2. Netlify reads `netlify.toml`, runs `npm run build`, and uses its Next.js runtime.
+3. In **Project configuration > Environment variables**, add:
+   - `FIREBASE_PROJECT_ID` (`koc2-20fb8`)
+   - `FIREBASE_DATABASE_URL` (`https://koc2-20fb8-default-rtdb.firebaseio.com`)
+   - `FIREBASE_CLIENT_EMAIL`
+   - `FIREBASE_PRIVATE_KEY` (use literal `\\n` between private-key lines)
+   - `SESSION_SECRET`
+   - `BUILDING_NAME` (optional)
+4. Deploy the site.
+5. From a trusted local computer, run the one-time seed against the same Firebase project:
 
 ```bash
 npm run db:seed
 ```
 
-Creates the three admin accounts (hashed passwords) and a handful of sample
-plots so you can try the app immediately.
+Do not put Firebase service-account values in variables prefixed with `NEXT_PUBLIC_`. They must remain server-only. You may remove `ADMIN_PASSWORD` from Netlify after seeding because login checks the hash stored in Realtime Database.
 
-### 6. Run the dev server
-
-```bash
-npm run dev
-```
-
-- Public view: http://localhost:3000
-- Admin login: http://localhost:3000/admin/login (use `admin1` / the password
-  you set in `.env`)
-
-## Quality checks
+## Commands
 
 ```bash
-npm run lint       # ESLint
-npm run typecheck  # tsc --noEmit
-npm run build      # prisma generate + next build (production build)
+npm run lint
+npm run typecheck
+npm run build
+npm run db:seed
+npm run admin:set-password -- admin "SomeNewLongPassword123"
+npm run import:tenants
 ```
 
-All three are expected to pass with zero errors.
-
-## Changing admin passwords
-
-**From the dashboard (recommended):** log in, click **Change password** in the
-header, enter the current password and a new one (10+ characters).
-
-**From the command line** (e.g. to recover a locked-out or forgotten
-password):
-
-```bash
-npm run admin:set-password -- admin2 "SomeNewLongPassword123"
-```
-
-This hashes the new password with bcrypt, updates the database directly, and
-clears any lockout on that account.
-
-## Security notes
-
-- Passwords are hashed with bcrypt (cost factor 12) and never sent to or
-  stored in the browser.
-- Sessions are signed JWTs (`SESSION_SECRET`) in an `httpOnly`, `sameSite=lax`
-  cookie, `secure` in production, expiring after 12 hours.
-- Every admin API route re-verifies the session **and** re-checks the admin
-  is still active in the database on every request — deactivating an admin
-  revokes access immediately, and nothing is trusted from the client.
-- Failed logins are tracked per account; 5 consecutive failures lock the
-  account for 15 minutes. A lightweight in-memory IP rate limit (10
-  attempts / 5 minutes) additionally slows down brute-force attempts against
-  the login endpoint itself.
-- The public API (`/api/public/status`) only ever returns plot number,
-  tenant name, move-in date, and a Paid/Unpaid flag. Phone numbers, rent
-  amounts, amount paid, balance, payment dates, and notes are only queried
-  and returned from routes that require an active admin session.
-- Every create/update to a unit, payment, or admin password is written to
-  `audit_logs` with the acting admin, before/after values, and a timestamp.
-- All inputs are validated with `zod` and all queries go through Prisma
-  (parameterized), so there is no hand-built SQL.
-- `unit_id + month` has a database-level unique constraint, so a payment
-  record can never be duplicated for the same plot/month — edits always
-  update the existing row.
-
-## Deployment (Vercel)
-
-You don't need to install or manage Postgres yourself — a free hosted
-database (Neon) takes about 2 minutes to set up, and Vercel deploys the app.
-
-### Step 1 — Get a free Postgres database (Neon)
-
-1. Go to https://neon.tech and sign up (free tier is enough for this app).
-2. Create a new project (any name/region is fine).
-3. On the project dashboard, copy the **connection string** shown — it looks
-   like `postgresql://user:password@ep-xxxx.neon.tech/neondb?sslmode=require`.
-   That's your entire `DATABASE_URL` — no further setup needed.
-
-(Vercel Postgres or Supabase work identically if you'd rather use one of
-those — just copy their connection string the same way.)
-
-### Step 2 — Deploy the app to Vercel
-
-1. Push this repository to GitHub.
-2. Go to https://vercel.com, sign up/log in, click **Add New → Project**,
-   and import the GitHub repo.
-3. Before clicking Deploy, open **Environment Variables** and add:
-   - `DATABASE_URL` — the connection string from Step 1.
-   - `SESSION_SECRET` — a long random string. Generate one with
-     `openssl rand -base64 48` (or any password generator, 40+ characters).
-   - `BUILDING_NAME` — e.g. `SJR Building`.
-   - `ADMIN1_PASSWORD`, `ADMIN2_PASSWORD`, `ADMIN3_PASSWORD` — temporary
-     initial passwords, only needed for the one-time seed step below.
-4. Click **Deploy**. Vercel runs `npm run build`, which already runs
-   `prisma generate` for you.
-
-### Step 3 — Create the tables and the 3 admin accounts (one-time)
-
-Run this once from your own computer, pointed at the Neon database (paste
-the same `DATABASE_URL` you used in Vercel):
-
-```bash
-DATABASE_URL="<paste your Neon connection string>" npx prisma migrate deploy
-DATABASE_URL="<paste your Neon connection string>" npm run db:seed
-```
-
-This creates the `admins`, `units`, `payments`, and `audit_logs` tables and
-the three admin accounts (admin1/admin2/admin3) with the passwords you set
-in Step 2.
-
-### Step 4 — Log in and lock things down
-
-1. Visit `https://<your-app>.vercel.app/admin/login` and sign in as `admin1`.
-2. Change each admin's password immediately (see "Changing admin passwords"
-   above) — the ones from `.env`/Vercel were only temporary.
-3. In Vercel, remove the `ADMIN1_PASSWORD` / `ADMIN2_PASSWORD` /
-   `ADMIN3_PASSWORD` environment variables — they're no longer needed once
-   the accounts exist and passwords are changed.
-
-That's it — the public page is live at your Vercel URL with no login
-required, and `/admin/login` is the admin entry point.
-
-### Loading real tenant data
-
-`scripts/import-tenants.ts` (`npm run import:tenants`) is a one-time,
-re-runnable import of the building's actual plots — name, joining date,
-rent, maintenance, phone, and the June 2026 payment status — written from
-the original rent register. It upserts by plot number, so running it again
-is safe. Run it the same way as the seed script, pointed at whichever
-database you want to load:
-
-```bash
-DATABASE_URL="<connection string>" npm run import:tenants
-```
-
-A few source values were ambiguous and were imported as-is with a flag:
-- Plots 201, 402, and 403 had an unclear/uncertain amount paid for June in
-  the original sheet (shown as "?"/"??") — these were imported as
-  **Unpaid** with a note added ("Amount paid for June unclear in source
-  records — needs verification"). Fix them via the admin dashboard once you
-  confirm the real amount.
-- Plot 402's joining date was recorded as "01-Jun-16" in the source, which
-  is almost certainly a typo for 2026 — imported as **1 Jun 2026**. Correct
-  it in the admin dashboard if that's wrong.
-- Plots 101 and 501 joined in August 2026 with only a total rent figure
-  given (no rent/maintenance breakdown yet) — imported with that total as
-  the rent and maintenance at ₹0; split it once you know the real numbers.
-
-### Netlify instead of Vercel
-
-The same steps work on Netlify: create the Neon database the same way
-(Step 1), set the same environment variables in Netlify's site settings,
-run the one-time `prisma migrate deploy` + `npm run db:seed` commands from
-Step 3 against the same `DATABASE_URL`, then deploy the Next.js app via
-Netlify's Next.js runtime (Netlify auto-detects Next.js and runs
-`npm run build`).
-
-## Sample data
-
-`npm run db:seed` creates 5 sample plots (A-101, A-102, A-103 (vacant),
-B-201, B-202) so you can exercise search, filters, and the payment editor
-without entering data by hand.
+`import:tenants` loads the bundled building register into Realtime Database and is safe to rerun. Top-level nodes are created automatically as `admins`, `units`, `payments`, and `auditLogs`; payment keys combine unit ID and month to prevent duplicate monthly records.

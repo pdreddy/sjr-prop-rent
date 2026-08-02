@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState, useSyncExternalStore, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
@@ -10,6 +10,11 @@ export default function AdminLoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const mounted = useSyncExternalStore(
+    () => () => undefined,
+    () => true,
+    () => false
+  );
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -33,6 +38,17 @@ export default function AdminLoginPage() {
     } finally {
       setSubmitting(false);
     }
+  }
+
+  // Password-manager extensions inject attributes into login inputs before
+  // React hydrates them. Render the form only after hydration so those DOM
+  // mutations cannot produce a server/client mismatch.
+  if (!mounted) {
+    return (
+      <div className="flex flex-1 items-center justify-center bg-background" aria-label="Loading sign in">
+        <span className="text-sm text-foreground/60">Loading sign in…</span>
+      </div>
+    );
   }
 
   return (
@@ -59,6 +75,7 @@ export default function AdminLoginPage() {
           <label className="flex flex-col gap-1">
             <span className="text-sm font-medium text-foreground/80">Username</span>
             <input
+              suppressHydrationWarning
               type="text"
               autoComplete="username"
               required
@@ -71,6 +88,7 @@ export default function AdminLoginPage() {
           <label className="flex flex-col gap-1">
             <span className="text-sm font-medium text-foreground/80">Password</span>
             <input
+              suppressHydrationWarning
               type="password"
               autoComplete="current-password"
               required

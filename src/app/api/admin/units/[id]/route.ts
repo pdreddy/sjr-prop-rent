@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { unitById, unitByPlot, unitDTO, updateUnit } from "@/lib/store";
 import { getAuthedAdmin } from "@/lib/auth";
 import { updateUnitSchema } from "@/lib/validation";
 import { recordAuditLog } from "@/lib/audit";
-import { serializeUnit } from "@/lib/serialize";
 
 export async function PATCH(
   request: NextRequest,
@@ -15,7 +14,7 @@ export async function PATCH(
   }
 
   const { id } = await params;
-  const existing = await prisma.unit.findUnique({ where: { id } });
+  const existing = await unitById(id);
   if (!existing) {
     return NextResponse.json({ error: "Plot not found." }, { status: 404 });
   }
@@ -30,9 +29,7 @@ export async function PATCH(
   }
 
   if (parsed.data.plotNumber && parsed.data.plotNumber !== existing.plotNumber) {
-    const conflict = await prisma.unit.findUnique({
-      where: { plotNumber: parsed.data.plotNumber },
-    });
+    const conflict = await unitByPlot(parsed.data.plotNumber);
     if (conflict) {
       return NextResponse.json(
         { error: "A plot with this number already exists." },
@@ -49,9 +46,7 @@ export async function PATCH(
     }
   }
 
-  const unit = await prisma.unit.update({
-    where: { id },
-    data: {
+  const unit = await updateUnit(id, {
       ...(parsed.data.plotNumber !== undefined && { plotNumber: parsed.data.plotNumber }),
       ...(parsed.data.tenantName !== undefined && { tenantName: parsed.data.tenantName || null }),
       ...(moveInDate !== undefined && { moveInDate }),
@@ -61,17 +56,17 @@ export async function PATCH(
         maintenanceAmount: parsed.data.maintenanceAmount,
       }),
       ...(parsed.data.active !== undefined && { active: parsed.data.active }),
-    },
   });
 
   await recordAuditLog({
     adminId: admin.id,
+    adminUsername: admin.username,
     action: "UPDATE",
     recordType: "Unit",
     recordId: unit.id,
-    previousValue: serializeUnit(existing),
-    newValue: serializeUnit(unit),
+    previousValue: unitDTO(existing),
+    newValue: unitDTO(unit),
   });
 
-  return NextResponse.json({ unit: serializeUnit(unit) });
+  return NextResponse.json({ unit: unitDTO(unit) });
 }

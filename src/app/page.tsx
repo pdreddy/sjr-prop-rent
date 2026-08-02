@@ -116,6 +116,9 @@ export default function Home() {
                       <p className="text-sm text-foreground/50">
                         Joined {formatDate(plot.moveInDate)}
                       </p>
+                      <p className="mt-1 text-sm font-medium text-foreground/70">
+                        Paid ₹{plot.amountPaid.toFixed(0)} · {plot.paidDate ? formatDate(plot.paidDate) : "No paid date"}
+                      </p>
                     </li>
                   ))}
                 </ul>
@@ -129,6 +132,8 @@ export default function Home() {
                         <th className="px-4 py-3 font-semibold">Name</th>
                         <th className="px-4 py-3 font-semibold">Date joined</th>
                         <th className="px-4 py-3 font-semibold">Status</th>
+                        <th className="px-4 py-3 font-semibold">Amount paid</th>
+                        <th className="px-4 py-3 font-semibold">Paid date</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -146,6 +151,8 @@ export default function Home() {
                           <td className="px-4 py-3">
                             <StatusBadge status={plot.status} />
                           </td>
+                          <td className="px-4 py-3">₹{plot.amountPaid.toFixed(0)}</td>
+                          <td className="px-4 py-3 text-foreground/80">{formatDate(plot.paidDate)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -158,7 +165,7 @@ export default function Home() {
       </main>
 
       <footer className="px-4 py-4 text-center text-xs text-foreground/40">
-        Phone numbers, rent amounts and payment history are private and only visible to admins.
+        Phone numbers, rent charges and notes are private. Payment amount and paid date are shown for transparency.
       </footer>
     </div>
   );

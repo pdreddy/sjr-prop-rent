@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { FirebaseAnalytics } from "@/components/FirebaseAnalytics";
 
 export const metadata: Metadata = {
   title: "SJR Rent Tracker",
@@ -18,7 +19,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full antialiased">
+    <html lang="en" className="h-full antialiased" suppressHydrationWarning>
       <body
         className="min-h-full flex flex-col"
         style={{
@@ -27,6 +28,7 @@ export default function RootLayout({
         }}
       >
         {children}
+        <FirebaseAnalytics />
       </body>
     </html>
   );

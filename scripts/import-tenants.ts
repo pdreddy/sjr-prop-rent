@@ -1,13 +1,5 @@
-import "dotenv/config";
-import { PrismaClient } from "../src/generated/prisma/client";
-import { PrismaPg } from "@prisma/adapter-pg";
-
-const connectionString = process.env.DATABASE_URL;
-if (!connectionString) {
-  throw new Error("DATABASE_URL environment variable is not set");
-}
-
-const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString }) });
+import { deleteDocument } from "../src/lib/firebase";
+import { allPayments, allUnits, createUnit, paymentStatus, savePayment, unitByPlot, updateUnit } from "../src/lib/store";
 
 const JUNE_2026 = "2026-06";
 
@@ -129,7 +121,7 @@ const tenants: TenantRecord[] = [
   {
     plotNumber: "402",
     tenantName: "Devashish",
-    moveInDate: new Date("2026-06-01"),
+    moveInDate: new Date("2016-06-01"),
     rent: 20000,
     maintenance: 1000,
     rentSum: 21000,
@@ -180,100 +172,32 @@ const newJoiners = [
 ];
 
 async function main() {
+  const samplePlots = new Set(["A-101", "A-102", "A-103", "B-201", "B-202"]);
+  const [units, payments] = await Promise.all([allUnits(), allPayments()]);
+  for (const unit of units.filter((item) => samplePlots.has(item.plotNumber))) {
+    await Promise.all(payments.filter((payment) => payment.unitId === unit.id).map((payment) => deleteDocument(`payments/${payment.id}`)));
+    await deleteDocument(`units/${unit.id}`);
+    console.log(`Removed old sample plot ${unit.plotNumber}`);
+  }
+
   for (const t of tenants) {
-    const unit = await prisma.unit.upsert({
-      where: { plotNumber: t.plotNumber },
-      create: {
-        plotNumber: t.plotNumber,
-        tenantName: t.tenantName,
-        moveInDate: t.moveInDate,
-        phone: t.phone,
-        monthlyRent: t.rent,
-        maintenanceAmount: t.maintenance,
-      },
-      update: {
-        tenantName: t.tenantName,
-        moveInDate: t.moveInDate,
-        phone: t.phone,
-        monthlyRent: t.rent,
-        maintenanceAmount: t.maintenance,
-        active: true,
-      },
-    });
-
+    const existing = await unitByPlot(t.plotNumber);
+    const unit = existing
+      ? await updateUnit(existing.id, { tenantName: t.tenantName, moveInDate: t.moveInDate, phone: t.phone, monthlyRent: t.rent, maintenanceAmount: t.maintenance, active: true })
+      : await createUnit({ plotNumber: t.plotNumber, tenantName: t.tenantName, moveInDate: t.moveInDate, phone: t.phone, monthlyRent: t.rent, maintenanceAmount: t.maintenance, active: true });
     const amountPaid = t.amountPaid === "unknown" ? 0 : t.amountPaid;
-    const balanceDue = t.rentSum - amountPaid;
-    const paymentStatus =
-      t.amountPaid === "unknown"
-        ? "UNPAID"
-        : amountPaid <= 0
-          ? "UNPAID"
-          : amountPaid >= t.rentSum
-            ? "PAID"
-            : "PARTIAL";
-    const notes =
-      t.amountPaid === "unknown"
-        ? [t.notes, "Amount paid for June unclear in source records — needs verification"]
-            .filter(Boolean)
-            .join(". ")
-        : t.notes;
-
-    await prisma.payment.upsert({
-      where: { unitId_month: { unitId: unit.id, month: JUNE_2026 } },
-      create: {
-        unitId: unit.id,
-        month: JUNE_2026,
-        paymentStatus,
-        rentAmount: t.rent,
-        maintenanceAmount: t.maintenance,
-        amountPaid,
-        balanceDue,
-        notes,
-      },
-      update: {
-        paymentStatus,
-        rentAmount: t.rent,
-        maintenanceAmount: t.maintenance,
-        amountPaid,
-        balanceDue,
-        notes,
-      },
-    });
-
+    const notes = t.amountPaid === "unknown"
+      ? [t.notes, "Amount paid for June unclear in source records — needs verification"].filter(Boolean).join(". ")
+      : t.notes;
+    await savePayment(unit.id, JUNE_2026, { paymentStatus: paymentStatus(amountPaid, t.rentSum), rentAmount: t.rent, maintenanceAmount: t.maintenance, amountPaid, balanceDue: t.rentSum - amountPaid, paidDate: null, notes, updatedBy: null });
     console.log(`Imported plot ${t.plotNumber} (${t.tenantName})`);
   }
-
   for (const j of newJoiners) {
-    await prisma.unit.upsert({
-      where: { plotNumber: j.plotNumber },
-      create: {
-        plotNumber: j.plotNumber,
-        tenantName: j.tenantName,
-        moveInDate: j.moveInDate,
-        phone: j.phone,
-        monthlyRent: j.rentSum,
-        maintenanceAmount: 0,
-      },
-      update: {
-        tenantName: j.tenantName,
-        moveInDate: j.moveInDate,
-        phone: j.phone,
-        monthlyRent: j.rentSum,
-        active: true,
-      },
-    });
-    console.log(`Imported plot ${j.plotNumber} (${j.tenantName}, no June payment — joined August)`);
+    const existing = await unitByPlot(j.plotNumber);
+    const data = { tenantName: j.tenantName, moveInDate: j.moveInDate, phone: j.phone, monthlyRent: j.rentSum, maintenanceAmount: 0, active: true };
+    if (existing) await updateUnit(existing.id, data); else await createUnit({ plotNumber: j.plotNumber, ...data });
   }
-
-  console.log(`Done. Imported ${tenants.length + newJoiners.length} plots.`);
+  console.log(`Done. Imported ${tenants.length + newJoiners.length} plots into Firebase.`);
 }
 
-main()
-  .then(async () => {
-    await prisma.$disconnect();
-  })
-  .catch(async (e) => {
-    console.error(e);
-    await prisma.$disconnect();
-    process.exit(1);
-  });
+main().catch((error) => { console.error(error); process.exit(1); });
