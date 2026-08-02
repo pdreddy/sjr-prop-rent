@@ -40,7 +40,9 @@ npm run db:seed
 npm run dev
 ```
 
-Open `/admin/login` and enter the `ADMIN_USERNAME` and `ADMIN_PASSWORD` used during seeding. The seed command stores only an scrypt password hash in Realtime Database. After seeding, `ADMIN_PASSWORD` is not needed by the running website. Password changes made from the dashboard are saved directly to Realtime Database.
+Open `/admin/login` and enter `ADMIN_USERNAME` and `ADMIN_PASSWORD`. On the first successful login, the server automatically creates the administrator node with an scrypt password hash, so seeding is optional for login. `npm run db:seed` is still useful for loading sample plots. Password changes made from the dashboard are saved directly to Realtime Database.
+
+Browser-console messages from `contentScript.bundle.js` or `api2.amplitude.com` come from a browser extension (often an ad/privacy blocker integration), not this application. They can be ignored or confirmed by testing in a private window with extensions disabled.
 
 The application uses the service account only in server-side Next.js route handlers. Deploy the included deny-all client rules with `firebase deploy --only database`; service-account requests continue to work while browser clients cannot read private rent data.
 

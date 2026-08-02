@@ -1,5 +1,5 @@
 import { promisify } from "node:util";
-import { randomBytes, scrypt as scryptCallback, timingSafeEqual } from "node:crypto";
+import { createHash, randomBytes, scrypt as scryptCallback, timingSafeEqual } from "node:crypto";
 
 const scrypt = promisify(scryptCallback);
 
@@ -15,4 +15,11 @@ export async function verifyPassword(password: string, encoded: string) {
   const expected = Buffer.from(hash, "hex");
   const actual = await scrypt(password, salt, expected.length) as Buffer;
   return actual.length === expected.length && timingSafeEqual(actual, expected);
+}
+
+/** Constant-time comparison for server-only bootstrap credentials. */
+export function passwordsMatch(left: string, right: string) {
+  const leftHash = createHash("sha256").update(left).digest();
+  const rightHash = createHash("sha256").update(right).digest();
+  return timingSafeEqual(leftHash, rightHash);
 }

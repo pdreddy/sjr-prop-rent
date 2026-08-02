@@ -1,7 +1,7 @@
 import "server-only";
-import { getDocument, listDocuments, setDocument } from "./firebase";
+import { getDocument, listDocuments, newDocumentId, setDocument } from "./firebase";
 import { clearSessionCookie, getSession, setSessionCookie } from "./session";
-import { hashPassword, verifyPassword } from "./password";
+import { hashPassword, passwordsMatch, verifyPassword } from "./password";
 export { verifyPassword } from "./password";
 
 export interface AdminRecord { id: string; username: string; passwordHash: string; active: boolean }
@@ -18,7 +18,26 @@ export async function saveAdminPassword(id: string, password: string) {
 }
 
 export async function login(username: string, password: string): Promise<LoginResult> {
-  const admin = await findAdmin(username);
+  let admin = await findAdmin(username);
+  const configuredUsername = process.env.ADMIN_USERNAME;
+  const configuredPassword = process.env.ADMIN_PASSWORD;
+  const matchesBootstrapLogin = Boolean(
+    configuredUsername && configuredPassword &&
+    configuredUsername.trim().toLowerCase() === username.trim().toLowerCase() &&
+    passwordsMatch(configuredPassword, password)
+  );
+
+  if (matchesBootstrapLogin && !admin) {
+    const id = newDocumentId();
+    const passwordHash = await hashPassword(password);
+    await setDocument(`admins/${id}`, {
+      username: configuredUsername!,
+      passwordHash,
+      active: true,
+    });
+    admin = { id, username: configuredUsername!, passwordHash, active: true };
+  }
+
   if (!admin?.active || !(await verifyPassword(password, admin.passwordHash))) return { ok: false, error: "Invalid username or password." };
   await setSessionCookie(admin.id, admin.username);
   return { ok: true };
