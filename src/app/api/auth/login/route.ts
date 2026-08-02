@@ -19,10 +19,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid username or password." }, { status: 400 });
   }
 
-  const result = await login(parsed.data.username, parsed.data.password);
-  if (!result.ok) {
-    return NextResponse.json({ error: result.error }, { status: 401 });
+  try {
+    const result = await login(parsed.data.username, parsed.data.password);
+    if (!result.ok) {
+      return NextResponse.json({ error: result.error }, { status: 401 });
+    }
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    console.error("Login failed with an unexpected error:", err);
+    return NextResponse.json(
+      { error: "Server error while signing in. Check the server logs for details." },
+      { status: 500 }
+    );
   }
-
-  return NextResponse.json({ ok: true });
 }
