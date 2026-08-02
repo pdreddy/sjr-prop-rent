@@ -59,6 +59,7 @@ export default function AdminLoginPage() {
           <label className="flex flex-col gap-1">
             <span className="text-sm font-medium text-foreground/80">Username</span>
             <input
+              suppressHydrationWarning
               type="text"
               autoComplete="username"
               required
@@ -71,6 +72,7 @@ export default function AdminLoginPage() {
           <label className="flex flex-col gap-1">
             <span className="text-sm font-medium text-foreground/80">Password</span>
             <input
+              suppressHydrationWarning
               type="password"
               autoComplete="current-password"
               required
