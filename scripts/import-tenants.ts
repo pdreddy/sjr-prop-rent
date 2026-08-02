@@ -120,7 +120,7 @@ const tenants: TenantRecord[] = [
   {
     plotNumber: "402",
     tenantName: "Devashish",
-    moveInDate: new Date("2026-06-01"),
+    moveInDate: new Date("2016-06-01"),
     rent: 20000,
     maintenance: 1000,
     rentSum: 21000,

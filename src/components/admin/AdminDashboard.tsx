@@ -13,7 +13,7 @@ import {
   formatMonthLabel,
   formatDate,
 } from "@/lib/month";
-import type { DashboardResponse, DashboardRow } from "@/lib/types";
+import type { DashboardResponse, DashboardRow, PaymentStatus } from "@/lib/types";
 
 const monthOptions = getMonthOptions();
 const STATUS_FILTERS = ["ALL", "PAID", "UNPAID", "PARTIAL", "VACANT"] as const;
@@ -31,6 +31,7 @@ export default function AdminDashboard({ username }: { username: string }) {
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [copying, setCopying] = useState(false);
+  const [inlineEditingId, setInlineEditingId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -265,6 +266,22 @@ export default function AdminDashboard({ username }: { username: string }) {
                   const maintenanceAmount =
                     row.payment?.maintenanceAmount ?? row.unit.maintenanceAmount;
                   const rentSum = rentAmount + maintenanceAmount;
+                  if (inlineEditingId === row.unit.id) {
+                    return (
+                      <InlineEditRow
+                        key={row.unit.id}
+                        row={row}
+                        month={month}
+                        onCancel={() => setInlineEditingId(null)}
+                        onSaved={() => {
+                          setInlineEditingId(null);
+                          setMessage(`Plot ${row.unit.plotNumber} saved.`);
+                          load();
+                        }}
+                        onError={setError}
+                      />
+                    );
+                  }
                   return (
                     <tr key={row.unit.id} className="border-t border-primary/5">
                       <td className="sticky left-0 z-10 w-[64px] min-w-[64px] bg-white px-3 py-3 font-semibold text-foreground">
@@ -301,10 +318,10 @@ export default function AdminDashboard({ username }: { username: string }) {
                       <td className="w-[150px] min-w-[150px] px-3 py-3">
                         <div className="flex gap-2">
                           <button
-                            onClick={() => setEditingRow(row)}
+                            onClick={() => setInlineEditingId(row.unit.id)}
                             className="min-h-9 rounded-md border border-primary/30 px-2.5 py-1 font-medium text-primary-dark hover:bg-primary-light"
                           >
-                            Edit
+                            Edit row
                           </button>
                           <button
                             onClick={() => handleDeactivate(row)}
@@ -340,6 +357,104 @@ export default function AdminDashboard({ username }: { username: string }) {
         <ChangePasswordModal onClose={() => setShowChangePassword(false)} />
       )}
     </div>
+  );
+}
+
+function InlineEditRow({
+  row,
+  month,
+  onCancel,
+  onSaved,
+  onError,
+}: {
+  row: DashboardRow;
+  month: string;
+  onCancel: () => void;
+  onSaved: () => void;
+  onError: (message: string | null) => void;
+}) {
+  const [plotNumber, setPlotNumber] = useState(row.unit.plotNumber);
+  const [tenantName, setTenantName] = useState(row.unit.tenantName ?? "");
+  const [moveInDate, setMoveInDate] = useState(row.unit.moveInDate?.slice(0, 10) ?? "");
+  const [rent, setRent] = useState(String(row.payment?.rentAmount ?? row.unit.monthlyRent));
+  const [maintenance, setMaintenance] = useState(String(row.payment?.maintenanceAmount ?? row.unit.maintenanceAmount));
+  const [amountPaid, setAmountPaid] = useState(String(row.payment?.amountPaid ?? 0));
+  const [phone, setPhone] = useState(row.unit.phone ?? "");
+  const [notes, setNotes] = useState(row.payment?.notes ?? "");
+  const [saving, setSaving] = useState(false);
+
+  const rentNumber = Number(rent || 0);
+  const maintenanceNumber = Number(maintenance || 0);
+  const paidNumber = Number(amountPaid || 0);
+  const rentSum = rentNumber + maintenanceNumber;
+  const balanceDue = Math.max(0, rentSum - paidNumber);
+  const status: PaymentStatus = paidNumber <= 0 ? "UNPAID" : paidNumber >= rentSum ? "PAID" : "PARTIAL";
+  const inputClass = "w-full min-w-0 rounded border border-primary/25 bg-white px-2 py-1.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30";
+
+  async function save() {
+    setSaving(true);
+    onError(null);
+    try {
+      const unitResponse = await fetch(`/api/admin/units/${row.unit.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          plotNumber,
+          tenantName: tenantName || null,
+          moveInDate: moveInDate || null,
+          phone: phone || null,
+          monthlyRent: rentNumber,
+          maintenanceAmount: maintenanceNumber,
+        }),
+      });
+      const unitJson = await unitResponse.json();
+      if (!unitResponse.ok) throw new Error(unitJson.error ?? "Failed to update plot.");
+
+      const paymentResponse = await fetch("/api/admin/payments", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          unitId: row.unit.id,
+          month,
+          paymentStatus: status,
+          rentAmount: rentNumber,
+          maintenanceAmount: maintenanceNumber,
+          amountPaid: paidNumber,
+          balanceDue,
+          paidDate: row.payment?.paidDate?.slice(0, 10) ?? null,
+          notes: notes || null,
+        }),
+      });
+      const paymentJson = await paymentResponse.json();
+      if (!paymentResponse.ok) throw new Error(paymentJson.error ?? "Failed to update payment.");
+      onSaved();
+    } catch (error) {
+      onError(error instanceof Error ? error.message : "Could not save this row.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <tr className="border-t border-primary/10 bg-primary-light/35 align-top">
+      <td className="sticky left-0 z-10 bg-[#f5f8f7] px-2 py-2"><input aria-label="Plot number" required value={plotNumber} onChange={(e) => setPlotNumber(e.target.value)} className={inputClass} /></td>
+      <td className="sticky left-[64px] z-10 border-r border-primary/10 bg-[#f5f8f7] px-2 py-2"><input aria-label="Tenant name" value={tenantName} onChange={(e) => setTenantName(e.target.value)} className={inputClass} /></td>
+      <td className="px-2 py-2"><input aria-label="Joining date" type="date" value={moveInDate} onChange={(e) => setMoveInDate(e.target.value)} className={inputClass} /></td>
+      <td className="px-2 py-2"><input aria-label="Rent" type="number" min="0" value={rent} onChange={(e) => setRent(e.target.value)} className={inputClass} /></td>
+      <td className="px-2 py-2"><input aria-label="Maintenance" type="number" min="0" value={maintenance} onChange={(e) => setMaintenance(e.target.value)} className={inputClass} /></td>
+      <td className="px-3 py-3 font-semibold">₹{rentSum.toFixed(0)}</td>
+      <td className="px-2 py-2"><input aria-label="Amount paid" type="number" min="0" value={amountPaid} onChange={(e) => setAmountPaid(e.target.value)} className={inputClass} /></td>
+      <td className="px-3 py-3">₹{balanceDue.toFixed(0)}</td>
+      <td className="px-3 py-3"><StatusBadge status={tenantName.trim() ? status : "VACANT"} /></td>
+      <td className="px-2 py-2"><input aria-label="Phone number" inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className={inputClass} /></td>
+      <td className="px-2 py-2"><input aria-label="Notes" value={notes} onChange={(e) => setNotes(e.target.value)} className={inputClass} /></td>
+      <td className="px-2 py-2">
+        <div className="flex gap-1">
+          <button type="button" onClick={save} disabled={saving} className="min-h-9 rounded-md bg-primary px-2.5 py-1 font-semibold text-white disabled:opacity-60">{saving ? "Saving…" : "Save"}</button>
+          <button type="button" onClick={onCancel} disabled={saving} className="min-h-9 rounded-md border border-primary/25 bg-white px-2.5 py-1">Cancel</button>
+        </div>
+      </td>
+    </tr>
   );
 }
 

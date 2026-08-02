@@ -17,6 +17,8 @@ npm run db:seed
 npm run dev
 ```
 
+To load the supplied plots 101–503 and their June 2026 payment figures, run `npm run setup:data` instead of `npm run db:seed`. In the admin table, click **Edit row** to change plot number, tenant, joining date, rent, maintenance, amount paid, phone, or notes directly in its columns. Rent sum, balance, and status recalculate automatically; **Save** writes both the unit and monthly payment to Realtime Database.
+
 If an IDE reports that it cannot resolve `next/package.json` or
 `default-transpiled-packages.json`, run the commands from the repository root
 (the folder containing `package.json`). Then reset the local installation:
