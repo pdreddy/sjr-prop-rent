@@ -23,6 +23,7 @@ export interface UnitDTO {
   tenantName: string | null;
   moveInDate: string | null;
   phone: string | null;
+  advanceAmount: number;
   monthlyRent: number;
   maintenanceAmount: number;
   active: boolean;

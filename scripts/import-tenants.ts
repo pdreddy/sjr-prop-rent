@@ -184,7 +184,7 @@ async function main() {
     const existing = await unitByPlot(t.plotNumber);
     const unit = existing
       ? await updateUnit(existing.id, { tenantName: t.tenantName, moveInDate: t.moveInDate, phone: t.phone, monthlyRent: t.rent, maintenanceAmount: t.maintenance, active: true })
-      : await createUnit({ plotNumber: t.plotNumber, tenantName: t.tenantName, moveInDate: t.moveInDate, phone: t.phone, monthlyRent: t.rent, maintenanceAmount: t.maintenance, active: true });
+      : await createUnit({ plotNumber: t.plotNumber, tenantName: t.tenantName, moveInDate: t.moveInDate, phone: t.phone, advanceAmount: 0, monthlyRent: t.rent, maintenanceAmount: t.maintenance, active: true });
     const amountPaid = t.amountPaid === "unknown" ? 0 : t.amountPaid;
     const notes = t.amountPaid === "unknown"
       ? [t.notes, "Amount paid for June unclear in source records — needs verification"].filter(Boolean).join(". ")
@@ -194,7 +194,7 @@ async function main() {
   }
   for (const j of newJoiners) {
     const existing = await unitByPlot(j.plotNumber);
-    const data = { tenantName: j.tenantName, moveInDate: j.moveInDate, phone: j.phone, monthlyRent: j.rentSum, maintenanceAmount: 0, active: true };
+    const data = { tenantName: j.tenantName, moveInDate: j.moveInDate, phone: j.phone, advanceAmount: 0, monthlyRent: j.rentSum, maintenanceAmount: 0, active: true };
     if (existing) await updateUnit(existing.id, data); else await createUnit({ plotNumber: j.plotNumber, ...data });
   }
   console.log(`Done. Imported ${tenants.length + newJoiners.length} plots into Firebase.`);

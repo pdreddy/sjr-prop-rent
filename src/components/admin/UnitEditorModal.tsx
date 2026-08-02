@@ -19,6 +19,9 @@ export default function UnitEditorModal({ row, month, onClose, onSaved }: Props)
     row?.unit.moveInDate ? row.unit.moveInDate.slice(0, 10) : ""
   );
   const [phone, setPhone] = useState(row?.unit.phone ?? "");
+  const [advanceAmount, setAdvanceAmount] = useState(
+    row ? String(row.unit.advanceAmount) : "0"
+  );
   const [monthlyRent, setMonthlyRent] = useState(
     row ? String(row.unit.monthlyRent) : "0"
   );
@@ -63,6 +66,7 @@ export default function UnitEditorModal({ row, month, onClose, onSaved }: Props)
             tenantName: tenantName || null,
             moveInDate: moveInDate || null,
             phone: phone || null,
+            advanceAmount: Number(advanceAmount),
             monthlyRent: Number(monthlyRent),
             maintenanceAmount: Number(defaultMaintenance),
           }),
@@ -82,6 +86,7 @@ export default function UnitEditorModal({ row, month, onClose, onSaved }: Props)
             tenantName: tenantName || null,
             moveInDate: moveInDate || null,
             phone: phone || null,
+            advanceAmount: Number(advanceAmount),
             monthlyRent: Number(monthlyRent),
             maintenanceAmount: Number(defaultMaintenance),
           }),
@@ -136,7 +141,7 @@ export default function UnitEditorModal({ row, month, onClose, onSaved }: Props)
       >
         <div className="mb-4 flex items-center justify-between">
           <h2 id="editor-title" className="text-lg font-bold text-primary-dark">
-            {isNew ? "Add Plot" : `Plot ${row!.unit.plotNumber}`}
+            {isNew ? "Add Plot" : `Edit Plot ${row!.unit.plotNumber}`}
           </h2>
           <button
             type="button"
@@ -196,6 +201,17 @@ export default function UnitEditorModal({ row, month, onClose, onSaved }: Props)
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 inputMode="tel"
+                className="min-h-11 rounded-lg border border-primary/20 px-3 py-2 text-base focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+              />
+            </label>
+            <label className="flex flex-col gap-1">
+              <span className="text-sm font-medium text-foreground/80">Advance amount (₹)</span>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={advanceAmount}
+                onChange={(e) => setAdvanceAmount(e.target.value)}
                 className="min-h-11 rounded-lg border border-primary/20 px-3 py-2 text-base focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
               />
             </label>

@@ -241,46 +241,85 @@ export default function AdminDashboard({ username }: { username: string }) {
             </div>
           <div className="overflow-x-auto rounded-xl border border-primary/10 bg-white shadow-sm">
             <table className="text-left text-sm">
-              <thead className="bg-primary-light text-primary-dark">
-                <tr>
-                  <th className="sticky left-0 z-10 w-[64px] min-w-[64px] bg-primary-light px-3 py-3 font-semibold">
-                    Plot#
-                  </th>
-                  <th className="sticky left-[64px] z-10 w-[140px] min-w-[140px] border-r border-primary/10 bg-primary-light px-3 py-3 font-semibold shadow-[2px_0_4px_rgba(0,0,0,0.04)]">
-                    Name
-                  </th>
-                  {tableView === "details" && <th className="w-[110px] min-w-[110px] px-3 py-3 font-semibold">
-                    Joining date
-                  </th>}
-                  <th className="w-[90px] min-w-[90px] px-3 py-3 font-semibold">Rent</th>
-                  <th className="w-[100px] min-w-[100px] px-3 py-3 font-semibold">
-                    Maintenance
-                  </th>
-                  <th className="w-[100px] min-w-[100px] px-3 py-3 font-semibold">Rent sum</th>
-                  <th className="w-[90px] min-w-[90px] px-3 py-3 font-semibold">Paid</th>
-                  <th className="w-[110px] min-w-[110px] px-3 py-3 font-semibold">Paid date</th>
-                  <th className="w-[90px] min-w-[90px] px-3 py-3 font-semibold">Balance</th>
-                  <th className="w-[100px] min-w-[100px] px-3 py-3 font-semibold">Status</th>
-                  {tableView === "details" && <th className="w-[130px] min-w-[130px] px-3 py-3 font-semibold">
-                    Phone number
-                  </th>}
-                  <th className="w-[180px] min-w-[180px] px-3 py-3 font-semibold">Notes</th>
-                  <th className="w-[150px] min-w-[150px] px-3 py-3 font-semibold">Actions</th>
-                </tr>
-              </thead>
+              {tableView === "details" ? (
+                <thead className="bg-primary-light text-primary-dark">
+                  <tr>
+                    <th className="sticky left-0 z-10 w-[64px] min-w-[64px] bg-primary-light px-3 py-3 font-semibold">Plot#</th>
+                    <th className="sticky left-[64px] z-10 w-[160px] min-w-[160px] border-r border-primary/10 bg-primary-light px-3 py-3 font-semibold shadow-[2px_0_4px_rgba(0,0,0,0.04)]">Name</th>
+                    <th className="w-[120px] min-w-[120px] px-3 py-3 font-semibold">Advance</th>
+                    <th className="w-[110px] min-w-[110px] px-3 py-3 font-semibold">Move-in date</th>
+                    <th className="w-[140px] min-w-[140px] px-3 py-3 font-semibold">Phone</th>
+                    <th className="w-[170px] min-w-[170px] px-3 py-3 font-semibold">Actions</th>
+                  </tr>
+                </thead>
+              ) : (
+                <thead className="bg-primary-light text-primary-dark">
+                  <tr>
+                    <th className="sticky left-0 z-10 w-[64px] min-w-[64px] bg-primary-light px-3 py-3 font-semibold">Plot#</th>
+                    <th className="sticky left-[64px] z-10 w-[140px] min-w-[140px] border-r border-primary/10 bg-primary-light px-3 py-3 font-semibold shadow-[2px_0_4px_rgba(0,0,0,0.04)]">Name</th>
+                    <th className="w-[90px] min-w-[90px] px-3 py-3 font-semibold">Rent</th>
+                    <th className="w-[100px] min-w-[100px] px-3 py-3 font-semibold">Maintenance</th>
+                    <th className="w-[100px] min-w-[100px] px-3 py-3 font-semibold">Rent sum</th>
+                    <th className="w-[90px] min-w-[90px] px-3 py-3 font-semibold">Paid</th>
+                    <th className="w-[110px] min-w-[110px] px-3 py-3 font-semibold">Paid date</th>
+                    <th className="w-[90px] min-w-[90px] px-3 py-3 font-semibold">Balance</th>
+                    <th className="w-[100px] min-w-[100px] px-3 py-3 font-semibold">Status</th>
+                    <th className="w-[180px] min-w-[180px] px-3 py-3 font-semibold">Notes</th>
+                    <th className="w-[150px] min-w-[150px] px-3 py-3 font-semibold">Actions</th>
+                  </tr>
+                </thead>
+              )}
               <tbody>
                 {data.rows.map((row) => {
                   const rentAmount = row.payment?.rentAmount ?? row.unit.monthlyRent;
                   const maintenanceAmount =
                     row.payment?.maintenanceAmount ?? row.unit.maintenanceAmount;
                   const rentSum = rentAmount + maintenanceAmount;
+
+                  if (tableView === "details") {
+                    return (
+                      <tr key={row.unit.id} className="border-t border-primary/5">
+                        <td className="sticky left-0 z-10 w-[64px] min-w-[64px] bg-white px-3 py-3 font-semibold text-foreground">
+                          {row.unit.plotNumber}
+                        </td>
+                        <td className="sticky left-[64px] z-10 w-[160px] min-w-[160px] border-r border-primary/10 bg-white px-3 py-3 shadow-[2px_0_4px_rgba(0,0,0,0.04)]">
+                          {row.unit.tenantName || "—"}
+                        </td>
+                        <td className="w-[120px] min-w-[120px] px-3 py-3">
+                          ₹{row.unit.advanceAmount.toFixed(0)}
+                        </td>
+                        <td className="w-[110px] min-w-[110px] px-3 py-3 text-foreground/80">
+                          {formatDate(row.unit.moveInDate)}
+                        </td>
+                        <td className="w-[140px] min-w-[140px] px-3 py-3">
+                          {row.unit.phone || "—"}
+                        </td>
+                        <td className="w-[170px] min-w-[170px] px-3 py-3">
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => setEditingRow(row)}
+                              className="min-h-9 rounded-md border border-primary/30 px-2.5 py-1 font-medium text-primary-dark hover:bg-primary-light"
+                            >
+                              Edit record
+                            </button>
+                            <button
+                              onClick={() => handleDeactivate(row)}
+                              className="min-h-9 rounded-md border border-unpaid/30 px-2.5 py-1 font-medium text-unpaid hover:bg-unpaid-bg"
+                            >
+                              Deactivate
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  }
+
                   if (inlineEditingId === row.unit.id) {
                     return (
                       <InlineEditRow
                         key={row.unit.id}
                         row={row}
                         month={month}
-                        tableView={tableView}
                         onCancel={() => setInlineEditingId(null)}
                         onSaved={() => {
                           setInlineEditingId(null);
@@ -299,9 +338,6 @@ export default function AdminDashboard({ username }: { username: string }) {
                       <td className="sticky left-[64px] z-10 w-[140px] min-w-[140px] border-r border-primary/10 bg-white px-3 py-3 shadow-[2px_0_4px_rgba(0,0,0,0.04)]">
                         {row.unit.tenantName || "—"}
                       </td>
-                      {tableView === "details" && <td className="w-[110px] min-w-[110px] px-3 py-3 text-foreground/80">
-                        {formatDate(row.unit.moveInDate)}
-                      </td>}
                       <td className="w-[90px] min-w-[90px] px-3 py-3">₹{rentAmount.toFixed(0)}</td>
                       <td className="w-[100px] min-w-[100px] px-3 py-3">
                         ₹{maintenanceAmount.toFixed(0)}
@@ -319,9 +355,6 @@ export default function AdminDashboard({ username }: { username: string }) {
                       <td className="w-[100px] min-w-[100px] px-3 py-3">
                         <StatusBadge status={row.isVacant ? "VACANT" : row.effectiveStatus} />
                       </td>
-                      {tableView === "details" && <td className="w-[130px] min-w-[130px] px-3 py-3">
-                        {row.unit.phone || "—"}
-                      </td>}
                       <td className="w-[180px] min-w-[180px] truncate px-3 py-3 text-foreground/70">
                         {row.payment?.notes || "—"}
                       </td>
@@ -374,26 +407,20 @@ export default function AdminDashboard({ username }: { username: string }) {
 function InlineEditRow({
   row,
   month,
-  tableView,
   onCancel,
   onSaved,
   onError,
 }: {
   row: DashboardRow;
   month: string;
-  tableView: AdminTableView;
   onCancel: () => void;
   onSaved: () => void;
   onError: (message: string | null) => void;
 }) {
-  const [plotNumber, setPlotNumber] = useState(row.unit.plotNumber);
-  const [tenantName, setTenantName] = useState(row.unit.tenantName ?? "");
-  const [moveInDate, setMoveInDate] = useState(row.unit.moveInDate?.slice(0, 10) ?? "");
   const [rent, setRent] = useState(String(row.payment?.rentAmount ?? row.unit.monthlyRent));
   const [maintenance, setMaintenance] = useState(String(row.payment?.maintenanceAmount ?? row.unit.maintenanceAmount));
   const [amountPaid, setAmountPaid] = useState(String(row.payment?.amountPaid ?? 0));
   const [paidDate, setPaidDate] = useState(row.payment?.paidDate?.slice(0, 10) ?? "");
-  const [phone, setPhone] = useState(row.unit.phone ?? "");
   const [notes, setNotes] = useState(row.payment?.notes ?? "");
   const [saving, setSaving] = useState(false);
 
@@ -417,10 +444,6 @@ function InlineEditRow({
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          plotNumber,
-          tenantName: tenantName || null,
-          moveInDate: moveInDate || null,
-          phone: phone || null,
           monthlyRent: rentNumber,
           maintenanceAmount: maintenanceNumber,
         }),
@@ -455,17 +478,15 @@ function InlineEditRow({
 
   return (
     <tr className="border-t border-primary/10 bg-primary-light/35 align-top">
-      <td className="sticky left-0 z-10 bg-[#f5f8f7] px-2 py-2">{tableView === "details" ? <input aria-label="Plot number" required value={plotNumber} onChange={(e) => setPlotNumber(e.target.value)} className={inputClass} /> : <span className="font-semibold">{plotNumber}</span>}</td>
-      <td className="sticky left-[64px] z-10 border-r border-primary/10 bg-[#f5f8f7] px-2 py-2">{tableView === "details" ? <input aria-label="Tenant name" value={tenantName} onChange={(e) => setTenantName(e.target.value)} className={inputClass} /> : <span>{tenantName || "—"}</span>}</td>
-      {tableView === "details" && <td className="px-2 py-2"><input aria-label="Joining date" type="date" value={moveInDate} onChange={(e) => setMoveInDate(e.target.value)} className={inputClass} /></td>}
+      <td className="sticky left-0 z-10 bg-[#f5f8f7] px-3 py-3 font-semibold">{row.unit.plotNumber}</td>
+      <td className="sticky left-[64px] z-10 border-r border-primary/10 bg-[#f5f8f7] px-3 py-3">{row.unit.tenantName || "—"}</td>
       <td className="px-2 py-2"><input aria-label="Rent" type="number" min="0" value={rent} onChange={(e) => setRent(e.target.value)} className={inputClass} /></td>
       <td className="px-2 py-2"><input aria-label="Maintenance" type="number" min="0" value={maintenance} onChange={(e) => setMaintenance(e.target.value)} className={inputClass} /></td>
       <td className="px-3 py-3 font-semibold">₹{rentSum.toFixed(0)}</td>
       <td className="px-2 py-2"><input aria-label="Amount paid" type="number" min="0" value={amountPaid} onChange={(e) => setAmountPaid(e.target.value)} className={inputClass} /></td>
       <td className="px-2 py-2"><input aria-label="Paid date" type="date" required={paidNumber > 0} value={paidDate} onChange={(e) => setPaidDate(e.target.value)} className={inputClass} /></td>
       <td className="px-3 py-3">₹{balanceDue.toFixed(0)}</td>
-      <td className="px-3 py-3"><StatusBadge status={tenantName.trim() ? status : "VACANT"} /></td>
-      {tableView === "details" && <td className="px-2 py-2"><input aria-label="Phone number" inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className={inputClass} /></td>}
+      <td className="px-3 py-3"><StatusBadge status={row.unit.tenantName?.trim() ? status : "VACANT"} /></td>
       <td className="px-2 py-2"><input aria-label="Notes" value={notes} onChange={(e) => setNotes(e.target.value)} className={inputClass} /></td>
       <td className="px-2 py-2">
         <div className="flex gap-1">

@@ -28,6 +28,7 @@ export const createUnitSchema = z.object({
     .regex(/^[0-9+\-() ]*$/, "Phone number contains invalid characters")
     .optional()
     .nullable(),
+  advanceAmount: z.coerce.number().min(0).max(10_000_000).optional(),
   monthlyRent: z.coerce.number().min(0).max(10_000_000),
   maintenanceAmount: z.coerce.number().min(0).max(10_000_000).optional(),
 });
@@ -43,6 +44,7 @@ export const updateUnitSchema = z.object({
     .regex(/^[0-9+\-() ]*$/, "Phone number contains invalid characters")
     .optional()
     .nullable(),
+  advanceAmount: z.coerce.number().min(0).max(10_000_000).optional(),
   monthlyRent: z.coerce.number().min(0).max(10_000_000).optional(),
   maintenanceAmount: z.coerce.number().min(0).max(10_000_000).optional(),
   active: z.boolean().optional(),

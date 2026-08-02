@@ -54,6 +54,7 @@ export async function POST(request: NextRequest) {
       tenantName: parsed.data.tenantName || null,
       moveInDate,
       phone: parsed.data.phone || null,
+      advanceAmount: parsed.data.advanceAmount ?? 0,
       monthlyRent: parsed.data.monthlyRent,
       maintenanceAmount: parsed.data.maintenanceAmount ?? 0,
       active: true,
