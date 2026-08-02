@@ -1,0 +1,44 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f7faf8;
+  --foreground: #1a2e22;
+  --color-primary: #0b4d33;
+  --color-primary-dark: #073523;
+  --color-primary-light: #e6f0ea;
+  --color-paid: #15803d;
+  --color-paid-bg: #dcfce7;
+  --color-unpaid: #b91c1c;
+  --color-unpaid-bg: #fee2e2;
+  --color-partial: #b45309;
+  --color-partial-bg: #fef3c7;
+  --color-vacant: #52525b;
+  --color-vacant-bg: #e4e4e7;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--color-primary);
+  --color-primary-dark: var(--color-primary-dark);
+  --color-primary-light: var(--color-primary-light);
+  --color-paid: var(--color-paid);
+  --color-paid-bg: var(--color-paid-bg);
+  --color-unpaid: var(--color-unpaid);
+  --color-unpaid-bg: var(--color-unpaid-bg);
+  --color-partial: var(--color-partial);
+  --color-partial-bg: var(--color-partial-bg);
+  --color-vacant: var(--color-vacant);
+  --color-vacant-bg: var(--color-vacant-bg);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
