@@ -15,6 +15,9 @@ export default function UnitEditorModal({ row, month, onClose, onSaved }: Props)
   const isNew = row === null;
   const [plotNumber, setPlotNumber] = useState(row?.unit.plotNumber ?? "");
   const [tenantName, setTenantName] = useState(row?.unit.tenantName ?? "");
+  const [moveInDate, setMoveInDate] = useState(
+    row?.unit.moveInDate ? row.unit.moveInDate.slice(0, 10) : ""
+  );
   const [phone, setPhone] = useState(row?.unit.phone ?? "");
   const [monthlyRent, setMonthlyRent] = useState(
     row ? String(row.unit.monthlyRent) : "0"
@@ -51,6 +54,7 @@ export default function UnitEditorModal({ row, month, onClose, onSaved }: Props)
           body: JSON.stringify({
             plotNumber,
             tenantName: tenantName || null,
+            moveInDate: moveInDate || null,
             phone: phone || null,
             monthlyRent: Number(monthlyRent),
           }),
@@ -68,6 +72,7 @@ export default function UnitEditorModal({ row, month, onClose, onSaved }: Props)
           body: JSON.stringify({
             plotNumber,
             tenantName: tenantName || null,
+            moveInDate: moveInDate || null,
             phone: phone || null,
             monthlyRent: Number(monthlyRent),
           }),
@@ -154,11 +159,24 @@ export default function UnitEditorModal({ row, month, onClose, onSaved }: Props)
               />
             </label>
             <label className="flex flex-col gap-1">
-              <span className="text-sm font-medium text-foreground/80">Tenant name</span>
+              <span className="text-sm font-medium text-foreground/80">
+                Tenant name <span className="font-normal text-foreground/40">(shown on public page)</span>
+              </span>
               <input
                 value={tenantName}
                 onChange={(e) => setTenantName(e.target.value)}
                 placeholder="Leave blank if vacant"
+                className="min-h-11 rounded-lg border border-primary/20 px-3 py-2 text-base focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+              />
+            </label>
+            <label className="flex flex-col gap-1">
+              <span className="text-sm font-medium text-foreground/80">
+                Move-in date <span className="font-normal text-foreground/40">(shown on public page)</span>
+              </span>
+              <input
+                type="date"
+                value={moveInDate}
+                onChange={(e) => setMoveInDate(e.target.value)}
                 className="min-h-11 rounded-lg border border-primary/20 px-3 py-2 text-base focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
               />
             </label>

@@ -41,11 +41,20 @@ export async function PATCH(
     }
   }
 
+  let moveInDate: Date | null | undefined;
+  if (parsed.data.moveInDate !== undefined) {
+    moveInDate = parsed.data.moveInDate ? new Date(parsed.data.moveInDate) : null;
+    if (parsed.data.moveInDate && Number.isNaN(moveInDate?.getTime())) {
+      return NextResponse.json({ error: "Invalid move-in date." }, { status: 400 });
+    }
+  }
+
   const unit = await prisma.unit.update({
     where: { id },
     data: {
       ...(parsed.data.plotNumber !== undefined && { plotNumber: parsed.data.plotNumber }),
       ...(parsed.data.tenantName !== undefined && { tenantName: parsed.data.tenantName || null }),
+      ...(moveInDate !== undefined && { moveInDate }),
       ...(parsed.data.phone !== undefined && { phone: parsed.data.phone || null }),
       ...(parsed.data.monthlyRent !== undefined && { monthlyRent: parsed.data.monthlyRent }),
       ...(parsed.data.active !== undefined && { active: parsed.data.active }),

@@ -2,6 +2,8 @@ export type PaymentStatus = "PAID" | "UNPAID" | "PARTIAL";
 
 export interface PublicPlot {
   plotNumber: string;
+  tenantName: string | null;
+  moveInDate: string | null;
   status: "PAID" | "UNPAID";
 }
 
@@ -17,6 +19,7 @@ export interface UnitDTO {
   id: string;
   plotNumber: string;
   tenantName: string | null;
+  moveInDate: string | null;
   phone: string | null;
   monthlyRent: number;
   active: boolean;

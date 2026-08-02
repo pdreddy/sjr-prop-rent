@@ -33,11 +33,35 @@ async function seedAdmins() {
 
 async function seedSampleUnits() {
   const samplePlots = [
-    { plotNumber: "A-101", tenantName: "Ravi Kumar", phone: "9876543210", monthlyRent: 15000 },
-    { plotNumber: "A-102", tenantName: "Priya Sharma", phone: "9876543211", monthlyRent: 15000 },
-    { plotNumber: "A-103", tenantName: null, phone: null, monthlyRent: 14000 },
-    { plotNumber: "B-201", tenantName: "Suresh Reddy", phone: "9876543212", monthlyRent: 18000 },
-    { plotNumber: "B-202", tenantName: "Anita Rao", phone: "9876543213", monthlyRent: 18000 },
+    {
+      plotNumber: "A-101",
+      tenantName: "Ravi Kumar",
+      moveInDate: new Date("2024-01-15"),
+      phone: "9876543210",
+      monthlyRent: 15000,
+    },
+    {
+      plotNumber: "A-102",
+      tenantName: "Priya Sharma",
+      moveInDate: new Date("2023-06-01"),
+      phone: "9876543211",
+      monthlyRent: 15000,
+    },
+    { plotNumber: "A-103", tenantName: null, moveInDate: null, phone: null, monthlyRent: 14000 },
+    {
+      plotNumber: "B-201",
+      tenantName: "Suresh Reddy",
+      moveInDate: new Date("2022-11-10"),
+      phone: "9876543212",
+      monthlyRent: 18000,
+    },
+    {
+      plotNumber: "B-202",
+      tenantName: "Anita Rao",
+      moveInDate: new Date("2025-02-20"),
+      phone: "9876543213",
+      monthlyRent: 18000,
+    },
   ];
 
   for (const plot of samplePlots) {

@@ -15,6 +15,8 @@ export async function GET(request: NextRequest) {
     select: {
       id: true,
       plotNumber: true,
+      tenantName: true,
+      moveInDate: true,
       payments: {
         where: { month },
         select: { paymentStatus: true },
@@ -24,6 +26,8 @@ export async function GET(request: NextRequest) {
 
   const plots = units.map((unit) => ({
     plotNumber: unit.plotNumber,
+    tenantName: unit.tenantName,
+    moveInDate: unit.moveInDate,
     // Public view collapses PARTIAL into "unpaid so far" — only PAID counts as paid.
     status: unit.payments[0]?.paymentStatus === "PAID" ? "PAID" : "UNPAID",
   }));

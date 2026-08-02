@@ -35,6 +35,7 @@ model Unit {
   id           String   @id @default(cuid())
   plotNumber   String   @unique @map("plot_number")
   tenantName   String?  @map("tenant_name")
+  moveInDate   DateTime? @map("move_in_date")
   phone        String?
   monthlyRent  Decimal  @default(0) @map("monthly_rent") @db.Decimal(10, 2)
   active       Boolean  @default(true)

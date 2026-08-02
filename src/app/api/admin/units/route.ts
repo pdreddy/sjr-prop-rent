@@ -54,10 +54,16 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const moveInDate = parsed.data.moveInDate ? new Date(parsed.data.moveInDate) : null;
+  if (parsed.data.moveInDate && Number.isNaN(moveInDate?.getTime())) {
+    return NextResponse.json({ error: "Invalid move-in date." }, { status: 400 });
+  }
+
   const unit = await prisma.unit.create({
     data: {
       plotNumber: parsed.data.plotNumber,
       tenantName: parsed.data.tenantName || null,
+      moveInDate,
       phone: parsed.data.phone || null,
       monthlyRent: parsed.data.monthlyRent,
     },

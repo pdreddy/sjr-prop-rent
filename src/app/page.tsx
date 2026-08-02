@@ -9,6 +9,16 @@ import type { PublicStatusResponse } from "@/lib/types";
 
 const monthOptions = getMonthOptions();
 
+function formatDate(value: string | null): string {
+  if (!value) return "—";
+  return new Date(value).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    timeZone: "UTC",
+  });
+}
+
 export default function Home() {
   const [month, setMonth] = useState(getCurrentMonth());
   const [data, setData] = useState<PublicStatusResponse | null>(null);
@@ -96,26 +106,69 @@ export default function Home() {
                 No plots have been added yet.
               </div>
             ) : (
-              <ul className="flex flex-col gap-2.5">
-                {data.plots.map((plot) => (
-                  <li
-                    key={plot.plotNumber}
-                    className="flex items-center justify-between rounded-xl border border-primary/10 bg-white px-4 py-3.5 shadow-sm"
-                  >
-                    <span className="text-base font-semibold text-foreground">
-                      Plot {plot.plotNumber}
-                    </span>
-                    <StatusBadge status={plot.status} />
-                  </li>
-                ))}
-              </ul>
+              <>
+                {/* Mobile cards */}
+                <ul className="flex flex-col gap-2.5 sm:hidden">
+                  {data.plots.map((plot) => (
+                    <li
+                      key={plot.plotNumber}
+                      className="rounded-xl border border-primary/10 bg-white px-4 py-3.5 shadow-sm"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-base font-semibold text-foreground">
+                          Plot {plot.plotNumber}
+                        </span>
+                        <StatusBadge status={plot.status} />
+                      </div>
+                      <p className="mt-1 text-sm text-foreground/70">
+                        {plot.tenantName || "No tenant"}
+                      </p>
+                      <p className="text-sm text-foreground/50">
+                        Joined {formatDate(plot.moveInDate)}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+
+                {/* Desktop table */}
+                <div className="hidden overflow-x-auto rounded-xl border border-primary/10 bg-white shadow-sm sm:block">
+                  <table className="w-full text-left text-sm">
+                    <thead className="bg-primary-light text-primary-dark">
+                      <tr>
+                        <th className="px-4 py-3 font-semibold">Plot</th>
+                        <th className="px-4 py-3 font-semibold">Name</th>
+                        <th className="px-4 py-3 font-semibold">Date joined</th>
+                        <th className="px-4 py-3 font-semibold">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {data.plots.map((plot) => (
+                        <tr key={plot.plotNumber} className="border-t border-primary/5">
+                          <td className="px-4 py-3 font-semibold text-foreground">
+                            {plot.plotNumber}
+                          </td>
+                          <td className="px-4 py-3 text-foreground/80">
+                            {plot.tenantName || "—"}
+                          </td>
+                          <td className="px-4 py-3 text-foreground/80">
+                            {formatDate(plot.moveInDate)}
+                          </td>
+                          <td className="px-4 py-3">
+                            <StatusBadge status={plot.status} />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
             )}
           </>
         )}
       </main>
 
       <footer className="px-4 py-4 text-center text-xs text-foreground/40">
-        Tenant details, amounts and payment history are private and only visible to admins.
+        Phone numbers, rent amounts and payment history are private and only visible to admins.
       </footer>
     </div>
   );

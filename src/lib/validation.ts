@@ -20,6 +20,7 @@ export const monthSchema = z
 export const createUnitSchema = z.object({
   plotNumber: z.string().trim().min(1).max(50),
   tenantName: z.string().trim().max(200).optional().nullable(),
+  moveInDate: z.string().trim().max(30).optional().nullable(),
   phone: z
     .string()
     .trim()
@@ -33,6 +34,7 @@ export const createUnitSchema = z.object({
 export const updateUnitSchema = z.object({
   plotNumber: z.string().trim().min(1).max(50).optional(),
   tenantName: z.string().trim().max(200).optional().nullable(),
+  moveInDate: z.string().trim().max(30).optional().nullable(),
   phone: z
     .string()
     .trim()

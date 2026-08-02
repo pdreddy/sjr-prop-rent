@@ -1,9 +1,10 @@
 # SJR Rent Tracker
 
 A mobile-friendly rent tracking application for SJR Building. Anyone with the
-link can see which plots have paid rent for a given month (no names, phone
-numbers, amounts, or notes). Three admins can log in to manage tenants, rent,
-and monthly payment records.
+link can see, per plot, the tenant name, move-in date, and whether that
+month's rent is Paid or Unpaid — phone numbers, rent amounts, payment
+history and notes stay admin-only. Three admins can log in to manage
+tenants, rent, and monthly payment records.
 
 ## Tech stack
 
@@ -123,10 +124,10 @@ clears any lockout on that account.
   account for 15 minutes. A lightweight in-memory IP rate limit (10
   attempts / 5 minutes) additionally slows down brute-force attempts against
   the login endpoint itself.
-- The public API (`/api/public/status`) only ever returns plot numbers and a
-  Paid/Unpaid flag — tenant names, phone numbers, rent, payment history and
-  notes are only queried and returned from routes that require an active
-  admin session.
+- The public API (`/api/public/status`) only ever returns plot number,
+  tenant name, move-in date, and a Paid/Unpaid flag. Phone numbers, rent
+  amounts, amount paid, balance, payment dates, and notes are only queried
+  and returned from routes that require an active admin session.
 - Every create/update to a unit, payment, or admin password is written to
   `audit_logs` with the acting admin, before/after values, and a timestamp.
 - All inputs are validated with `zod` and all queries go through Prisma
@@ -137,29 +138,69 @@ clears any lockout on that account.
 
 ## Deployment (Vercel)
 
-1. Push this repository to GitHub and import it in Vercel.
-2. Provision a Postgres database (Vercel Postgres, Neon, or Supabase all
-   work) and copy its connection string.
-3. In the Vercel project's Environment Variables, set:
-   - `DATABASE_URL`
-   - `SESSION_SECRET` (a fresh long random value — do not reuse the local one)
-   - `BUILDING_NAME`
-   - `ADMIN1_PASSWORD`, `ADMIN2_PASSWORD`, `ADMIN3_PASSWORD` (only needed for
-     the one-time seed step below; safe to remove afterwards)
-4. Deploy. The build command (`npm run build`) already runs `prisma generate`.
-5. Apply migrations and seed the three admins against the production
-   database (run once, from your machine or a Vercel CLI shell):
-   ```bash
-   DATABASE_URL="<production-connection-string>" npx prisma migrate deploy
-   DATABASE_URL="<production-connection-string>" npm run db:seed
-   ```
-6. Log in at `/admin/login` and change each admin's password immediately
-   (see "Changing admin passwords" above), then remove the `ADMIN*_PASSWORD`
-   env vars from Vercel since they're no longer needed.
+You don't need to install or manage Postgres yourself — a free hosted
+database (Neon) takes about 2 minutes to set up, and Vercel deploys the app.
 
-The same steps work on Netlify (or any Node host): set the same environment
-variables, run `prisma migrate deploy` + the seed script once against the
-production database, then deploy the Next.js app.
+### Step 1 — Get a free Postgres database (Neon)
+
+1. Go to https://neon.tech and sign up (free tier is enough for this app).
+2. Create a new project (any name/region is fine).
+3. On the project dashboard, copy the **connection string** shown — it looks
+   like `postgresql://user:password@ep-xxxx.neon.tech/neondb?sslmode=require`.
+   That's your entire `DATABASE_URL` — no further setup needed.
+
+(Vercel Postgres or Supabase work identically if you'd rather use one of
+those — just copy their connection string the same way.)
+
+### Step 2 — Deploy the app to Vercel
+
+1. Push this repository to GitHub.
+2. Go to https://vercel.com, sign up/log in, click **Add New → Project**,
+   and import the GitHub repo.
+3. Before clicking Deploy, open **Environment Variables** and add:
+   - `DATABASE_URL` — the connection string from Step 1.
+   - `SESSION_SECRET` — a long random string. Generate one with
+     `openssl rand -base64 48` (or any password generator, 40+ characters).
+   - `BUILDING_NAME` — e.g. `SJR Building`.
+   - `ADMIN1_PASSWORD`, `ADMIN2_PASSWORD`, `ADMIN3_PASSWORD` — temporary
+     initial passwords, only needed for the one-time seed step below.
+4. Click **Deploy**. Vercel runs `npm run build`, which already runs
+   `prisma generate` for you.
+
+### Step 3 — Create the tables and the 3 admin accounts (one-time)
+
+Run this once from your own computer, pointed at the Neon database (paste
+the same `DATABASE_URL` you used in Vercel):
+
+```bash
+DATABASE_URL="<paste your Neon connection string>" npx prisma migrate deploy
+DATABASE_URL="<paste your Neon connection string>" npm run db:seed
+```
+
+This creates the `admins`, `units`, `payments`, and `audit_logs` tables and
+the three admin accounts (admin1/admin2/admin3) with the passwords you set
+in Step 2.
+
+### Step 4 — Log in and lock things down
+
+1. Visit `https://<your-app>.vercel.app/admin/login` and sign in as `admin1`.
+2. Change each admin's password immediately (see "Changing admin passwords"
+   above) — the ones from `.env`/Vercel were only temporary.
+3. In Vercel, remove the `ADMIN1_PASSWORD` / `ADMIN2_PASSWORD` /
+   `ADMIN3_PASSWORD` environment variables — they're no longer needed once
+   the accounts exist and passwords are changed.
+
+That's it — the public page is live at your Vercel URL with no login
+required, and `/admin/login` is the admin entry point.
+
+### Netlify instead of Vercel
+
+The same steps work on Netlify: create the Neon database the same way
+(Step 1), set the same environment variables in Netlify's site settings,
+run the one-time `prisma migrate deploy` + `npm run db:seed` commands from
+Step 3 against the same `DATABASE_URL`, then deploy the Next.js app via
+Netlify's Next.js runtime (Netlify auto-detects Next.js and runs
+`npm run build`).
 
 ## Sample data
 
