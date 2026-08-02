@@ -7,11 +7,21 @@ A mobile-friendly Next.js rent tracker with one simple username/password adminis
 1. Create a Firebase project and a **Cloud Firestore** database in Native mode. Firebase Authentication is not required.
 2. The repository includes the supplied Firebase web configuration for project `koc2-20fb8`. Firebase App and Analytics load in the browser after the page becomes interactive.
 3. Open **Project settings > Service accounts** in that project and generate a private key. The browser configuration alone cannot authorize the protected server routes to write Firestore data.
-4. Copy `.env.example` to `.env`, then copy `client_email` and `private_key` from the downloaded service-account JSON into `FIREBASE_CLIENT_EMAIL` and `FIREBASE_PRIVATE_KEY`.
+4. Rename the downloaded file to `firebase-service-account.json` and put it in the repository root. It is gitignored. Copy `.env.example` to `.env`; no private-key editing is needed locally.
 5. Choose `ADMIN_USERNAME`, `ADMIN_PASSWORD`, and a random `SESSION_SECRET` of at least 32 characters.
 6. Install and initialize the login and sample data:
 
 ```bash
+npm install
+npm run db:seed
+npm run dev
+```
+
+Copy/paste local setup after downloading the JSON:
+
+```bash
+mv ~/Downloads/YOUR-DOWNLOADED-FIREBASE-FILE.json ./firebase-service-account.json
+cp .env.example .env
 npm install
 npm run db:seed
 npm run dev
@@ -30,7 +40,7 @@ The supplied `initializeApp()` and Analytics configuration is now loaded globall
 1. Push this repository to GitHub and select **Add new project > Import an existing project** in Netlify.
 2. Netlify reads `netlify.toml`, runs `npm run build`, and uses its Next.js runtime.
 3. In **Project configuration > Environment variables**, add:
-   - `FIREBASE_PROJECT_ID`
+   - `FIREBASE_PROJECT_ID` (`koc2-20fb8`)
    - `FIREBASE_CLIENT_EMAIL`
    - `FIREBASE_PRIVATE_KEY` (use literal `\\n` between private-key lines)
    - `SESSION_SECRET`

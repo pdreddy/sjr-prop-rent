@@ -1,17 +1,42 @@
 import { createSign } from "node:crypto";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 
 type Primitive = string | number | boolean | null;
 export type FirebaseValue = Primitive | Date | FirebaseValue[] | { [key: string]: FirebaseValue };
 
-const projectId = process.env.FIREBASE_PROJECT_ID;
-const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n");
+interface ServiceAccountFile {
+  project_id?: string;
+  client_email?: string;
+  private_key?: string;
+}
+
+let configCache: { projectId: string; clientEmail: string; privateKey: string } | undefined;
 
 function requireConfig() {
-  if (!projectId || !clientEmail || !privateKey) {
-    throw new Error("FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL and FIREBASE_PRIVATE_KEY must be configured");
+  if (configCache) return configCache;
+
+  let fileConfig: ServiceAccountFile = {};
+  const accountPath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH;
+  if (accountPath) {
+    const absolutePath = resolve(/* turbopackIgnore: true */ process.cwd(), accountPath);
+    try {
+      fileConfig = JSON.parse(readFileSync(absolutePath, "utf8")) as ServiceAccountFile;
+    } catch (error) {
+      throw new Error(`Could not read Firebase service account at ${absolutePath}`, { cause: error });
+    }
   }
-  return { projectId, clientEmail, privateKey };
+
+  const projectId = process.env.FIREBASE_PROJECT_ID || fileConfig.project_id;
+  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL || fileConfig.client_email;
+  const privateKey = (process.env.FIREBASE_PRIVATE_KEY || fileConfig.private_key)?.replace(/\\n/g, "\n");
+  if (!projectId || !clientEmail || !privateKey) {
+    throw new Error(
+      "Firebase credentials are missing. Put the downloaded service-account JSON at ./firebase-service-account.json and set FIREBASE_SERVICE_ACCOUNT_PATH=./firebase-service-account.json in .env, or configure FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL and FIREBASE_PRIVATE_KEY."
+    );
+  }
+  configCache = { projectId, clientEmail, privateKey };
+  return configCache;
 }
 
 const base64url = (value: string | Buffer) => Buffer.from(value).toString("base64url");
