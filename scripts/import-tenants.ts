@@ -1,4 +1,5 @@
-import { createUnit, paymentStatus, savePayment, unitByPlot, updateUnit } from "../src/lib/store";
+import { deleteDocument } from "../src/lib/firebase";
+import { allPayments, allUnits, createUnit, paymentStatus, savePayment, unitByPlot, updateUnit } from "../src/lib/store";
 
 const JUNE_2026 = "2026-06";
 
@@ -171,6 +172,14 @@ const newJoiners = [
 ];
 
 async function main() {
+  const samplePlots = new Set(["A-101", "A-102", "A-103", "B-201", "B-202"]);
+  const [units, payments] = await Promise.all([allUnits(), allPayments()]);
+  for (const unit of units.filter((item) => samplePlots.has(item.plotNumber))) {
+    await Promise.all(payments.filter((payment) => payment.unitId === unit.id).map((payment) => deleteDocument(`payments/${payment.id}`)));
+    await deleteDocument(`units/${unit.id}`);
+    console.log(`Removed old sample plot ${unit.plotNumber}`);
+  }
+
   for (const t of tenants) {
     const existing = await unitByPlot(t.plotNumber);
     const unit = existing

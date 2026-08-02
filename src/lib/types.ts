@@ -5,6 +5,8 @@ export interface PublicPlot {
   tenantName: string | null;
   moveInDate: string | null;
   status: "PAID" | "UNPAID";
+  amountPaid: number;
+  paidDate: string | null;
 }
 
 export interface PublicStatusResponse {

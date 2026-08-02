@@ -12,13 +12,18 @@ export async function GET(request: NextRequest) {
   const [allUnitRecords, payments] = await Promise.all([allUnits(), allPayments()]);
   const units = allUnitRecords.filter((unit) => unit.active);
 
-  const plots = units.map((unit) => ({
-    plotNumber: unit.plotNumber,
-    tenantName: unit.tenantName,
-    moveInDate: unit.moveInDate?.toISOString() ?? null,
-    // Public view collapses PARTIAL into "unpaid so far" — only PAID counts as paid.
-    status: payments.find((p) => p.unitId === unit.id && p.month === month)?.paymentStatus === "PAID" ? "PAID" : "UNPAID",
-  }));
+  const plots = units.map((unit) => {
+    const payment = payments.find((item) => item.unitId === unit.id && item.month === month);
+    return {
+      plotNumber: unit.plotNumber,
+      tenantName: unit.tenantName,
+      moveInDate: unit.moveInDate?.toISOString() ?? null,
+      // Public view collapses PARTIAL into "unpaid so far" — only PAID counts as paid.
+      status: payment?.paymentStatus === "PAID" ? "PAID" as const : "UNPAID" as const,
+      amountPaid: payment?.amountPaid ?? 0,
+      paidDate: payment?.paidDate?.toISOString() ?? null,
+    };
+  });
 
   const paidCount = plots.filter((p) => p.status === "PAID").length;
 

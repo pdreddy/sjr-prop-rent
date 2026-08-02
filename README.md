@@ -9,15 +9,15 @@ A mobile-friendly Next.js rent tracker with one simple username/password adminis
 3. Open **Project settings > Service accounts** in that project and generate a private key. The browser configuration alone cannot authorize the protected server routes to write Realtime Database data.
 4. Rename the downloaded file to `firebase-service-account.json` and put it in the repository root. It is gitignored. Copy `.env.example` to `.env`; no private-key editing is needed locally.
 5. Choose `ADMIN_USERNAME`, `ADMIN_PASSWORD`, and a random `SESSION_SECRET` of at least 32 characters.
-6. Install and initialize the login and sample data:
+6. Install and initialize the login, then import the supplied tenant register:
 
 ```bash
 npm install
-npm run db:seed
+npm run setup:data
 npm run dev
 ```
 
-To load the supplied plots 101–503 and their June 2026 payment figures, run `npm run setup:data` instead of `npm run db:seed`. In the admin table, click **Edit row** to change plot number, tenant, joining date, rent, maintenance, amount paid, phone, or notes directly in its columns. Rent sum, balance, and status recalculate automatically; **Save** writes both the unit and monthly payment to Realtime Database.
+`npm run setup:data` removes the old A-101…B-202 demo rows and loads the supplied plots 101–503 with their June 2026 payment figures. The admin dashboard has **Tenant details** and **Update rent** tabs. Click **Edit row** to change values directly in the table. Rent sum, balance, and status recalculate automatically, and paid amounts require a paid date. **Save** writes both the unit and monthly payment to Realtime Database. The public page shows status, amount paid, and paid date while keeping phone numbers, rent charges, and notes private.
 
 If an IDE reports that it cannot resolve `next/package.json` or
 `default-transpiled-packages.json`, run the commands from the repository root
