@@ -1,0 +1,11 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // All application access goes through authenticated Next.js route handlers
+    // using the Firebase service account. Never expose rent data to client SDKs.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

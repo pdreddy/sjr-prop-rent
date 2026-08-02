@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { allUnits, createUnit, unitByPlot, unitDTO } from "@/lib/store";
 import { getAuthedAdmin } from "@/lib/auth";
 import { createUnitSchema } from "@/lib/validation";
 import { recordAuditLog } from "@/lib/audit";
-import { serializeUnit } from "@/lib/serialize";
 
 export async function GET(request: NextRequest) {
   const admin = await getAuthedAdmin();
@@ -13,20 +12,13 @@ export async function GET(request: NextRequest) {
 
   const search = request.nextUrl.searchParams.get("search")?.trim();
 
-  const units = await prisma.unit.findMany({
-    where: search
-      ? {
-          OR: [
-            { plotNumber: { contains: search, mode: "insensitive" } },
-            { tenantName: { contains: search, mode: "insensitive" } },
-            { phone: { contains: search, mode: "insensitive" } },
-          ],
-        }
-      : undefined,
-    orderBy: { plotNumber: "asc" },
-  });
+  let units = await allUnits();
+  if (search) {
+    const needle = search.toLowerCase();
+    units = units.filter((unit) => [unit.plotNumber, unit.tenantName, unit.phone].some((value) => value?.toLowerCase().includes(needle)));
+  }
 
-  return NextResponse.json({ units: units.map(serializeUnit) });
+  return NextResponse.json({ units: units.map(unitDTO) });
 }
 
 export async function POST(request: NextRequest) {
@@ -44,9 +36,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const existing = await prisma.unit.findUnique({
-    where: { plotNumber: parsed.data.plotNumber },
-  });
+  const existing = await unitByPlot(parsed.data.plotNumber);
   if (existing) {
     return NextResponse.json(
       { error: "A plot with this number already exists." },
@@ -59,24 +49,24 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid move-in date." }, { status: 400 });
   }
 
-  const unit = await prisma.unit.create({
-    data: {
+  const unit = await createUnit({
       plotNumber: parsed.data.plotNumber,
       tenantName: parsed.data.tenantName || null,
       moveInDate,
       phone: parsed.data.phone || null,
       monthlyRent: parsed.data.monthlyRent,
       maintenanceAmount: parsed.data.maintenanceAmount ?? 0,
-    },
+      active: true,
   });
 
   await recordAuditLog({
     adminId: admin.id,
+    adminUsername: admin.username,
     action: "CREATE",
     recordType: "Unit",
     recordId: unit.id,
-    newValue: serializeUnit(unit),
+    newValue: unitDTO(unit),
   });
 
-  return NextResponse.json({ unit: serializeUnit(unit) }, { status: 201 });
+  return NextResponse.json({ unit: unitDTO(unit) }, { status: 201 });
 }

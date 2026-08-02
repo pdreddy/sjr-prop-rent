@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
-import { prisma } from "@/lib/prisma";
-import { getAuthedAdmin } from "@/lib/auth";
+import { getAuthedAdmin, findAdmin, saveAdminPassword, verifyPassword } from "@/lib/auth";
 import { changePasswordSchema } from "@/lib/validation";
 import { recordAuditLog } from "@/lib/audit";
 
@@ -20,24 +18,16 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const record = await prisma.admin.findUnique({ where: { id: admin.id } });
-  if (!record) {
-    return NextResponse.json({ error: "Admin not found." }, { status: 404 });
-  }
-
-  const matches = await bcrypt.compare(parsed.data.currentPassword, record.passwordHash);
-  if (!matches) {
+  const record = await findAdmin(admin.username);
+  if (!record || !(await verifyPassword(parsed.data.currentPassword, record.passwordHash))) {
     return NextResponse.json({ error: "Current password is incorrect." }, { status: 401 });
   }
 
-  const newHash = await bcrypt.hash(parsed.data.newPassword, 12);
-  await prisma.admin.update({
-    where: { id: admin.id },
-    data: { passwordHash: newHash },
-  });
+  await saveAdminPassword(admin.id, parsed.data.newPassword);
 
   await recordAuditLog({
     adminId: admin.id,
+    adminUsername: admin.username,
     action: "CHANGE_PASSWORD",
     recordType: "Admin",
     recordId: admin.id,

@@ -1,83 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { getAuthedAdmin } from "@/lib/auth";
 import { isValidMonth, getCurrentMonth } from "@/lib/month";
-import { serializeUnit, serializePayment } from "@/lib/serialize";
+import { allPayments, allUnits, paymentDTO, unitDTO } from "@/lib/store";
 
 export async function GET(request: NextRequest) {
-  const admin = await getAuthedAdmin();
-  if (!admin) {
-    return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
-  }
-
+  if (!(await getAuthedAdmin())) return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
   const params = request.nextUrl.searchParams;
   const monthParam = params.get("month");
   const month = monthParam && isValidMonth(monthParam) ? monthParam : getCurrentMonth();
-  const search = params.get("search")?.trim();
-  const statusFilter = params.get("status"); // PAID | UNPAID | PARTIAL | VACANT | ALL
-
-  const units = await prisma.unit.findMany({
-    where: {
-      active: true,
-      ...(search
-        ? {
-            OR: [
-              { plotNumber: { contains: search, mode: "insensitive" } },
-              { tenantName: { contains: search, mode: "insensitive" } },
-              { phone: { contains: search, mode: "insensitive" } },
-            ],
-          }
-        : {}),
-    },
-    orderBy: { plotNumber: "asc" },
-    include: {
-      payments: { where: { month } },
-    },
+  const search = params.get("search")?.trim().toLowerCase();
+  const statusFilter = params.get("status");
+  const [unitRecords, paymentRecords] = await Promise.all([allUnits(), allPayments()]);
+  let rows = unitRecords.filter((unit) => unit.active && (!search || [unit.plotNumber, unit.tenantName, unit.phone].some((v) => v?.toLowerCase().includes(search)))).map((unit) => {
+    const payment = paymentRecords.find((p) => p.unitId === unit.id && p.month === month) ?? null;
+    const isVacant = !unit.tenantName?.trim();
+    return { unit: unitDTO(unit), payment: payment ? paymentDTO(payment) : null, isVacant, effectiveStatus: payment?.paymentStatus ?? "UNPAID" };
   });
-
-  let rows = units.map((unit) => {
-    const { payments, ...unitFields } = unit;
-    const payment = payments[0] ?? null;
-    const isVacant = !unit.tenantName || unit.tenantName.trim().length === 0;
-    return {
-      unit: serializeUnit(unitFields),
-      payment: payment ? serializePayment(payment) : null,
-      isVacant,
-      effectiveStatus: payment?.paymentStatus ?? "UNPAID",
-    };
-  });
-
-  if (statusFilter && statusFilter !== "ALL") {
-    if (statusFilter === "VACANT") {
-      rows = rows.filter((r) => r.isVacant);
-    } else {
-      rows = rows.filter((r) => r.effectiveStatus === statusFilter);
-    }
-  }
-
-  const totals = rows.reduce(
-    (acc, r) => {
-      const expected = r.payment
-        ? r.payment.rentAmount + r.payment.maintenanceAmount
-        : Number(r.unit.monthlyRent) + Number(r.unit.maintenanceAmount);
-      const collected = r.payment ? r.payment.amountPaid : 0;
-      acc.totalExpected += expected;
-      acc.totalCollected += collected;
-      if (r.effectiveStatus === "PAID") acc.numPaid += 1;
-      else if (r.effectiveStatus === "PARTIAL") acc.numPartial += 1;
-      else acc.numUnpaid += 1;
-      return acc;
-    },
-    { totalExpected: 0, totalCollected: 0, numPaid: 0, numPartial: 0, numUnpaid: 0 }
-  );
-
-  return NextResponse.json({
-    month,
-    rows,
-    totals: {
-      ...totals,
-      outstandingBalance: totals.totalExpected - totals.totalCollected,
-      totalUnits: rows.length,
-    },
-  });
+  if (statusFilter && statusFilter !== "ALL") rows = rows.filter((row) => statusFilter === "VACANT" ? row.isVacant : row.effectiveStatus === statusFilter);
+  const totals = rows.reduce((acc, row) => {
+    const expected = row.payment ? row.payment.rentAmount + row.payment.maintenanceAmount : row.unit.monthlyRent + row.unit.maintenanceAmount;
+    acc.totalExpected += expected; acc.totalCollected += row.payment?.amountPaid ?? 0;
+    if (row.effectiveStatus === "PAID") acc.numPaid++; else if (row.effectiveStatus === "PARTIAL") acc.numPartial++; else acc.numUnpaid++;
+    return acc;
+  }, { totalExpected: 0, totalCollected: 0, numPaid: 0, numPartial: 0, numUnpaid: 0 });
+  return NextResponse.json({ month, rows, totals: { ...totals, outstandingBalance: totals.totalExpected - totals.totalCollected, totalUnits: rows.length } });
 }

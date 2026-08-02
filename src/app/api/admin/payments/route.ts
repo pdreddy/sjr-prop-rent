@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { paymentDTO, paymentFor, savePayment, unitById } from "@/lib/store";
 import { getAuthedAdmin } from "@/lib/auth";
 import { upsertPaymentSchema } from "@/lib/validation";
 import { recordAuditLog } from "@/lib/audit";
-import { serializePayment } from "@/lib/serialize";
 
 export async function PUT(request: NextRequest) {
   const admin = await getAuthedAdmin();
@@ -20,7 +19,7 @@ export async function PUT(request: NextRequest) {
     );
   }
 
-  const unit = await prisma.unit.findUnique({ where: { id: parsed.data.unitId } });
+  const unit = await unitById(parsed.data.unitId);
   if (!unit) {
     return NextResponse.json({ error: "Plot not found." }, { status: 404 });
   }
@@ -30,9 +29,7 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ error: "Invalid paid date." }, { status: 400 });
   }
 
-  const existing = await prisma.payment.findUnique({
-    where: { unitId_month: { unitId: parsed.data.unitId, month: parsed.data.month } },
-  });
+  const existing = await paymentFor(parsed.data.unitId, parsed.data.month);
 
   const data = {
     paymentStatus: parsed.data.paymentStatus,
@@ -45,24 +42,17 @@ export async function PUT(request: NextRequest) {
     updatedBy: admin.username,
   };
 
-  const payment = await prisma.payment.upsert({
-    where: { unitId_month: { unitId: parsed.data.unitId, month: parsed.data.month } },
-    create: {
-      unitId: parsed.data.unitId,
-      month: parsed.data.month,
-      ...data,
-    },
-    update: data,
-  });
+  const payment = await savePayment(parsed.data.unitId, parsed.data.month, data);
 
   await recordAuditLog({
     adminId: admin.id,
+    adminUsername: admin.username,
     action: existing ? "UPDATE" : "CREATE",
     recordType: "Payment",
     recordId: payment.id,
-    previousValue: existing ? serializePayment(existing) : null,
-    newValue: serializePayment(payment),
+    previousValue: existing ? paymentDTO(existing) : null,
+    newValue: paymentDTO(payment),
   });
 
-  return NextResponse.json({ payment: serializePayment(payment) });
+  return NextResponse.json({ payment: paymentDTO(payment) });
 }

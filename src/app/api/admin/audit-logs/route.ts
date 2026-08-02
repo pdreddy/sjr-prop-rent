@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { auditLogs } from "@/lib/store";
 import { getAuthedAdmin } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
@@ -11,16 +11,12 @@ export async function GET(request: NextRequest) {
   const limitParam = Number(request.nextUrl.searchParams.get("limit") ?? "50");
   const limit = Math.min(Math.max(Number.isFinite(limitParam) ? limitParam : 50, 1), 200);
 
-  const logs = await prisma.auditLog.findMany({
-    orderBy: { createdAt: "desc" },
-    take: limit,
-    include: { admin: { select: { username: true } } },
-  });
+  const logs = await auditLogs(limit);
 
   return NextResponse.json({
     logs: logs.map((log) => ({
       id: log.id,
-      adminUsername: log.admin?.username ?? "unknown",
+      adminUsername: log.adminUsername,
       action: log.action,
       recordType: log.recordType,
       recordId: log.recordId,
