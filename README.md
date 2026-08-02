@@ -17,6 +17,19 @@ npm run db:seed
 npm run dev
 ```
 
+If an IDE reports that it cannot resolve `next/package.json` or
+`default-transpiled-packages.json`, run the commands from the repository root
+(the folder containing `package.json`). Then reset the local installation:
+
+```bash
+rm -rf .next node_modules
+npm ci
+npm run dev
+```
+
+The project pins Turbopack's root in `next.config.ts`, so IDE launchers cannot
+incorrectly treat `src/app` as the workspace root.
+
 Copy/paste local setup after downloading the JSON:
 
 ```bash
