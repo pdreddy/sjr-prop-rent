@@ -5,7 +5,7 @@ A mobile-friendly Next.js rent tracker with one simple username/password adminis
 ## Firebase setup
 
 1. Create a Firebase project and a **Cloud Firestore** database in Native mode. Firebase Authentication is not required.
-2. The repository is already configured for the supplied Firebase web project's ID, `koc2-20fb8`. The supplied browser API key, analytics ID, app ID, and messaging ID are intentionally not needed by this server-rendered application and are not secrets used for database administration.
+2. The repository includes the supplied Firebase web configuration for project `koc2-20fb8`. Firebase App and Analytics load in the browser after the page becomes interactive.
 3. Open **Project settings > Service accounts** in that project and generate a private key. The browser configuration alone cannot authorize the protected server routes to write Firestore data.
 4. Copy `.env.example` to `.env`, then copy `client_email` and `private_key` from the downloaded service-account JSON into `FIREBASE_CLIENT_EMAIL` and `FIREBASE_PRIVATE_KEY`.
 5. Choose `ADMIN_USERNAME`, `ADMIN_PASSWORD`, and a random `SESSION_SECRET` of at least 32 characters.
@@ -21,9 +21,9 @@ Open `/admin/login` and enter the `ADMIN_USERNAME` and `ADMIN_PASSWORD` used dur
 
 The application uses the service account only in server-side Next.js route handlers. Deploy the included deny-all client rules with `firebase deploy --only firestore:rules`; service-account requests continue to work while browser clients cannot read private rent data.
 
-### Why the Firebase web snippet is not imported
+### Firebase browser and server configuration
 
-`initializeApp()` from `firebase/app` configures code that runs in a visitor's browser. Importing `firebase/analytics` would also send analytics from the browser, but it would not grant the Next.js APIs permission to save rent records. This application deliberately keeps tenant, payment, login, and service-account access on the server. It therefore uses the project ID plus a Firebase service account rather than shipping Firebase database code or privileged credentials to every browser.
+The supplied `initializeApp()` and Analytics configuration is now loaded globally in the browser from Google's official Firebase module CDN. It provides browser analytics only. Tenant, payment, and login data still use protected server routes and the service account because the public web API key cannot authorize privileged Firestore writes.
 
 ## Deploy to Netlify
 
