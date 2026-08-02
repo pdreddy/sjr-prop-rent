@@ -27,6 +27,16 @@ export function formatMonthLabel(month: string): string {
   });
 }
 
+export function formatDate(value: string | null): string {
+  if (!value) return "—";
+  return new Date(value).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    timeZone: "UTC",
+  });
+}
+
 export function getMonthOptions(count = 24): string[] {
   const options: string[] = [];
   let month = getCurrentMonth();

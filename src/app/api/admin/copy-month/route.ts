@@ -43,14 +43,19 @@ export async function POST(request: NextRequest) {
     toCreate.map((unit) => {
       const sourcePayment = unit.payments.find((p) => p.month === sourceMonth);
       const rentAmount = sourcePayment ? sourcePayment.rentAmount : unit.monthlyRent;
+      const maintenanceAmount = sourcePayment
+        ? sourcePayment.maintenanceAmount
+        : unit.maintenanceAmount;
+      const totalExpected = Number(rentAmount) + Number(maintenanceAmount);
       return prisma.payment.create({
         data: {
           unitId: unit.id,
           month: targetMonth,
           paymentStatus: "UNPAID",
           rentAmount,
+          maintenanceAmount,
           amountPaid: 0,
-          balanceDue: rentAmount,
+          balanceDue: totalExpected,
           updatedBy: admin.username,
         },
       });

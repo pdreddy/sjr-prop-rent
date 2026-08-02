@@ -57,7 +57,9 @@ export async function GET(request: NextRequest) {
 
   const totals = rows.reduce(
     (acc, r) => {
-      const expected = r.payment ? r.payment.rentAmount : Number(r.unit.monthlyRent);
+      const expected = r.payment
+        ? r.payment.rentAmount + r.payment.maintenanceAmount
+        : Number(r.unit.monthlyRent) + Number(r.unit.maintenanceAmount);
       const collected = r.payment ? r.payment.amountPaid : 0;
       acc.totalExpected += expected;
       acc.totalCollected += collected;

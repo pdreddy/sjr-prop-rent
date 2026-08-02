@@ -6,7 +6,13 @@ import MonthYearSelector from "@/components/MonthYearSelector";
 import StatusBadge from "@/components/StatusBadge";
 import UnitEditorModal from "./UnitEditorModal";
 import ChangePasswordModal from "./ChangePasswordModal";
-import { getCurrentMonth, getMonthOptions, getPreviousMonth, formatMonthLabel } from "@/lib/month";
+import {
+  getCurrentMonth,
+  getMonthOptions,
+  getPreviousMonth,
+  formatMonthLabel,
+  formatDate,
+} from "@/lib/month";
 import type { DashboardResponse, DashboardRow } from "@/lib/types";
 
 const monthOptions = getMonthOptions();
@@ -225,94 +231,95 @@ export default function AdminDashboard({ username }: { username: string }) {
         )}
 
         {!loading && data && data.rows.length > 0 && (
-          <>
-            {/* Mobile cards */}
-            <ul className="flex flex-col gap-2.5 sm:hidden">
-              {data.rows.map((row) => (
-                <li
-                  key={row.unit.id}
-                  className="rounded-xl border border-primary/10 bg-white p-4 shadow-sm"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-base font-semibold">Plot {row.unit.plotNumber}</span>
-                    <StatusBadge status={row.isVacant ? "VACANT" : row.effectiveStatus} />
-                  </div>
-                  <p className="mt-1 text-sm text-foreground/60">
-                    {row.unit.tenantName || "No tenant"} · {row.unit.phone || "—"}
-                  </p>
-                  <p className="mt-1 text-sm text-foreground/70">
-                    Paid ₹{(row.payment?.amountPaid ?? 0).toFixed(0)} of ₹
-                    {(row.payment?.rentAmount ?? row.unit.monthlyRent).toFixed(0)}
-                  </p>
-                  <div className="mt-3 flex gap-2">
-                    <button
-                      onClick={() => setEditingRow(row)}
-                      className="min-h-10 flex-1 rounded-lg border border-primary/30 px-3 py-2 text-sm font-semibold text-primary-dark"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDeactivate(row)}
-                      className="min-h-10 rounded-lg border border-unpaid/30 px-3 py-2 text-sm font-semibold text-unpaid"
-                    >
-                      Deactivate
-                    </button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-
-            {/* Desktop table */}
-            <div className="hidden overflow-x-auto rounded-xl border border-primary/10 bg-white shadow-sm sm:block">
-              <table className="w-full min-w-[720px] text-left text-sm">
-                <thead className="bg-primary-light text-primary-dark">
-                  <tr>
-                    <th className="px-4 py-3 font-semibold">Plot</th>
-                    <th className="px-4 py-3 font-semibold">Tenant</th>
-                    <th className="px-4 py-3 font-semibold">Phone</th>
-                    <th className="px-4 py-3 font-semibold">Status</th>
-                    <th className="px-4 py-3 font-semibold">Rent</th>
-                    <th className="px-4 py-3 font-semibold">Paid</th>
-                    <th className="px-4 py-3 font-semibold">Balance</th>
-                    <th className="px-4 py-3 font-semibold">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.rows.map((row) => (
+          <div className="overflow-x-auto rounded-xl border border-primary/10 bg-white shadow-sm">
+            <table className="text-left text-sm">
+              <thead className="bg-primary-light text-primary-dark">
+                <tr>
+                  <th className="sticky left-0 z-10 w-[64px] min-w-[64px] bg-primary-light px-3 py-3 font-semibold">
+                    Plot#
+                  </th>
+                  <th className="sticky left-[64px] z-10 w-[140px] min-w-[140px] border-r border-primary/10 bg-primary-light px-3 py-3 font-semibold shadow-[2px_0_4px_rgba(0,0,0,0.04)]">
+                    Name
+                  </th>
+                  <th className="w-[110px] min-w-[110px] px-3 py-3 font-semibold">
+                    Joining date
+                  </th>
+                  <th className="w-[90px] min-w-[90px] px-3 py-3 font-semibold">Rent</th>
+                  <th className="w-[100px] min-w-[100px] px-3 py-3 font-semibold">
+                    Maintenance
+                  </th>
+                  <th className="w-[100px] min-w-[100px] px-3 py-3 font-semibold">Rent sum</th>
+                  <th className="w-[90px] min-w-[90px] px-3 py-3 font-semibold">Paid</th>
+                  <th className="w-[90px] min-w-[90px] px-3 py-3 font-semibold">Balance</th>
+                  <th className="w-[100px] min-w-[100px] px-3 py-3 font-semibold">Status</th>
+                  <th className="w-[130px] min-w-[130px] px-3 py-3 font-semibold">
+                    Phone number
+                  </th>
+                  <th className="w-[180px] min-w-[180px] px-3 py-3 font-semibold">Notes</th>
+                  <th className="w-[150px] min-w-[150px] px-3 py-3 font-semibold">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.rows.map((row) => {
+                  const rentAmount = row.payment?.rentAmount ?? row.unit.monthlyRent;
+                  const maintenanceAmount =
+                    row.payment?.maintenanceAmount ?? row.unit.maintenanceAmount;
+                  const rentSum = rentAmount + maintenanceAmount;
+                  return (
                     <tr key={row.unit.id} className="border-t border-primary/5">
-                      <td className="px-4 py-3 font-semibold">{row.unit.plotNumber}</td>
-                      <td className="px-4 py-3">{row.unit.tenantName || "—"}</td>
-                      <td className="px-4 py-3">{row.unit.phone || "—"}</td>
-                      <td className="px-4 py-3">
+                      <td className="sticky left-0 z-10 w-[64px] min-w-[64px] bg-white px-3 py-3 font-semibold text-foreground">
+                        {row.unit.plotNumber}
+                      </td>
+                      <td className="sticky left-[64px] z-10 w-[140px] min-w-[140px] border-r border-primary/10 bg-white px-3 py-3 shadow-[2px_0_4px_rgba(0,0,0,0.04)]">
+                        {row.unit.tenantName || "—"}
+                      </td>
+                      <td className="w-[110px] min-w-[110px] px-3 py-3 text-foreground/80">
+                        {formatDate(row.unit.moveInDate)}
+                      </td>
+                      <td className="w-[90px] min-w-[90px] px-3 py-3">₹{rentAmount.toFixed(0)}</td>
+                      <td className="w-[100px] min-w-[100px] px-3 py-3">
+                        ₹{maintenanceAmount.toFixed(0)}
+                      </td>
+                      <td className="w-[100px] min-w-[100px] px-3 py-3 font-medium">
+                        ₹{rentSum.toFixed(0)}
+                      </td>
+                      <td className="w-[90px] min-w-[90px] px-3 py-3">
+                        ₹{(row.payment?.amountPaid ?? 0).toFixed(0)}
+                      </td>
+                      <td className="w-[90px] min-w-[90px] px-3 py-3">
+                        ₹{(row.payment?.balanceDue ?? 0).toFixed(0)}
+                      </td>
+                      <td className="w-[100px] min-w-[100px] px-3 py-3">
                         <StatusBadge status={row.isVacant ? "VACANT" : row.effectiveStatus} />
                       </td>
-                      <td className="px-4 py-3">
-                        ₹{(row.payment?.rentAmount ?? row.unit.monthlyRent).toFixed(0)}
+                      <td className="w-[130px] min-w-[130px] px-3 py-3">
+                        {row.unit.phone || "—"}
                       </td>
-                      <td className="px-4 py-3">₹{(row.payment?.amountPaid ?? 0).toFixed(0)}</td>
-                      <td className="px-4 py-3">₹{(row.payment?.balanceDue ?? 0).toFixed(0)}</td>
-                      <td className="px-4 py-3">
+                      <td className="w-[180px] min-w-[180px] truncate px-3 py-3 text-foreground/70">
+                        {row.payment?.notes || "—"}
+                      </td>
+                      <td className="w-[150px] min-w-[150px] px-3 py-3">
                         <div className="flex gap-2">
                           <button
                             onClick={() => setEditingRow(row)}
-                            className="rounded-md border border-primary/30 px-2.5 py-1 font-medium text-primary-dark hover:bg-primary-light"
+                            className="min-h-9 rounded-md border border-primary/30 px-2.5 py-1 font-medium text-primary-dark hover:bg-primary-light"
                           >
                             Edit
                           </button>
                           <button
                             onClick={() => handleDeactivate(row)}
-                            className="rounded-md border border-unpaid/30 px-2.5 py-1 font-medium text-unpaid hover:bg-unpaid-bg"
+                            className="min-h-9 rounded-md border border-unpaid/30 px-2.5 py-1 font-medium text-unpaid hover:bg-unpaid-bg"
                           >
                             Deactivate
                           </button>
                         </div>
                       </td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
       </main>
 

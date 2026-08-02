@@ -57,6 +57,9 @@ export async function PATCH(
       ...(moveInDate !== undefined && { moveInDate }),
       ...(parsed.data.phone !== undefined && { phone: parsed.data.phone || null }),
       ...(parsed.data.monthlyRent !== undefined && { monthlyRent: parsed.data.monthlyRent }),
+      ...(parsed.data.maintenanceAmount !== undefined && {
+        maintenanceAmount: parsed.data.maintenanceAmount,
+      }),
       ...(parsed.data.active !== undefined && { active: parsed.data.active }),
     },
   });

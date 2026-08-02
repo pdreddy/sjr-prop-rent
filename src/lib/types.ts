@@ -22,6 +22,7 @@ export interface UnitDTO {
   moveInDate: string | null;
   phone: string | null;
   monthlyRent: number;
+  maintenanceAmount: number;
   active: boolean;
   createdAt: string;
   updatedAt: string;
@@ -33,6 +34,7 @@ export interface PaymentDTO {
   month: string;
   paymentStatus: PaymentStatus;
   rentAmount: number;
+  maintenanceAmount: number;
   amountPaid: number;
   balanceDue: number;
   paidDate: string | null;

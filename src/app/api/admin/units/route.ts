@@ -66,6 +66,7 @@ export async function POST(request: NextRequest) {
       moveInDate,
       phone: parsed.data.phone || null,
       monthlyRent: parsed.data.monthlyRent,
+      maintenanceAmount: parsed.data.maintenanceAmount ?? 0,
     },
   });
 

@@ -37,6 +37,7 @@ export async function PUT(request: NextRequest) {
   const data = {
     paymentStatus: parsed.data.paymentStatus,
     rentAmount: parsed.data.rentAmount,
+    maintenanceAmount: parsed.data.maintenanceAmount,
     amountPaid: parsed.data.amountPaid,
     balanceDue: parsed.data.balanceDue,
     paidDate,

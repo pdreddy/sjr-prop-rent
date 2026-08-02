@@ -38,6 +38,7 @@ model Unit {
   moveInDate   DateTime? @map("move_in_date")
   phone        String?
   monthlyRent  Decimal  @default(0) @map("monthly_rent") @db.Decimal(10, 2)
+  maintenanceAmount Decimal @default(0) @map("maintenance_amount") @db.Decimal(10, 2)
   active       Boolean  @default(true)
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
@@ -54,6 +55,7 @@ model Payment {
   month         String        @map("month") // format: "YYYY-MM"
   paymentStatus PaymentStatus @default(UNPAID) @map("payment_status")
   rentAmount    Decimal       @default(0) @map("rent_amount") @db.Decimal(10, 2)
+  maintenanceAmount Decimal   @default(0) @map("maintenance_amount") @db.Decimal(10, 2)
   amountPaid    Decimal       @default(0) @map("amount_paid") @db.Decimal(10, 2)
   balanceDue    Decimal       @default(0) @map("balance_due") @db.Decimal(10, 2)
   paidDate      DateTime?     @map("paid_date")

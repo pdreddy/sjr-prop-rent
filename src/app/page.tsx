@@ -4,20 +4,10 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import MonthYearSelector from "@/components/MonthYearSelector";
 import StatusBadge from "@/components/StatusBadge";
-import { getCurrentMonth, getMonthOptions } from "@/lib/month";
+import { getCurrentMonth, getMonthOptions, formatDate } from "@/lib/month";
 import type { PublicStatusResponse } from "@/lib/types";
 
 const monthOptions = getMonthOptions();
-
-function formatDate(value: string | null): string {
-  if (!value) return "—";
-  return new Date(value).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    timeZone: "UTC",
-  });
-}
 
 export default function Home() {
   const [month, setMonth] = useState(getCurrentMonth());

@@ -193,6 +193,32 @@ in Step 2.
 That's it — the public page is live at your Vercel URL with no login
 required, and `/admin/login` is the admin entry point.
 
+### Loading real tenant data
+
+`scripts/import-tenants.ts` (`npm run import:tenants`) is a one-time,
+re-runnable import of the building's actual plots — name, joining date,
+rent, maintenance, phone, and the June 2026 payment status — written from
+the original rent register. It upserts by plot number, so running it again
+is safe. Run it the same way as the seed script, pointed at whichever
+database you want to load:
+
+```bash
+DATABASE_URL="<connection string>" npm run import:tenants
+```
+
+A few source values were ambiguous and were imported as-is with a flag:
+- Plots 201, 402, and 403 had an unclear/uncertain amount paid for June in
+  the original sheet (shown as "?"/"??") — these were imported as
+  **Unpaid** with a note added ("Amount paid for June unclear in source
+  records — needs verification"). Fix them via the admin dashboard once you
+  confirm the real amount.
+- Plot 402's joining date was recorded as "01-Jun-16" in the source, which
+  is almost certainly a typo for 2026 — imported as **1 Jun 2026**. Correct
+  it in the admin dashboard if that's wrong.
+- Plots 101 and 501 joined in August 2026 with only a total rent figure
+  given (no rent/maintenance breakdown yet) — imported with that total as
+  the rent and maintenance at ₹0; split it once you know the real numbers.
+
 ### Netlify instead of Vercel
 
 The same steps work on Netlify: create the Neon database the same way

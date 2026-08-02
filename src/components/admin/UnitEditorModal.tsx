@@ -22,12 +22,18 @@ export default function UnitEditorModal({ row, month, onClose, onSaved }: Props)
   const [monthlyRent, setMonthlyRent] = useState(
     row ? String(row.unit.monthlyRent) : "0"
   );
+  const [defaultMaintenance, setDefaultMaintenance] = useState(
+    row ? String(row.unit.maintenanceAmount) : "0"
+  );
 
   const defaultRent = row?.payment?.rentAmount ?? row?.unit.monthlyRent ?? 0;
+  const defaultPaymentMaintenance =
+    row?.payment?.maintenanceAmount ?? row?.unit.maintenanceAmount ?? 0;
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>(
     row?.payment?.paymentStatus ?? "UNPAID"
   );
   const [rentAmount, setRentAmount] = useState(String(defaultRent));
+  const [maintenanceAmount, setMaintenanceAmount] = useState(String(defaultPaymentMaintenance));
   const [amountPaid, setAmountPaid] = useState(String(row?.payment?.amountPaid ?? 0));
   const [paidDate, setPaidDate] = useState(
     row?.payment?.paidDate ? row.payment.paidDate.slice(0, 10) : ""
@@ -37,7 +43,8 @@ export default function UnitEditorModal({ row, month, onClose, onSaved }: Props)
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const balanceDue = Math.max(0, Number(rentAmount || 0) - Number(amountPaid || 0));
+  const rentSum = Number(rentAmount || 0) + Number(maintenanceAmount || 0);
+  const balanceDue = Math.max(0, rentSum - Number(amountPaid || 0));
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -57,6 +64,7 @@ export default function UnitEditorModal({ row, month, onClose, onSaved }: Props)
             moveInDate: moveInDate || null,
             phone: phone || null,
             monthlyRent: Number(monthlyRent),
+            maintenanceAmount: Number(defaultMaintenance),
           }),
         });
         const json = await res.json();
@@ -75,6 +83,7 @@ export default function UnitEditorModal({ row, month, onClose, onSaved }: Props)
             moveInDate: moveInDate || null,
             phone: phone || null,
             monthlyRent: Number(monthlyRent),
+            maintenanceAmount: Number(defaultMaintenance),
           }),
         });
         const json = await res.json();
@@ -92,6 +101,7 @@ export default function UnitEditorModal({ row, month, onClose, onSaved }: Props)
           month,
           paymentStatus,
           rentAmount: Number(rentAmount),
+          maintenanceAmount: Number(maintenanceAmount),
           amountPaid: Number(amountPaid),
           balanceDue,
           paidDate: paidDate || null,
@@ -201,6 +211,19 @@ export default function UnitEditorModal({ row, month, onClose, onSaved }: Props)
                 className="min-h-11 rounded-lg border border-primary/20 px-3 py-2 text-base focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
               />
             </label>
+            <label className="flex flex-col gap-1">
+              <span className="text-sm font-medium text-foreground/80">
+                Default monthly maintenance (₹)
+              </span>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={defaultMaintenance}
+                onChange={(e) => setDefaultMaintenance(e.target.value)}
+                className="min-h-11 rounded-lg border border-primary/20 px-3 py-2 text-base focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+              />
+            </label>
           </fieldset>
 
           <fieldset className="flex flex-col gap-3 rounded-xl border border-primary/10 p-3">
@@ -243,6 +266,23 @@ export default function UnitEditorModal({ row, month, onClose, onSaved }: Props)
                 className="min-h-11 rounded-lg border border-primary/20 px-3 py-2 text-base focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
               />
             </label>
+
+            <label className="flex flex-col gap-1">
+              <span className="text-sm font-medium text-foreground/80">Maintenance for this month (₹)</span>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={maintenanceAmount}
+                onChange={(e) => setMaintenanceAmount(e.target.value)}
+                className="min-h-11 rounded-lg border border-primary/20 px-3 py-2 text-base focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+              />
+            </label>
+
+            <p className="text-sm text-foreground/60">
+              Rent sum (rent + maintenance):{" "}
+              <span className="font-semibold text-foreground">₹{rentSum.toFixed(2)}</span>
+            </p>
 
             <label className="flex flex-col gap-1">
               <span className="text-sm font-medium text-foreground/80">Amount paid (₹)</span>
