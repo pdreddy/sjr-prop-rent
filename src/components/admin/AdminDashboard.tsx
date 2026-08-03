@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import MonthYearSelector from "@/components/MonthYearSelector";
 import StatusBadge from "@/components/StatusBadge";
 import UnitEditorModal from "./UnitEditorModal";
+import RentUpdateModal from "./RentUpdateModal";
 import ChangePasswordModal from "./ChangePasswordModal";
 import {
   getCurrentMonth,
@@ -13,12 +14,11 @@ import {
   formatMonthLabel,
   formatDate,
 } from "@/lib/month";
-import type { DashboardResponse, DashboardRow, PaymentStatus } from "@/lib/types";
+import type { DashboardResponse, DashboardRow } from "@/lib/types";
 
 const monthOptions = getMonthOptions();
 const STATUS_FILTERS = ["ALL", "PAID", "UNPAID", "PARTIAL", "VACANT"] as const;
 type StatusFilter = (typeof STATUS_FILTERS)[number];
-type AdminTableView = "details" | "rent";
 
 export default function AdminDashboard({ username }: { username: string }) {
   const router = useRouter();
@@ -29,11 +29,10 @@ export default function AdminDashboard({ username }: { username: string }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editingRow, setEditingRow] = useState<DashboardRow | null | "new">(null);
+  const [rentEditRow, setRentEditRow] = useState<DashboardRow | null>(null);
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [copying, setCopying] = useState(false);
-  const [inlineEditingId, setInlineEditingId] = useState<string | null>(null);
-  const [tableView, setTableView] = useState<AdminTableView>("details");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -124,22 +123,22 @@ export default function AdminDashboard({ username }: { username: string }) {
 
   return (
     <div className="flex flex-1 flex-col bg-background">
-      <header className="bg-primary px-4 py-4 text-white shadow-sm sm:px-6">
+      <header className="sticky top-0 z-20 border-b border-primary/10 bg-white/90 px-4 py-3 backdrop-blur sm:px-6">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-lg font-bold sm:text-xl">SJR Rent Tracker — Admin</h1>
-            <p className="text-xs text-white/70">Signed in as {username}</p>
+            <h1 className="text-lg font-bold text-primary-dark sm:text-xl">SJR Rent Tracker</h1>
+            <p className="text-xs text-foreground/50">Signed in as {username}</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <button
               onClick={() => setShowChangePassword(true)}
-              className="min-h-10 rounded-md border border-white/40 px-3 py-1.5 text-sm font-medium hover:bg-white/10"
+              className="min-h-10 rounded-full border border-primary/20 px-3 py-1.5 text-sm font-medium text-primary-dark hover:bg-primary-light"
             >
               Change password
             </button>
             <button
               onClick={handleLogout}
-              className="min-h-10 rounded-md border border-white/40 px-3 py-1.5 text-sm font-medium hover:bg-white/10"
+              className="min-h-10 rounded-full border border-primary/20 px-3 py-1.5 text-sm font-medium text-primary-dark hover:bg-primary-light"
             >
               Log out
             </button>
@@ -159,7 +158,18 @@ export default function AdminDashboard({ username }: { username: string }) {
           </div>
         )}
 
-        <div className="mb-5 flex flex-wrap items-end gap-3">
+        {totals && (
+          <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+            <TotalCard label="Total plots" value={String(totals.totalUnits)} />
+            <TotalCard label="Paid" value={String(totals.numPaid)} accent="paid" />
+            <TotalCard label="Partial" value={String(totals.numPartial)} accent="partial" />
+            <TotalCard label="Unpaid" value={String(totals.numUnpaid)} accent="unpaid" />
+            <TotalCard label="Expected" value={`₹${totals.totalExpected.toFixed(0)}`} />
+            <TotalCard label="Outstanding" value={`₹${totals.outstandingBalance.toFixed(0)}`} />
+          </div>
+        )}
+
+        <div className="mb-6 flex flex-wrap items-end gap-3 rounded-2xl border border-primary/10 bg-white p-4 shadow-sm">
           <MonthYearSelector month={month} options={monthOptions} onChange={setMonth} />
 
           <label className="flex flex-1 min-w-[200px] flex-col gap-1">
@@ -179,7 +189,7 @@ export default function AdminDashboard({ username }: { username: string }) {
                 <button
                   key={s}
                   onClick={() => setStatusFilter(s)}
-                  className={`min-h-11 rounded-lg border px-3 py-2 text-sm font-medium ${
+                  className={`min-h-11 rounded-full border px-3 py-2 text-sm font-medium ${
                     statusFilter === s
                       ? "border-primary bg-primary text-white"
                       : "border-primary/20 bg-white text-foreground/70"
@@ -194,192 +204,45 @@ export default function AdminDashboard({ username }: { username: string }) {
           <div className="flex gap-2">
             <button
               onClick={() => setEditingRow("new")}
-              className="min-h-11 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark"
+              className="min-h-11 rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark"
             >
               + Add plot
             </button>
             <button
               onClick={handleCopyPreviousMonth}
               disabled={copying}
-              className="min-h-11 rounded-lg border border-primary/30 bg-white px-4 py-2.5 text-sm font-semibold text-primary-dark hover:bg-primary-light disabled:opacity-60"
+              className="min-h-11 rounded-full border border-primary/30 bg-white px-4 py-2.5 text-sm font-semibold text-primary-dark hover:bg-primary-light disabled:opacity-60"
             >
               {copying ? "Copying..." : "Copy previous month"}
             </button>
           </div>
         </div>
 
-        {totals && (
-          <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-            <TotalCard label="Total plots" value={String(totals.totalUnits)} />
-            <TotalCard label="Paid" value={String(totals.numPaid)} accent="paid" />
-            <TotalCard label="Partial" value={String(totals.numPartial)} accent="partial" />
-            <TotalCard label="Unpaid" value={String(totals.numUnpaid)} accent="unpaid" />
-            <TotalCard label="Expected" value={`₹${totals.totalExpected.toFixed(0)}`} />
-            <TotalCard label="Outstanding" value={`₹${totals.outstandingBalance.toFixed(0)}`} />
-          </div>
-        )}
-
         {loading && (
-          <div className="flex flex-col gap-2" aria-busy="true">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="h-14 animate-pulse rounded-lg bg-primary-light" />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-busy="true">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="h-56 animate-pulse rounded-2xl bg-primary-light" />
             ))}
           </div>
         )}
 
         {!loading && data && data.rows.length === 0 && (
-          <div className="rounded-xl border border-primary/15 bg-white p-8 text-center text-foreground/60">
+          <div className="rounded-2xl border border-primary/15 bg-white p-8 text-center text-foreground/60">
             No plots match your search or filter.
           </div>
         )}
 
         {!loading && data && data.rows.length > 0 && (
-          <div>
-            <div className="mb-3 flex gap-2" role="tablist" aria-label="Admin table view">
-              <button type="button" role="tab" aria-selected={tableView === "details"} onClick={() => setTableView("details")} className={`rounded-lg px-4 py-2 text-sm font-semibold ${tableView === "details" ? "bg-primary text-white" : "border border-primary/20 bg-white text-primary-dark"}`}>Tenant details</button>
-              <button type="button" role="tab" aria-selected={tableView === "rent"} onClick={() => setTableView("rent")} className={`rounded-lg px-4 py-2 text-sm font-semibold ${tableView === "rent" ? "bg-primary text-white" : "border border-primary/20 bg-white text-primary-dark"}`}>Update rent</button>
-            </div>
-          <div className="overflow-x-auto rounded-xl border border-primary/10 bg-white shadow-sm">
-            <table className="text-left text-sm">
-              {tableView === "details" ? (
-                <thead className="bg-primary-light text-primary-dark">
-                  <tr>
-                    <th className="sticky left-0 z-10 w-[64px] min-w-[64px] bg-primary-light px-3 py-3 font-semibold">Plot#</th>
-                    <th className="sticky left-[64px] z-10 w-[160px] min-w-[160px] border-r border-primary/10 bg-primary-light px-3 py-3 font-semibold shadow-[2px_0_4px_rgba(0,0,0,0.04)]">Name</th>
-                    <th className="w-[120px] min-w-[120px] px-3 py-3 font-semibold">Advance</th>
-                    <th className="w-[110px] min-w-[110px] px-3 py-3 font-semibold">Move-in date</th>
-                    <th className="w-[140px] min-w-[140px] px-3 py-3 font-semibold">Phone</th>
-                    <th className="w-[170px] min-w-[170px] px-3 py-3 font-semibold">Actions</th>
-                  </tr>
-                </thead>
-              ) : (
-                <thead className="bg-primary-light text-primary-dark">
-                  <tr>
-                    <th className="sticky left-0 z-10 w-[64px] min-w-[64px] bg-primary-light px-3 py-3 font-semibold">Plot#</th>
-                    <th className="sticky left-[64px] z-10 w-[140px] min-w-[140px] border-r border-primary/10 bg-primary-light px-3 py-3 font-semibold shadow-[2px_0_4px_rgba(0,0,0,0.04)]">Name</th>
-                    <th className="w-[90px] min-w-[90px] px-3 py-3 font-semibold">Rent</th>
-                    <th className="w-[100px] min-w-[100px] px-3 py-3 font-semibold">Maintenance</th>
-                    <th className="w-[100px] min-w-[100px] px-3 py-3 font-semibold">Rent sum</th>
-                    <th className="w-[90px] min-w-[90px] px-3 py-3 font-semibold">Paid</th>
-                    <th className="w-[110px] min-w-[110px] px-3 py-3 font-semibold">Paid date</th>
-                    <th className="w-[90px] min-w-[90px] px-3 py-3 font-semibold">Balance</th>
-                    <th className="w-[100px] min-w-[100px] px-3 py-3 font-semibold">Status</th>
-                    <th className="w-[180px] min-w-[180px] px-3 py-3 font-semibold">Notes</th>
-                    <th className="w-[150px] min-w-[150px] px-3 py-3 font-semibold">Actions</th>
-                  </tr>
-                </thead>
-              )}
-              <tbody>
-                {data.rows.map((row) => {
-                  const rentAmount = row.payment?.rentAmount ?? row.unit.monthlyRent;
-                  const maintenanceAmount =
-                    row.payment?.maintenanceAmount ?? row.unit.maintenanceAmount;
-                  const rentSum = rentAmount + maintenanceAmount;
-
-                  if (tableView === "details") {
-                    return (
-                      <tr key={row.unit.id} className="border-t border-primary/5">
-                        <td className="sticky left-0 z-10 w-[64px] min-w-[64px] bg-white px-3 py-3 font-semibold text-foreground">
-                          {row.unit.plotNumber}
-                        </td>
-                        <td className="sticky left-[64px] z-10 w-[160px] min-w-[160px] border-r border-primary/10 bg-white px-3 py-3 shadow-[2px_0_4px_rgba(0,0,0,0.04)]">
-                          {row.unit.tenantName || "—"}
-                        </td>
-                        <td className="w-[120px] min-w-[120px] px-3 py-3">
-                          ₹{row.unit.advanceAmount.toFixed(0)}
-                        </td>
-                        <td className="w-[110px] min-w-[110px] px-3 py-3 text-foreground/80">
-                          {formatDate(row.unit.moveInDate)}
-                        </td>
-                        <td className="w-[140px] min-w-[140px] px-3 py-3">
-                          {row.unit.phone || "—"}
-                        </td>
-                        <td className="w-[170px] min-w-[170px] px-3 py-3">
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => setEditingRow(row)}
-                              className="min-h-9 rounded-md border border-primary/30 px-2.5 py-1 font-medium text-primary-dark hover:bg-primary-light"
-                            >
-                              Edit record
-                            </button>
-                            <button
-                              onClick={() => handleDeactivate(row)}
-                              className="min-h-9 rounded-md border border-unpaid/30 px-2.5 py-1 font-medium text-unpaid hover:bg-unpaid-bg"
-                            >
-                              Deactivate
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  }
-
-                  if (inlineEditingId === row.unit.id) {
-                    return (
-                      <InlineEditRow
-                        key={row.unit.id}
-                        row={row}
-                        month={month}
-                        onCancel={() => setInlineEditingId(null)}
-                        onSaved={() => {
-                          setInlineEditingId(null);
-                          setMessage(`Plot ${row.unit.plotNumber} saved.`);
-                          load();
-                        }}
-                        onError={setError}
-                      />
-                    );
-                  }
-                  return (
-                    <tr key={row.unit.id} className="border-t border-primary/5">
-                      <td className="sticky left-0 z-10 w-[64px] min-w-[64px] bg-white px-3 py-3 font-semibold text-foreground">
-                        {row.unit.plotNumber}
-                      </td>
-                      <td className="sticky left-[64px] z-10 w-[140px] min-w-[140px] border-r border-primary/10 bg-white px-3 py-3 shadow-[2px_0_4px_rgba(0,0,0,0.04)]">
-                        {row.unit.tenantName || "—"}
-                      </td>
-                      <td className="w-[90px] min-w-[90px] px-3 py-3">₹{rentAmount.toFixed(0)}</td>
-                      <td className="w-[100px] min-w-[100px] px-3 py-3">
-                        ₹{maintenanceAmount.toFixed(0)}
-                      </td>
-                      <td className="w-[100px] min-w-[100px] px-3 py-3 font-medium">
-                        ₹{rentSum.toFixed(0)}
-                      </td>
-                      <td className="w-[90px] min-w-[90px] px-3 py-3">
-                        ₹{(row.payment?.amountPaid ?? 0).toFixed(0)}
-                      </td>
-                      <td className="w-[110px] min-w-[110px] px-3 py-3 text-foreground/80">{formatDate(row.payment?.paidDate ?? null)}</td>
-                      <td className="w-[90px] min-w-[90px] px-3 py-3">
-                        ₹{(row.payment?.balanceDue ?? 0).toFixed(0)}
-                      </td>
-                      <td className="w-[100px] min-w-[100px] px-3 py-3">
-                        <StatusBadge status={row.isVacant ? "VACANT" : row.effectiveStatus} />
-                      </td>
-                      <td className="w-[180px] min-w-[180px] truncate px-3 py-3 text-foreground/70">
-                        {row.payment?.notes || "—"}
-                      </td>
-                      <td className="w-[150px] min-w-[150px] px-3 py-3">
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => setInlineEditingId(row.unit.id)}
-                            className="min-h-9 rounded-md border border-primary/30 px-2.5 py-1 font-medium text-primary-dark hover:bg-primary-light"
-                          >
-                            Edit row
-                          </button>
-                          <button
-                            onClick={() => handleDeactivate(row)}
-                            className="min-h-9 rounded-md border border-unpaid/30 px-2.5 py-1 font-medium text-unpaid hover:bg-unpaid-bg"
-                          >
-                            Deactivate
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {data.rows.map((row) => (
+              <PlotCard
+                key={row.unit.id}
+                row={row}
+                onEditDetails={() => setEditingRow(row)}
+                onUpdateRent={() => setRentEditRow(row)}
+                onDeactivate={() => handleDeactivate(row)}
+              />
+            ))}
           </div>
         )}
       </main>
@@ -397,6 +260,19 @@ export default function AdminDashboard({ username }: { username: string }) {
         />
       )}
 
+      {rentEditRow && (
+        <RentUpdateModal
+          row={rentEditRow}
+          month={month}
+          onClose={() => setRentEditRow(null)}
+          onSaved={() => {
+            setRentEditRow(null);
+            setMessage(`Plot ${rentEditRow.unit.plotNumber} rent updated.`);
+            load();
+          }}
+        />
+      )}
+
       {showChangePassword && (
         <ChangePasswordModal onClose={() => setShowChangePassword(false)} />
       )}
@@ -404,97 +280,94 @@ export default function AdminDashboard({ username }: { username: string }) {
   );
 }
 
-function InlineEditRow({
+function PlotCard({
   row,
-  month,
-  onCancel,
-  onSaved,
-  onError,
+  onEditDetails,
+  onUpdateRent,
+  onDeactivate,
 }: {
   row: DashboardRow;
-  month: string;
-  onCancel: () => void;
-  onSaved: () => void;
-  onError: (message: string | null) => void;
+  onEditDetails: () => void;
+  onUpdateRent: () => void;
+  onDeactivate: () => void;
 }) {
-  const [rent, setRent] = useState(String(row.payment?.rentAmount ?? row.unit.monthlyRent));
-  const [maintenance, setMaintenance] = useState(String(row.payment?.maintenanceAmount ?? row.unit.maintenanceAmount));
-  const [amountPaid, setAmountPaid] = useState(String(row.payment?.amountPaid ?? 0));
-  const [paidDate, setPaidDate] = useState(row.payment?.paidDate?.slice(0, 10) ?? "");
-  const [notes, setNotes] = useState(row.payment?.notes ?? "");
-  const [saving, setSaving] = useState(false);
-
-  const rentNumber = Number(rent || 0);
-  const maintenanceNumber = Number(maintenance || 0);
-  const paidNumber = Number(amountPaid || 0);
-  const rentSum = rentNumber + maintenanceNumber;
-  const balanceDue = Math.max(0, rentSum - paidNumber);
-  const status: PaymentStatus = paidNumber <= 0 ? "UNPAID" : paidNumber >= rentSum ? "PAID" : "PARTIAL";
-  const inputClass = "w-full min-w-0 rounded border border-primary/25 bg-white px-2 py-1.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30";
-
-  async function save() {
-    if (paidNumber > 0 && !paidDate) {
-      onError("Enter a paid date when an amount has been paid.");
-      return;
-    }
-    setSaving(true);
-    onError(null);
-    try {
-      const unitResponse = await fetch(`/api/admin/units/${row.unit.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          monthlyRent: rentNumber,
-          maintenanceAmount: maintenanceNumber,
-        }),
-      });
-      const unitJson = await unitResponse.json();
-      if (!unitResponse.ok) throw new Error(unitJson.error ?? "Failed to update plot.");
-
-      const paymentResponse = await fetch("/api/admin/payments", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          unitId: row.unit.id,
-          month,
-          paymentStatus: status,
-          rentAmount: rentNumber,
-          maintenanceAmount: maintenanceNumber,
-          amountPaid: paidNumber,
-          balanceDue,
-          paidDate: paidDate || null,
-          notes: notes || null,
-        }),
-      });
-      const paymentJson = await paymentResponse.json();
-      if (!paymentResponse.ok) throw new Error(paymentJson.error ?? "Failed to update payment.");
-      onSaved();
-    } catch (error) {
-      onError(error instanceof Error ? error.message : "Could not save this row.");
-    } finally {
-      setSaving(false);
-    }
-  }
+  const rentAmount = row.payment?.rentAmount ?? row.unit.monthlyRent;
+  const maintenanceAmount = row.payment?.maintenanceAmount ?? row.unit.maintenanceAmount;
+  const rentSum = rentAmount + maintenanceAmount;
 
   return (
-    <tr className="border-t border-primary/10 bg-primary-light/35 align-top">
-      <td className="sticky left-0 z-10 bg-[#f5f8f7] px-3 py-3 font-semibold">{row.unit.plotNumber}</td>
-      <td className="sticky left-[64px] z-10 border-r border-primary/10 bg-[#f5f8f7] px-3 py-3">{row.unit.tenantName || "—"}</td>
-      <td className="px-2 py-2"><input aria-label="Rent" type="number" min="0" value={rent} onChange={(e) => setRent(e.target.value)} className={inputClass} /></td>
-      <td className="px-2 py-2"><input aria-label="Maintenance" type="number" min="0" value={maintenance} onChange={(e) => setMaintenance(e.target.value)} className={inputClass} /></td>
-      <td className="px-3 py-3 font-semibold">₹{rentSum.toFixed(0)}</td>
-      <td className="px-2 py-2"><input aria-label="Amount paid" type="number" min="0" value={amountPaid} onChange={(e) => setAmountPaid(e.target.value)} className={inputClass} /></td>
-      <td className="px-2 py-2"><input aria-label="Paid date" type="date" required={paidNumber > 0} value={paidDate} onChange={(e) => setPaidDate(e.target.value)} className={inputClass} /></td>
-      <td className="px-3 py-3">₹{balanceDue.toFixed(0)}</td>
-      <td className="px-3 py-3"><StatusBadge status={row.unit.tenantName?.trim() ? status : "VACANT"} /></td>
-      <td className="px-2 py-2"><input aria-label="Notes" value={notes} onChange={(e) => setNotes(e.target.value)} className={inputClass} /></td>
-      <td className="px-2 py-2">
-        <div className="flex gap-1">
-          <button type="button" onClick={save} disabled={saving} className="min-h-9 rounded-md bg-primary px-2.5 py-1 font-semibold text-white disabled:opacity-60">{saving ? "Saving…" : "Save"}</button>
-          <button type="button" onClick={onCancel} disabled={saving} className="min-h-9 rounded-md border border-primary/25 bg-white px-2.5 py-1">Cancel</button>
+    <div className="flex flex-col gap-4 rounded-2xl border border-primary/10 bg-white p-4 shadow-sm">
+      <div className="flex items-start justify-between gap-2">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-foreground/40">
+            Plot {row.unit.plotNumber}
+          </p>
+          <p className="text-lg font-bold text-foreground">{row.unit.tenantName || "Vacant"}</p>
         </div>
-      </td>
-    </tr>
+        <StatusBadge status={row.isVacant ? "VACANT" : row.effectiveStatus} />
+      </div>
+
+      <dl className="grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
+        <div>
+          <dt className="text-foreground/40">Move-in date</dt>
+          <dd className="font-medium text-foreground/80">{formatDate(row.unit.moveInDate)}</dd>
+        </div>
+        <div>
+          <dt className="text-foreground/40">Phone</dt>
+          <dd className="font-medium text-foreground/80">{row.unit.phone || "—"}</dd>
+        </div>
+        <div>
+          <dt className="text-foreground/40">Advance</dt>
+          <dd className="font-medium text-foreground/80">₹{row.unit.advanceAmount.toFixed(0)}</dd>
+        </div>
+        <div>
+          <dt className="text-foreground/40">Rent this month</dt>
+          <dd className="font-medium text-foreground/80">₹{rentSum.toFixed(0)}</dd>
+        </div>
+      </dl>
+
+      <div className="grid grid-cols-2 gap-2 rounded-xl bg-primary-light/60 p-3 text-sm">
+        <div>
+          <p className="text-foreground/40">Paid</p>
+          <p className="font-semibold text-foreground">₹{(row.payment?.amountPaid ?? 0).toFixed(0)}</p>
+        </div>
+        <div>
+          <p className="text-foreground/40">Balance</p>
+          <p className="font-semibold text-foreground">₹{(row.payment?.balanceDue ?? 0).toFixed(0)}</p>
+        </div>
+        <div className="col-span-2">
+          <p className="text-foreground/40">Paid date</p>
+          <p className="font-medium text-foreground/80">{formatDate(row.payment?.paidDate ?? null)}</p>
+        </div>
+        {row.payment?.notes && (
+          <div className="col-span-2">
+            <p className="text-foreground/40">Notes</p>
+            <p className="truncate font-medium text-foreground/80">{row.payment.notes}</p>
+          </div>
+        )}
+      </div>
+
+      <div className="mt-auto flex flex-wrap gap-2">
+        <button
+          onClick={onEditDetails}
+          className="min-h-9 flex-1 rounded-lg border border-primary/30 px-3 py-1.5 text-sm font-medium text-primary-dark hover:bg-primary-light"
+        >
+          Edit record
+        </button>
+        <button
+          onClick={onUpdateRent}
+          className="min-h-9 flex-1 rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-dark"
+        >
+          Update rent
+        </button>
+        <button
+          onClick={onDeactivate}
+          className="min-h-9 rounded-lg border border-unpaid/30 px-3 py-1.5 text-sm font-medium text-unpaid hover:bg-unpaid-bg"
+        >
+          Deactivate
+        </button>
+      </div>
+    </div>
   );
 }
 
