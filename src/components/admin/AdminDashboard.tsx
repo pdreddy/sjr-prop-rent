@@ -15,6 +15,20 @@ import {
   formatDate,
 } from "@/lib/month";
 import type { DashboardResponse, DashboardRow } from "@/lib/types";
+import {
+  IconBuilding,
+  IconCalendar,
+  IconCopy,
+  IconEdit,
+  IconLock,
+  IconLogout,
+  IconPhone,
+  IconPlus,
+  IconRupee,
+  IconSearch,
+  IconTrash,
+  IconWallet,
+} from "@/components/icons";
 
 const monthOptions = getMonthOptions();
 const STATUS_FILTERS = ["ALL", "PAID", "UNPAID", "PARTIAL", "VACANT"] as const;
@@ -125,22 +139,31 @@ export default function AdminDashboard({ username }: { username: string }) {
     <div className="flex flex-1 flex-col bg-background">
       <header className="sticky top-0 z-20 border-b border-primary/10 bg-white/90 px-4 py-3 backdrop-blur sm:px-6">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3">
-          <div>
-            <h1 className="text-lg font-bold text-primary-dark sm:text-xl">SJR Rent Tracker</h1>
-            <p className="text-xs text-foreground/50">Signed in as {username}</p>
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-white">
+              <IconBuilding className="h-5 w-5" />
+            </span>
+            <div>
+              <h1 className="text-base font-bold leading-tight text-primary-dark sm:text-lg">
+                SJR Rent Tracker
+              </h1>
+              <p className="text-xs text-foreground/45">Signed in as {username}</p>
+            </div>
           </div>
           <div className="flex flex-wrap gap-2">
             <button
               onClick={() => setShowChangePassword(true)}
-              className="min-h-10 rounded-full border border-primary/20 px-3 py-1.5 text-sm font-medium text-primary-dark hover:bg-primary-light"
+              className="inline-flex min-h-10 items-center gap-1.5 rounded-full border border-primary/20 px-3.5 py-1.5 text-sm font-medium text-primary-dark hover:bg-primary-light"
             >
-              Change password
+              <IconLock className="h-4 w-4" />
+              <span className="hidden sm:inline">Change password</span>
             </button>
             <button
               onClick={handleLogout}
-              className="min-h-10 rounded-full border border-primary/20 px-3 py-1.5 text-sm font-medium text-primary-dark hover:bg-primary-light"
+              className="inline-flex min-h-10 items-center gap-1.5 rounded-full border border-primary/20 px-3.5 py-1.5 text-sm font-medium text-primary-dark hover:bg-primary-light"
             >
-              Log out
+              <IconLogout className="h-4 w-4" />
+              <span className="hidden sm:inline">Log out</span>
             </button>
           </div>
         </div>
@@ -174,12 +197,15 @@ export default function AdminDashboard({ username }: { username: string }) {
 
           <label className="flex flex-1 min-w-[200px] flex-col gap-1">
             <span className="text-sm font-medium text-primary-dark">Search</span>
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Plot number, tenant or phone"
-              className="min-h-11 rounded-lg border border-primary/20 bg-white px-3 py-2 text-base focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
-            />
+            <div className="relative">
+              <IconSearch className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-primary/50" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Plot number, tenant or phone"
+                className="min-h-11 w-full rounded-xl border border-primary/20 bg-white py-2 pl-9 pr-3 text-base focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+              />
+            </div>
           </label>
 
           <div className="flex flex-col gap-1">
@@ -204,15 +230,17 @@ export default function AdminDashboard({ username }: { username: string }) {
           <div className="flex gap-2">
             <button
               onClick={() => setEditingRow("new")}
-              className="min-h-11 rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark"
+              className="inline-flex min-h-11 items-center gap-1.5 rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark"
             >
-              + Add plot
+              <IconPlus className="h-4 w-4" />
+              Add plot
             </button>
             <button
               onClick={handleCopyPreviousMonth}
               disabled={copying}
-              className="min-h-11 rounded-full border border-primary/30 bg-white px-4 py-2.5 text-sm font-semibold text-primary-dark hover:bg-primary-light disabled:opacity-60"
+              className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-primary/30 bg-white px-4 py-2.5 text-sm font-semibold text-primary-dark hover:bg-primary-light disabled:opacity-60"
             >
+              <IconCopy className="h-4 w-4" />
               {copying ? "Copying..." : "Copy previous month"}
             </button>
           </div>
@@ -296,7 +324,7 @@ function PlotCard({
   const rentSum = rentAmount + maintenanceAmount;
 
   return (
-    <div className="flex flex-col gap-4 rounded-2xl border border-primary/10 bg-white p-4 shadow-sm">
+    <div className="flex flex-col gap-4 rounded-2xl border border-primary/10 bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
       <div className="flex items-start justify-between gap-2">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-foreground/40">
@@ -307,41 +335,53 @@ function PlotCard({
         <StatusBadge status={row.isVacant ? "VACANT" : row.effectiveStatus} />
       </div>
 
-      <dl className="grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
-        <div>
-          <dt className="text-foreground/40">Move-in date</dt>
-          <dd className="font-medium text-foreground/80">{formatDate(row.unit.moveInDate)}</dd>
+      <dl className="grid grid-cols-2 gap-x-3 gap-y-2.5 text-sm">
+        <div className="flex items-start gap-1.5">
+          <IconCalendar className="mt-0.5 h-3.5 w-3.5 shrink-0 text-foreground/30" />
+          <div>
+            <dt className="text-xs text-foreground/40">Move-in</dt>
+            <dd className="font-medium text-foreground/80">{formatDate(row.unit.moveInDate)}</dd>
+          </div>
         </div>
-        <div>
-          <dt className="text-foreground/40">Phone</dt>
-          <dd className="font-medium text-foreground/80">{row.unit.phone || "—"}</dd>
+        <div className="flex items-start gap-1.5">
+          <IconPhone className="mt-0.5 h-3.5 w-3.5 shrink-0 text-foreground/30" />
+          <div>
+            <dt className="text-xs text-foreground/40">Phone</dt>
+            <dd className="font-medium text-foreground/80">{row.unit.phone || "—"}</dd>
+          </div>
         </div>
-        <div>
-          <dt className="text-foreground/40">Advance</dt>
-          <dd className="font-medium text-foreground/80">₹{row.unit.advanceAmount.toFixed(0)}</dd>
+        <div className="flex items-start gap-1.5">
+          <IconWallet className="mt-0.5 h-3.5 w-3.5 shrink-0 text-foreground/30" />
+          <div>
+            <dt className="text-xs text-foreground/40">Advance</dt>
+            <dd className="font-medium text-foreground/80">₹{row.unit.advanceAmount.toFixed(0)}</dd>
+          </div>
         </div>
-        <div>
-          <dt className="text-foreground/40">Rent this month</dt>
-          <dd className="font-medium text-foreground/80">₹{rentSum.toFixed(0)}</dd>
+        <div className="flex items-start gap-1.5">
+          <IconRupee className="mt-0.5 h-3.5 w-3.5 shrink-0 text-foreground/30" />
+          <div>
+            <dt className="text-xs text-foreground/40">Rent this month</dt>
+            <dd className="font-medium text-foreground/80">₹{rentSum.toFixed(0)}</dd>
+          </div>
         </div>
       </dl>
 
-      <div className="grid grid-cols-2 gap-2 rounded-xl bg-primary-light/60 p-3 text-sm">
+      <div className="grid grid-cols-2 gap-2 rounded-xl bg-primary-light/50 p-3 text-sm">
         <div>
-          <p className="text-foreground/40">Paid</p>
+          <p className="text-xs text-foreground/40">Paid</p>
           <p className="font-semibold text-foreground">₹{(row.payment?.amountPaid ?? 0).toFixed(0)}</p>
         </div>
         <div>
-          <p className="text-foreground/40">Balance</p>
+          <p className="text-xs text-foreground/40">Balance</p>
           <p className="font-semibold text-foreground">₹{(row.payment?.balanceDue ?? 0).toFixed(0)}</p>
         </div>
         <div className="col-span-2">
-          <p className="text-foreground/40">Paid date</p>
+          <p className="text-xs text-foreground/40">Paid date</p>
           <p className="font-medium text-foreground/80">{formatDate(row.payment?.paidDate ?? null)}</p>
         </div>
         {row.payment?.notes && (
           <div className="col-span-2">
-            <p className="text-foreground/40">Notes</p>
+            <p className="text-xs text-foreground/40">Notes</p>
             <p className="truncate font-medium text-foreground/80">{row.payment.notes}</p>
           </div>
         )}
@@ -350,21 +390,24 @@ function PlotCard({
       <div className="mt-auto flex flex-wrap gap-2">
         <button
           onClick={onEditDetails}
-          className="min-h-9 flex-1 rounded-lg border border-primary/30 px-3 py-1.5 text-sm font-medium text-primary-dark hover:bg-primary-light"
+          className="inline-flex min-h-9 flex-1 items-center justify-center gap-1.5 rounded-lg border border-primary/30 px-3 py-1.5 text-sm font-medium text-primary-dark hover:bg-primary-light"
         >
+          <IconEdit className="h-3.5 w-3.5" />
           Edit record
         </button>
         <button
           onClick={onUpdateRent}
-          className="min-h-9 flex-1 rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-dark"
+          className="inline-flex min-h-9 flex-1 items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-dark"
         >
+          <IconRupee className="h-3.5 w-3.5" />
           Update rent
         </button>
         <button
           onClick={onDeactivate}
-          className="min-h-9 rounded-lg border border-unpaid/30 px-3 py-1.5 text-sm font-medium text-unpaid hover:bg-unpaid-bg"
+          aria-label={`Deactivate plot ${row.unit.plotNumber}`}
+          className="inline-flex min-h-9 items-center justify-center rounded-lg border border-unpaid/30 px-3 py-1.5 text-sm font-medium text-unpaid hover:bg-unpaid-bg"
         >
-          Deactivate
+          <IconTrash className="h-3.5 w-3.5" />
         </button>
       </div>
     </div>

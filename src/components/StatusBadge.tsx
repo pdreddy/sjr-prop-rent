@@ -7,6 +7,13 @@ const STYLES: Record<Status, string> = {
   VACANT: "bg-vacant-bg text-vacant",
 };
 
+const DOT: Record<Status, string> = {
+  PAID: "bg-paid",
+  UNPAID: "bg-unpaid",
+  PARTIAL: "bg-partial",
+  VACANT: "bg-vacant",
+};
+
 const LABELS: Record<Status, string> = {
   PAID: "Paid",
   UNPAID: "Unpaid",
@@ -17,8 +24,9 @@ const LABELS: Record<Status, string> = {
 export default function StatusBadge({ status }: { status: Status }) {
   return (
     <span
-      className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold ${STYLES[status]}`}
+      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-semibold ${STYLES[status]}`}
     >
+      <span className={`h-1.5 w-1.5 rounded-full ${DOT[status]}`} aria-hidden="true" />
       {LABELS[status]}
     </span>
   );

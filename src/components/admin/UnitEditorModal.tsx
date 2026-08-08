@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import type { DashboardRow, PaymentStatus } from "@/lib/types";
 import { formatMonthLabel } from "@/lib/month";
+import ModalShell from "./ModalShell";
 
 interface Props {
   row: DashboardRow | null; // null = creating a new plot
@@ -10,6 +11,12 @@ interface Props {
   onClose: () => void;
   onSaved: () => void;
 }
+
+const inputClass =
+  "min-h-11 w-full rounded-xl border border-primary/20 px-3 py-2 text-base focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30";
+const labelClass = "text-sm font-medium text-foreground/80";
+const sectionClass = "flex flex-col gap-3 rounded-2xl bg-primary-light/40 p-4";
+const legendClass = "text-xs font-semibold uppercase tracking-wide text-primary-dark/70";
 
 export default function UnitEditorModal({ row, month, onClose, onSaved }: Props) {
   const isNew = row === null;
@@ -128,95 +135,82 @@ export default function UnitEditorModal({ row, month, onClose, onSaved }: Props)
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center sm:p-4"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="editor-title"
-      onClick={onClose}
+    <ModalShell
+      titleId="editor-title"
+      title={isNew ? "Add plot" : `Edit plot ${row!.unit.plotNumber}`}
+      subtitle={isNew ? "Create a new plot record" : "Full tenant record"}
+      onClose={onClose}
+      maxWidth="lg"
     >
-      <div
-        className="max-h-[92vh] w-full overflow-y-auto rounded-t-2xl bg-white p-5 shadow-xl sm:max-w-lg sm:rounded-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="mb-4 flex items-center justify-between">
-          <h2 id="editor-title" className="text-lg font-bold text-primary-dark">
-            {isNew ? "Add Plot" : `Edit Plot ${row!.unit.plotNumber}`}
-          </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close"
-            className="rounded-full p-2 text-foreground/50 hover:bg-foreground/5"
-          >
-            ✕
-          </button>
-        </div>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        {error && (
+          <div role="alert" className="rounded-lg border border-unpaid/30 bg-unpaid-bg px-3 py-2 text-sm text-unpaid">
+            {error}
+          </div>
+        )}
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          {error && (
-            <div role="alert" className="rounded-lg border border-unpaid/30 bg-unpaid-bg px-3 py-2 text-sm text-unpaid">
-              {error}
-            </div>
-          )}
-
-          <fieldset className="flex flex-col gap-3 rounded-xl border border-primary/10 p-3">
-            <legend className="px-1 text-xs font-semibold uppercase tracking-wide text-foreground/50">
-              Plot details
-            </legend>
-            <label className="flex flex-col gap-1">
-              <span className="text-sm font-medium text-foreground/80">Plot / flat number</span>
+        <fieldset className={sectionClass}>
+          <legend className={legendClass}>Tenant details</legend>
+          <div className="grid grid-cols-2 gap-3">
+            <label className="col-span-2 flex flex-col gap-1 sm:col-span-1">
+              <span className={labelClass}>Plot / flat number</span>
               <input
                 required
                 value={plotNumber}
                 onChange={(e) => setPlotNumber(e.target.value)}
-                className="min-h-11 rounded-lg border border-primary/20 px-3 py-2 text-base focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                className={inputClass}
               />
             </label>
-            <label className="flex flex-col gap-1">
-              <span className="text-sm font-medium text-foreground/80">
-                Tenant name <span className="font-normal text-foreground/40">(shown on public page)</span>
+            <label className="col-span-2 flex flex-col gap-1 sm:col-span-1">
+              <span className={labelClass}>
+                Tenant name <span className="font-normal text-foreground/40">(public)</span>
               </span>
               <input
                 value={tenantName}
                 onChange={(e) => setTenantName(e.target.value)}
                 placeholder="Leave blank if vacant"
-                className="min-h-11 rounded-lg border border-primary/20 px-3 py-2 text-base focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                className={inputClass}
               />
             </label>
             <label className="flex flex-col gap-1">
-              <span className="text-sm font-medium text-foreground/80">
-                Move-in date <span className="font-normal text-foreground/40">(shown on public page)</span>
+              <span className={labelClass}>
+                Move-in date <span className="font-normal text-foreground/40">(public)</span>
               </span>
               <input
                 type="date"
                 value={moveInDate}
                 onChange={(e) => setMoveInDate(e.target.value)}
-                className="min-h-11 rounded-lg border border-primary/20 px-3 py-2 text-base focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                className={inputClass}
               />
             </label>
             <label className="flex flex-col gap-1">
-              <span className="text-sm font-medium text-foreground/80">Phone number</span>
+              <span className={labelClass}>Phone number</span>
               <input
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 inputMode="tel"
-                className="min-h-11 rounded-lg border border-primary/20 px-3 py-2 text-base focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                className={inputClass}
               />
             </label>
             <label className="flex flex-col gap-1">
-              <span className="text-sm font-medium text-foreground/80">Advance amount (₹)</span>
+              <span className={labelClass}>Advance amount (₹)</span>
               <input
                 type="number"
                 min="0"
                 step="0.01"
                 value={advanceAmount}
                 onChange={(e) => setAdvanceAmount(e.target.value)}
-                className="min-h-11 rounded-lg border border-primary/20 px-3 py-2 text-base focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                className={inputClass}
               />
             </label>
+          </div>
+        </fieldset>
+
+        <fieldset className={sectionClass}>
+          <legend className={legendClass}>Default rent</legend>
+          <div className="grid grid-cols-2 gap-3">
             <label className="flex flex-col gap-1">
-              <span className="text-sm font-medium text-foreground/80">Monthly rent (₹)</span>
+              <span className={labelClass}>Monthly rent (₹)</span>
               <input
                 type="number"
                 min="0"
@@ -224,137 +218,133 @@ export default function UnitEditorModal({ row, month, onClose, onSaved }: Props)
                 required
                 value={monthlyRent}
                 onChange={(e) => setMonthlyRent(e.target.value)}
-                className="min-h-11 rounded-lg border border-primary/20 px-3 py-2 text-base focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                className={inputClass}
               />
             </label>
             <label className="flex flex-col gap-1">
-              <span className="text-sm font-medium text-foreground/80">
-                Default monthly maintenance (₹)
-              </span>
+              <span className={labelClass}>Maintenance (₹)</span>
               <input
                 type="number"
                 min="0"
                 step="0.01"
                 value={defaultMaintenance}
                 onChange={(e) => setDefaultMaintenance(e.target.value)}
-                className="min-h-11 rounded-lg border border-primary/20 px-3 py-2 text-base focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                className={inputClass}
               />
             </label>
-          </fieldset>
+          </div>
+          <p className="text-xs text-foreground/45">
+            Used as the default when a month doesn&apos;t have its own rent entered yet.
+          </p>
+        </fieldset>
 
-          <fieldset className="flex flex-col gap-3 rounded-xl border border-primary/10 p-3">
-            <legend className="px-1 text-xs font-semibold uppercase tracking-wide text-foreground/50">
-              Payment — {formatMonthLabel(month)}
-            </legend>
+        <fieldset className={sectionClass}>
+          <legend className={legendClass}>Payment — {formatMonthLabel(month)}</legend>
 
-            <div className="flex flex-col gap-1">
-              <span className="text-sm font-medium text-foreground/80">Status</span>
-              <div className="flex gap-2">
-                {(["PAID", "PARTIAL", "UNPAID"] as PaymentStatus[]).map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => setPaymentStatus(s)}
-                    className={`min-h-11 flex-1 rounded-lg border px-2 py-2 text-sm font-semibold transition-colors ${
-                      paymentStatus === s
-                        ? s === "PAID"
-                          ? "border-paid bg-paid-bg text-paid"
-                          : s === "PARTIAL"
-                          ? "border-partial bg-partial-bg text-partial"
-                          : "border-unpaid bg-unpaid-bg text-unpaid"
-                        : "border-primary/15 text-foreground/60"
-                    }`}
-                  >
-                    {s.charAt(0) + s.slice(1).toLowerCase()}
-                  </button>
-                ))}
-              </div>
-            </div>
+          <div className="flex gap-2">
+            {(["PAID", "PARTIAL", "UNPAID"] as PaymentStatus[]).map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => setPaymentStatus(s)}
+                className={`min-h-10 flex-1 rounded-lg border px-2 py-2 text-sm font-semibold transition-colors ${
+                  paymentStatus === s
+                    ? s === "PAID"
+                      ? "border-paid bg-paid-bg text-paid"
+                      : s === "PARTIAL"
+                      ? "border-partial bg-partial-bg text-partial"
+                      : "border-unpaid bg-unpaid-bg text-unpaid"
+                    : "border-primary/15 bg-white text-foreground/60"
+                }`}
+              >
+                {s.charAt(0) + s.slice(1).toLowerCase()}
+              </button>
+            ))}
+          </div>
 
+          <div className="grid grid-cols-2 gap-3">
             <label className="flex flex-col gap-1">
-              <span className="text-sm font-medium text-foreground/80">Rent for this month (₹)</span>
+              <span className={labelClass}>Rent this month (₹)</span>
               <input
                 type="number"
                 min="0"
                 step="0.01"
                 value={rentAmount}
                 onChange={(e) => setRentAmount(e.target.value)}
-                className="min-h-11 rounded-lg border border-primary/20 px-3 py-2 text-base focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                className={inputClass}
               />
             </label>
-
             <label className="flex flex-col gap-1">
-              <span className="text-sm font-medium text-foreground/80">Maintenance for this month (₹)</span>
+              <span className={labelClass}>Maintenance this month (₹)</span>
               <input
                 type="number"
                 min="0"
                 step="0.01"
                 value={maintenanceAmount}
                 onChange={(e) => setMaintenanceAmount(e.target.value)}
-                className="min-h-11 rounded-lg border border-primary/20 px-3 py-2 text-base focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                className={inputClass}
               />
             </label>
-
-            <p className="text-sm text-foreground/60">
-              Rent sum (rent + maintenance):{" "}
-              <span className="font-semibold text-foreground">₹{rentSum.toFixed(2)}</span>
-            </p>
-
-            <label className="flex flex-col gap-1">
-              <span className="text-sm font-medium text-foreground/80">Amount paid (₹)</span>
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={amountPaid}
-                onChange={(e) => setAmountPaid(e.target.value)}
-                className="min-h-11 rounded-lg border border-primary/20 px-3 py-2 text-base focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
-              />
-            </label>
-
-            <p className="text-sm text-foreground/60">
-              Balance due: <span className="font-semibold text-foreground">₹{balanceDue.toFixed(2)}</span>
-            </p>
-
-            <label className="flex flex-col gap-1">
-              <span className="text-sm font-medium text-foreground/80">Payment date</span>
-              <input
-                type="date"
-                value={paidDate}
-                onChange={(e) => setPaidDate(e.target.value)}
-                className="min-h-11 rounded-lg border border-primary/20 px-3 py-2 text-base focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
-              />
-            </label>
-
-            <label className="flex flex-col gap-1">
-              <span className="text-sm font-medium text-foreground/80">Internal notes</span>
-              <textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                rows={3}
-                className="rounded-lg border border-primary/20 px-3 py-2 text-base focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
-              />
-            </label>
-          </fieldset>
-
-          <div className="sticky bottom-0 -mx-5 -mb-5 flex gap-3 border-t border-primary/10 bg-white p-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="min-h-11 flex-1 rounded-lg border border-primary/20 px-4 py-2.5 text-base font-semibold text-foreground/70"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={submitting}
-              className="min-h-11 flex-1 rounded-lg bg-primary px-4 py-2.5 text-base font-semibold text-white hover:bg-primary-dark disabled:opacity-60"
-            >
-              {submitting ? "Saving..." : "Save"}
-            </button>
           </div>
-        </form>
-      </div>
-    </div>
+
+          <p className="text-sm text-foreground/60">
+            Rent sum: <span className="font-semibold text-foreground">₹{rentSum.toFixed(2)}</span>
+          </p>
+
+          <label className="flex flex-col gap-1">
+            <span className={labelClass}>Amount paid (₹)</span>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={amountPaid}
+              onChange={(e) => setAmountPaid(e.target.value)}
+              className={inputClass}
+            />
+          </label>
+
+          <p className="text-sm text-foreground/60">
+            Balance due: <span className="font-semibold text-foreground">₹{balanceDue.toFixed(2)}</span>
+          </p>
+
+          <label className="flex flex-col gap-1">
+            <span className={labelClass}>Payment date</span>
+            <input
+              type="date"
+              value={paidDate}
+              onChange={(e) => setPaidDate(e.target.value)}
+              className={inputClass}
+            />
+          </label>
+
+          <label className="flex flex-col gap-1">
+            <span className={labelClass}>Internal notes</span>
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={3}
+              className="rounded-xl border border-primary/20 px-3 py-2 text-base focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+            />
+          </label>
+        </fieldset>
+
+        <div className="sticky bottom-0 -mx-5 -mb-4 flex gap-3 border-t border-primary/10 bg-white p-4">
+          <button
+            type="button"
+            onClick={onClose}
+            className="min-h-11 flex-1 rounded-xl border border-primary/20 px-4 py-2.5 text-base font-semibold text-foreground/70"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={submitting}
+            className="min-h-11 flex-1 rounded-xl bg-primary px-4 py-2.5 text-base font-semibold text-white hover:bg-primary-dark disabled:opacity-60"
+          >
+            {submitting ? "Saving..." : "Save"}
+          </button>
+        </div>
+      </form>
+    </ModalShell>
   );
 }
