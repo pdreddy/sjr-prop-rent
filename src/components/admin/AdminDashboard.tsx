@@ -1,33 +1,25 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import MonthYearSelector from "@/components/MonthYearSelector";
 import StatusBadge from "@/components/StatusBadge";
-import UnitEditorModal from "./UnitEditorModal";
-import RentUpdateModal from "./RentUpdateModal";
 import ChangePasswordModal from "./ChangePasswordModal";
 import {
   getCurrentMonth,
   getMonthOptions,
   getPreviousMonth,
   formatMonthLabel,
-  formatDate,
 } from "@/lib/month";
-import type { DashboardResponse, DashboardRow } from "@/lib/types";
+import type { DashboardResponse } from "@/lib/types";
 import {
   IconBuilding,
-  IconCalendar,
   IconCopy,
-  IconEdit,
   IconLock,
   IconLogout,
-  IconPhone,
   IconPlus,
-  IconRupee,
   IconSearch,
-  IconTrash,
-  IconWallet,
 } from "@/components/icons";
 
 const monthOptions = getMonthOptions();
@@ -42,10 +34,7 @@ export default function AdminDashboard({ username }: { username: string }) {
   const [data, setData] = useState<DashboardResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [editingRow, setEditingRow] = useState<DashboardRow | null | "new">(null);
-  const [rentEditRow, setRentEditRow] = useState<DashboardRow | null>(null);
   const [showChangePassword, setShowChangePassword] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
   const [copying, setCopying] = useState(false);
 
   const load = useCallback(async () => {
@@ -82,21 +71,6 @@ export default function AdminDashboard({ username }: { username: string }) {
     router.refresh();
   }
 
-  async function handleDeactivate(row: DashboardRow) {
-    if (!confirm(`Deactivate Plot ${row.unit.plotNumber}? It will stop appearing in listings.`)) {
-      return;
-    }
-    const res = await fetch(`/api/admin/units/${row.unit.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ active: false }),
-    });
-    if (res.ok) {
-      setMessage(`Plot ${row.unit.plotNumber} deactivated.`);
-      load();
-    }
-  }
-
   async function handleCopyPreviousMonth() {
     const sourceMonth = getPreviousMonth(month);
     if (
@@ -117,7 +91,6 @@ export default function AdminDashboard({ username }: { username: string }) {
       });
       const json = await res.json();
       if (res.ok) {
-        setMessage(`Copied ${json.createdCount} record(s) into ${formatMonthLabel(month)}.`);
         load();
       } else {
         setError(json.error ?? "Failed to copy previous month.");
@@ -127,18 +100,13 @@ export default function AdminDashboard({ username }: { username: string }) {
     }
   }
 
-  useEffect(() => {
-    if (!message) return;
-    const t = setTimeout(() => setMessage(null), 4000);
-    return () => clearTimeout(t);
-  }, [message]);
-
   const totals = data?.totals;
+  const monthParam = encodeURIComponent(month);
 
   return (
     <div className="flex flex-1 flex-col bg-background">
       <header className="sticky top-0 z-20 border-b border-primary/10 bg-white/90 px-4 py-3 backdrop-blur sm:px-6">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3">
+        <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-white">
               <IconBuilding className="h-5 w-5" />
@@ -169,12 +137,7 @@ export default function AdminDashboard({ username }: { username: string }) {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6">
-        {message && (
-          <div className="mb-4 rounded-lg border border-paid/30 bg-paid-bg px-3 py-2 text-sm text-paid">
-            {message}
-          </div>
-        )}
+      <main className="mx-auto w-full max-w-4xl flex-1 px-3 py-5 sm:px-6">
         {error && (
           <div className="mb-4 rounded-lg border border-unpaid/30 bg-unpaid-bg px-3 py-2 text-sm text-unpaid">
             {error}
@@ -182,8 +145,8 @@ export default function AdminDashboard({ username }: { username: string }) {
         )}
 
         {totals && (
-          <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-            <TotalCard label="Total plots" value={String(totals.totalUnits)} />
+          <div className="mb-4 grid grid-cols-3 gap-2 sm:grid-cols-6">
+            <TotalCard label="Plots" value={String(totals.totalUnits)} />
             <TotalCard label="Paid" value={String(totals.numPaid)} accent="paid" />
             <TotalCard label="Partial" value={String(totals.numPartial)} accent="partial" />
             <TotalCard label="Unpaid" value={String(totals.numUnpaid)} accent="unpaid" />
@@ -192,30 +155,30 @@ export default function AdminDashboard({ username }: { username: string }) {
           </div>
         )}
 
-        <div className="mb-6 flex flex-wrap items-end gap-3 rounded-2xl border border-primary/10 bg-white p-4 shadow-sm">
+        <div className="mb-4 flex flex-wrap items-end gap-3 rounded-2xl border border-primary/10 bg-white p-3 shadow-sm sm:p-4">
           <MonthYearSelector month={month} options={monthOptions} onChange={setMonth} />
 
-          <label className="flex flex-1 min-w-[200px] flex-col gap-1">
+          <label className="flex flex-1 min-w-[160px] flex-col gap-1">
             <span className="text-sm font-medium text-primary-dark">Search</span>
             <div className="relative">
               <IconSearch className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-primary/50" />
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Plot number, tenant or phone"
+                placeholder="Plot, tenant or phone"
                 className="min-h-11 w-full rounded-xl border border-primary/20 bg-white py-2 pl-9 pr-3 text-base focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
               />
             </div>
           </label>
 
-          <div className="flex flex-col gap-1">
+          <div className="flex w-full flex-col gap-1 sm:w-auto">
             <span className="text-sm font-medium text-primary-dark">Filter</span>
             <div className="flex flex-wrap gap-1.5">
               {STATUS_FILTERS.map((s) => (
                 <button
                   key={s}
                   onClick={() => setStatusFilter(s)}
-                  className={`min-h-11 rounded-full border px-3 py-2 text-sm font-medium ${
+                  className={`min-h-9 rounded-full border px-3 py-1.5 text-sm font-medium ${
                     statusFilter === s
                       ? "border-primary bg-primary text-white"
                       : "border-primary/20 bg-white text-foreground/70"
@@ -227,29 +190,29 @@ export default function AdminDashboard({ username }: { username: string }) {
             </div>
           </div>
 
-          <div className="flex gap-2">
-            <button
-              onClick={() => setEditingRow("new")}
-              className="inline-flex min-h-11 items-center gap-1.5 rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark"
+          <div className="flex w-full gap-2 sm:w-auto">
+            <Link
+              href={`/admin/plots/new?month=${monthParam}`}
+              className="inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark sm:flex-none"
             >
               <IconPlus className="h-4 w-4" />
               Add plot
-            </button>
+            </Link>
             <button
               onClick={handleCopyPreviousMonth}
               disabled={copying}
-              className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-primary/30 bg-white px-4 py-2.5 text-sm font-semibold text-primary-dark hover:bg-primary-light disabled:opacity-60"
+              className="inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-full border border-primary/30 bg-white px-4 py-2.5 text-sm font-semibold text-primary-dark hover:bg-primary-light disabled:opacity-60 sm:flex-none"
             >
               <IconCopy className="h-4 w-4" />
-              {copying ? "Copying..." : "Copy previous month"}
+              {copying ? "Copying..." : "Copy last month"}
             </button>
           </div>
         </div>
 
         {loading && (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-busy="true">
+          <div className="flex flex-col gap-2" aria-busy="true">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="h-56 animate-pulse rounded-2xl bg-primary-light" />
+              <div key={i} className="h-14 animate-pulse rounded-xl bg-primary-light" />
             ))}
           </div>
         )}
@@ -261,155 +224,44 @@ export default function AdminDashboard({ username }: { username: string }) {
         )}
 
         {!loading && data && data.rows.length > 0 && (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {data.rows.map((row) => (
-              <PlotCard
-                key={row.unit.id}
-                row={row}
-                onEditDetails={() => setEditingRow(row)}
-                onUpdateRent={() => setRentEditRow(row)}
-                onDeactivate={() => handleDeactivate(row)}
-              />
-            ))}
+          <div className="overflow-hidden rounded-2xl border border-primary/10 bg-white shadow-sm">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-primary-light text-primary-dark">
+                <tr>
+                  <th className="px-3 py-2.5 font-semibold">Plot</th>
+                  <th className="px-3 py-2.5 font-semibold">Tenant</th>
+                  <th className="px-3 py-2.5 font-semibold">Status</th>
+                  <th className="px-3 py-2.5 text-right font-semibold">Balance</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.rows.map((row) => (
+                  <tr
+                    key={row.unit.id}
+                    onClick={() => router.push(`/admin/plots/${row.unit.id}?month=${monthParam}`)}
+                    className="cursor-pointer border-t border-primary/5 active:bg-primary-light/60 sm:hover:bg-primary-light/40"
+                  >
+                    <td className="px-3 py-3 font-semibold text-foreground">{row.unit.plotNumber}</td>
+                    <td className="max-w-[120px] truncate px-3 py-3 text-foreground/80 sm:max-w-none">
+                      {row.unit.tenantName || "Vacant"}
+                    </td>
+                    <td className="px-3 py-3">
+                      <StatusBadge status={row.isVacant ? "VACANT" : row.effectiveStatus} />
+                    </td>
+                    <td className="px-3 py-3 text-right font-medium text-foreground/80">
+                      ₹{(row.payment?.balanceDue ?? 0).toFixed(0)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </main>
 
-      {editingRow !== null && (
-        <UnitEditorModal
-          row={editingRow === "new" ? null : editingRow}
-          month={month}
-          onClose={() => setEditingRow(null)}
-          onSaved={() => {
-            setEditingRow(null);
-            setMessage("Saved successfully.");
-            load();
-          }}
-        />
-      )}
-
-      {rentEditRow && (
-        <RentUpdateModal
-          row={rentEditRow}
-          month={month}
-          onClose={() => setRentEditRow(null)}
-          onSaved={() => {
-            setRentEditRow(null);
-            setMessage(`Plot ${rentEditRow.unit.plotNumber} rent updated.`);
-            load();
-          }}
-        />
-      )}
-
       {showChangePassword && (
         <ChangePasswordModal onClose={() => setShowChangePassword(false)} />
       )}
-    </div>
-  );
-}
-
-function PlotCard({
-  row,
-  onEditDetails,
-  onUpdateRent,
-  onDeactivate,
-}: {
-  row: DashboardRow;
-  onEditDetails: () => void;
-  onUpdateRent: () => void;
-  onDeactivate: () => void;
-}) {
-  const rentAmount = row.payment?.rentAmount ?? row.unit.monthlyRent;
-  const maintenanceAmount = row.payment?.maintenanceAmount ?? row.unit.maintenanceAmount;
-  const rentSum = rentAmount + maintenanceAmount;
-
-  return (
-    <div className="flex flex-col gap-4 rounded-2xl border border-primary/10 bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
-      <div className="flex items-start justify-between gap-2">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-foreground/40">
-            Plot {row.unit.plotNumber}
-          </p>
-          <p className="text-lg font-bold text-foreground">{row.unit.tenantName || "Vacant"}</p>
-        </div>
-        <StatusBadge status={row.isVacant ? "VACANT" : row.effectiveStatus} />
-      </div>
-
-      <dl className="grid grid-cols-2 gap-x-3 gap-y-2.5 text-sm">
-        <div className="flex items-start gap-1.5">
-          <IconCalendar className="mt-0.5 h-3.5 w-3.5 shrink-0 text-foreground/30" />
-          <div>
-            <dt className="text-xs text-foreground/40">Move-in</dt>
-            <dd className="font-medium text-foreground/80">{formatDate(row.unit.moveInDate)}</dd>
-          </div>
-        </div>
-        <div className="flex items-start gap-1.5">
-          <IconPhone className="mt-0.5 h-3.5 w-3.5 shrink-0 text-foreground/30" />
-          <div>
-            <dt className="text-xs text-foreground/40">Phone</dt>
-            <dd className="font-medium text-foreground/80">{row.unit.phone || "—"}</dd>
-          </div>
-        </div>
-        <div className="flex items-start gap-1.5">
-          <IconWallet className="mt-0.5 h-3.5 w-3.5 shrink-0 text-foreground/30" />
-          <div>
-            <dt className="text-xs text-foreground/40">Advance</dt>
-            <dd className="font-medium text-foreground/80">₹{row.unit.advanceAmount.toFixed(0)}</dd>
-          </div>
-        </div>
-        <div className="flex items-start gap-1.5">
-          <IconRupee className="mt-0.5 h-3.5 w-3.5 shrink-0 text-foreground/30" />
-          <div>
-            <dt className="text-xs text-foreground/40">Rent this month</dt>
-            <dd className="font-medium text-foreground/80">₹{rentSum.toFixed(0)}</dd>
-          </div>
-        </div>
-      </dl>
-
-      <div className="grid grid-cols-2 gap-2 rounded-xl bg-primary-light/50 p-3 text-sm">
-        <div>
-          <p className="text-xs text-foreground/40">Paid</p>
-          <p className="font-semibold text-foreground">₹{(row.payment?.amountPaid ?? 0).toFixed(0)}</p>
-        </div>
-        <div>
-          <p className="text-xs text-foreground/40">Balance</p>
-          <p className="font-semibold text-foreground">₹{(row.payment?.balanceDue ?? 0).toFixed(0)}</p>
-        </div>
-        <div className="col-span-2">
-          <p className="text-xs text-foreground/40">Paid date</p>
-          <p className="font-medium text-foreground/80">{formatDate(row.payment?.paidDate ?? null)}</p>
-        </div>
-        {row.payment?.notes && (
-          <div className="col-span-2">
-            <p className="text-xs text-foreground/40">Notes</p>
-            <p className="truncate font-medium text-foreground/80">{row.payment.notes}</p>
-          </div>
-        )}
-      </div>
-
-      <div className="mt-auto flex flex-wrap gap-2">
-        <button
-          onClick={onEditDetails}
-          className="inline-flex min-h-9 flex-1 items-center justify-center gap-1.5 rounded-lg border border-primary/30 px-3 py-1.5 text-sm font-medium text-primary-dark hover:bg-primary-light"
-        >
-          <IconEdit className="h-3.5 w-3.5" />
-          Edit record
-        </button>
-        <button
-          onClick={onUpdateRent}
-          className="inline-flex min-h-9 flex-1 items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-dark"
-        >
-          <IconRupee className="h-3.5 w-3.5" />
-          Update rent
-        </button>
-        <button
-          onClick={onDeactivate}
-          aria-label={`Deactivate plot ${row.unit.plotNumber}`}
-          className="inline-flex min-h-9 items-center justify-center rounded-lg border border-unpaid/30 px-3 py-1.5 text-sm font-medium text-unpaid hover:bg-unpaid-bg"
-        >
-          <IconTrash className="h-3.5 w-3.5" />
-        </button>
-      </div>
     </div>
   );
 }
@@ -432,9 +284,9 @@ function TotalCard({
       ? "text-partial"
       : "text-primary-dark";
   return (
-    <div className="rounded-xl border border-primary/10 bg-white p-3 shadow-sm">
-      <p className="text-xs font-medium text-foreground/50">{label}</p>
-      <p className={`mt-1 text-lg font-bold ${accentClass}`}>{value}</p>
+    <div className="rounded-xl border border-primary/10 bg-white p-2.5 shadow-sm sm:p-3">
+      <p className="text-[11px] font-medium text-foreground/50 sm:text-xs">{label}</p>
+      <p className={`mt-0.5 text-base font-bold sm:text-lg ${accentClass}`}>{value}</p>
     </div>
   );
 }
