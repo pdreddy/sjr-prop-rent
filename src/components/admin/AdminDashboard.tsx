@@ -145,13 +145,18 @@ export default function AdminDashboard({ username }: { username: string }) {
         )}
 
         {totals && (
-          <div className="mb-4 grid grid-cols-3 gap-2 sm:grid-cols-6">
-            <TotalCard label="Plots" value={String(totals.totalUnits)} />
-            <TotalCard label="Paid" value={String(totals.numPaid)} accent="paid" />
-            <TotalCard label="Partial" value={String(totals.numPartial)} accent="partial" />
-            <TotalCard label="Unpaid" value={String(totals.numUnpaid)} accent="unpaid" />
-            <TotalCard label="Expected" value={`₹${totals.totalExpected.toFixed(0)}`} />
-            <TotalCard label="Outstanding" value={`₹${totals.outstandingBalance.toFixed(0)}`} />
+          <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-primary/10 bg-white px-3.5 py-2.5 text-sm shadow-sm">
+            <Stat label="Plots" value={totals.totalUnits} />
+            <StatDot />
+            <Stat label="Paid" value={totals.numPaid} accent="paid" />
+            <StatDot />
+            <Stat label="Partial" value={totals.numPartial} accent="partial" />
+            <StatDot />
+            <Stat label="Unpaid" value={totals.numUnpaid} accent="unpaid" />
+            <StatDot />
+            <Stat label="Expected" value={`₹${totals.totalExpected.toFixed(0)}`} />
+            <StatDot />
+            <Stat label="Outstanding" value={`₹${totals.outstandingBalance.toFixed(0)}`} />
           </div>
         )}
 
@@ -266,13 +271,13 @@ export default function AdminDashboard({ username }: { username: string }) {
   );
 }
 
-function TotalCard({
+function Stat({
   label,
   value,
   accent,
 }: {
   label: string;
-  value: string;
+  value: string | number;
   accent?: "paid" | "unpaid" | "partial";
 }) {
   const accentClass =
@@ -284,9 +289,17 @@ function TotalCard({
       ? "text-partial"
       : "text-primary-dark";
   return (
-    <div className="rounded-xl border border-primary/10 bg-white p-2.5 shadow-sm sm:p-3">
-      <p className="text-[11px] font-medium text-foreground/50 sm:text-xs">{label}</p>
-      <p className={`mt-0.5 text-base font-bold sm:text-lg ${accentClass}`}>{value}</p>
-    </div>
+    <span className="whitespace-nowrap">
+      <span className="text-foreground/45">{label} </span>
+      <span className={`font-semibold ${accentClass}`}>{value}</span>
+    </span>
+  );
+}
+
+function StatDot() {
+  return (
+    <span className="text-foreground/20" aria-hidden="true">
+      ·
+    </span>
   );
 }
