@@ -10,11 +10,15 @@ export async function GET(request: NextRequest) {
   const month = monthParam && isValidMonth(monthParam) ? monthParam : getCurrentMonth();
   const search = params.get("search")?.trim().toLowerCase();
   const statusFilter = params.get("status");
+  const selectedYear = month.slice(0, 4);
   const [unitRecords, paymentRecords] = await Promise.all([allUnits(), allPayments()]);
   let rows = unitRecords.filter((unit) => unit.active && (!search || [unit.plotNumber, unit.tenantName, unit.phone].some((v) => v?.toLowerCase().includes(search)))).map((unit) => {
     const payment = paymentRecords.find((p) => p.unitId === unit.id && p.month === month) ?? null;
+    const monthlyPayments = paymentRecords
+      .filter((p) => p.unitId === unit.id && p.month.startsWith(`${selectedYear}-`))
+      .map(paymentDTO);
     const isVacant = !unit.tenantName?.trim();
-    return { unit: unitDTO(unit), payment: payment ? paymentDTO(payment) : null, isVacant, effectiveStatus: payment?.paymentStatus ?? "UNPAID" };
+    return { unit: unitDTO(unit), payment: payment ? paymentDTO(payment) : null, monthlyPayments, isVacant, effectiveStatus: payment?.paymentStatus ?? "UNPAID" };
   });
   if (statusFilter && statusFilter !== "ALL") rows = rows.filter((row) => statusFilter === "VACANT" ? row.isVacant : row.effectiveStatus === statusFilter);
   const totals = rows.reduce((acc, row) => {

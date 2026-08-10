@@ -102,6 +102,11 @@ export default function AdminDashboard({ username }: { username: string }) {
 
   const totals = data?.totals;
   const monthParam = encodeURIComponent(month);
+  const selectedYear = month.slice(0, 4);
+  const yearMonths = Array.from(
+    { length: 12 },
+    (_, index) => `${selectedYear}-${String(index + 1).padStart(2, "0")}`
+  );
 
   return (
     <div className="flex flex-1 flex-col bg-background">
@@ -230,19 +235,32 @@ export default function AdminDashboard({ username }: { username: string }) {
 
         {!loading && data && data.rows.length > 0 && (
           <div className="overflow-hidden rounded-2xl border border-primary/10 bg-white shadow-sm">
-            <div className="overflow-x-auto" tabIndex={0} aria-label="Plot and monthly rent details">
-              <table className="min-w-[980px] w-full text-left text-sm">
+            <p className="border-b border-primary/10 bg-white px-3 py-2 text-xs text-foreground/55 sm:hidden">
+              Swipe left to view every month →
+            </p>
+            <div
+              className="max-w-full touch-pan-x overflow-x-scroll overscroll-x-contain"
+              tabIndex={0}
+              aria-label={`Plot and monthly rent details for ${selectedYear}`}
+            >
+              <table className="w-max min-w-full text-left text-sm">
                 <thead className="bg-primary-light text-primary-dark">
                   <tr>
-                    <th className="whitespace-nowrap px-3 py-2.5 font-semibold">Plot number</th>
-                    <th className="whitespace-nowrap px-3 py-2.5 font-semibold">Tenant name</th>
-                    <th className="whitespace-nowrap px-3 py-2.5 font-semibold">Phone number</th>
-                    <th className="whitespace-nowrap px-3 py-2.5 text-right font-semibold">Advance amount</th>
-                    <th className="whitespace-nowrap px-3 py-2.5 text-right font-semibold">Monthly rent</th>
-                    <th className="whitespace-nowrap px-3 py-2.5 font-semibold">
-                      {formatMonthLabel(month)} status
-                    </th>
-                    <th className="whitespace-nowrap px-3 py-2.5 text-right font-semibold">Balance</th>
+                    <th className="min-w-28 whitespace-nowrap px-3 py-2.5 font-semibold">Plot number</th>
+                    <th className="min-w-52 whitespace-nowrap px-3 py-2.5 font-semibold">Tenant name</th>
+                    <th className="min-w-40 whitespace-nowrap px-3 py-2.5 font-semibold">Phone number</th>
+                    <th className="min-w-40 whitespace-nowrap px-3 py-2.5 text-right font-semibold">Advance amount</th>
+                    <th className="min-w-36 whitespace-nowrap px-3 py-2.5 text-right font-semibold">Monthly rent</th>
+                    {yearMonths.map((yearMonth) => (
+                      <th
+                        key={yearMonth}
+                        className={`min-w-36 whitespace-nowrap px-3 py-2.5 text-center font-semibold ${
+                          yearMonth === month ? "bg-primary/10" : ""
+                        }`}
+                      >
+                        {formatMonthLabel(yearMonth)}
+                      </th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody>
@@ -267,12 +285,30 @@ export default function AdminDashboard({ username }: { username: string }) {
                       <td className="whitespace-nowrap px-3 py-3 text-right font-medium text-foreground/80">
                         ₹{row.unit.monthlyRent.toFixed(0)}
                       </td>
-                      <td className="whitespace-nowrap px-3 py-3">
-                        <StatusBadge status={row.isVacant ? "VACANT" : row.effectiveStatus} />
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-3 text-right font-medium text-foreground/80">
-                        ₹{(row.payment?.balanceDue ?? 0).toFixed(0)}
-                      </td>
+                      {yearMonths.map((yearMonth) => {
+                        const monthlyPayment = row.monthlyPayments.find(
+                          (payment) => payment.month === yearMonth
+                        );
+                        return (
+                          <td
+                            key={yearMonth}
+                            className={`whitespace-nowrap px-3 py-2 text-center ${
+                              yearMonth === month ? "bg-primary-light/45" : ""
+                            }`}
+                          >
+                            <StatusBadge
+                              status={
+                                row.isVacant
+                                  ? "VACANT"
+                                  : monthlyPayment?.paymentStatus ?? "UNPAID"
+                              }
+                            />
+                            <div className="mt-1 text-xs text-foreground/55">
+                              ₹{(monthlyPayment?.amountPaid ?? 0).toFixed(0)} paid
+                            </div>
+                          </td>
+                        );
+                      })}
                     </tr>
                   ))}
                 </tbody>
