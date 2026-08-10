@@ -22,7 +22,9 @@ export function firebaseEnvironmentIssues(): string[] {
     process.env.FIREBASE_PRIVATE_KEY
   );
 
-  if (!hasInlineAccount && !hasAccountPath && !hasIndividualAccount) {
+  if (process.env.NETLIFY && hasAccountPath && !hasInlineAccount && !hasIndividualAccount) {
+    issues.push("FIREBASE_SERVICE_ACCOUNT_PATH cannot be used on Netlify. Set FIREBASE_SERVICE_ACCOUNT_JSON instead.");
+  } else if (!hasInlineAccount && !hasAccountPath && !hasIndividualAccount) {
     issues.push("Set FIREBASE_SERVICE_ACCOUNT_JSON or all individual Firebase service-account variables.");
   }
   if (!process.env.FIREBASE_DATABASE_URL && !process.env.FIREBASE_PROJECT_ID && !hasInlineAccount && !hasAccountPath) {
