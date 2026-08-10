@@ -50,6 +50,7 @@ export interface PaymentDTO {
 export interface DashboardRow {
   unit: UnitDTO;
   payment: PaymentDTO | null;
+  monthlyPayments: PaymentDTO[];
   isVacant: boolean;
   effectiveStatus: PaymentStatus;
 }

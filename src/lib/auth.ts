@@ -19,7 +19,7 @@ export async function saveAdminPassword(id: string, password: string) {
 
 export async function login(username: string, password: string): Promise<LoginResult> {
   let admin = await findAdmin(username);
-  const configuredUsername = process.env.ADMIN_USERNAME;
+  const configuredUsername = process.env.ADMIN_USERNAME || "admin";
   const configuredPassword = process.env.ADMIN_PASSWORD;
   const matchesBootstrapLogin = Boolean(
     configuredUsername && configuredPassword &&

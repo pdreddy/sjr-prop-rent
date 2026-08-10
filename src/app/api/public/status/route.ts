@@ -9,29 +9,37 @@ export async function GET(request: NextRequest) {
   const monthParam = request.nextUrl.searchParams.get("month");
   const month = monthParam && isValidMonth(monthParam) ? monthParam : getCurrentMonth();
 
-  const [allUnitRecords, payments] = await Promise.all([allUnits(), allPayments()]);
-  const units = allUnitRecords.filter((unit) => unit.active);
+  try {
+    const [allUnitRecords, payments] = await Promise.all([allUnits(), allPayments()]);
+    const units = allUnitRecords.filter((unit) => unit.active);
 
-  const plots = units.map((unit) => {
-    const payment = payments.find((item) => item.unitId === unit.id && item.month === month);
-    return {
-      plotNumber: unit.plotNumber,
-      tenantName: unit.tenantName,
-      moveInDate: unit.moveInDate?.toISOString() ?? null,
-      // Public view collapses PARTIAL into "unpaid so far" — only PAID counts as paid.
-      status: payment?.paymentStatus === "PAID" ? "PAID" as const : "UNPAID" as const,
-      amountPaid: payment?.amountPaid ?? 0,
-      paidDate: payment?.paidDate?.toISOString() ?? null,
-    };
-  });
+    const plots = units.map((unit) => {
+      const payment = payments.find((item) => item.unitId === unit.id && item.month === month);
+      return {
+        plotNumber: unit.plotNumber,
+        tenantName: unit.tenantName,
+        moveInDate: unit.moveInDate?.toISOString() ?? null,
+        // Public view collapses PARTIAL into "unpaid so far" — only PAID counts as paid.
+        status: payment?.paymentStatus === "PAID" ? "PAID" as const : "UNPAID" as const,
+        amountPaid: payment?.amountPaid ?? 0,
+        paidDate: payment?.paidDate?.toISOString() ?? null,
+      };
+    });
 
-  const paidCount = plots.filter((p) => p.status === "PAID").length;
+    const paidCount = plots.filter((p) => p.status === "PAID").length;
 
-  return NextResponse.json({
-    buildingName: BUILDING_NAME,
-    month,
-    totalPlots: plots.length,
-    paidCount,
-    plots,
-  });
+    return NextResponse.json({
+      buildingName: BUILDING_NAME,
+      month,
+      totalPlots: plots.length,
+      paidCount,
+      plots,
+    });
+  } catch (error) {
+    console.error("Public rent status failed:", error);
+    return NextResponse.json(
+      { error: "The deployed server cannot connect to the rent database.", code: "DATABASE_UNAVAILABLE" },
+      { status: 503, headers: { "cache-control": "no-store" } }
+    );
+  }
 }

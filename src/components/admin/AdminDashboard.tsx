@@ -102,6 +102,11 @@ export default function AdminDashboard({ username }: { username: string }) {
 
   const totals = data?.totals;
   const monthParam = encodeURIComponent(month);
+  const selectedYear = month.slice(0, 4);
+  const yearMonths = Array.from(
+    { length: 12 },
+    (_, index) => `${selectedYear}-${String(index + 1).padStart(2, "0")}`
+  );
 
   return (
     <div className="flex flex-1 flex-col bg-background">
@@ -230,36 +235,88 @@ export default function AdminDashboard({ username }: { username: string }) {
 
         {!loading && data && data.rows.length > 0 && (
           <div className="overflow-hidden rounded-2xl border border-primary/10 bg-white shadow-sm">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-primary-light text-primary-dark">
-                <tr>
-                  <th className="px-3 py-2.5 font-semibold">Plot</th>
-                  <th className="px-3 py-2.5 font-semibold">Tenant</th>
-                  <th className="px-3 py-2.5 font-semibold">Status</th>
-                  <th className="px-3 py-2.5 text-right font-semibold">Balance</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.rows.map((row) => (
-                  <tr
-                    key={row.unit.id}
-                    onClick={() => router.push(`/admin/plots/${row.unit.id}?month=${monthParam}`)}
-                    className="cursor-pointer border-t border-primary/5 active:bg-primary-light/60 sm:hover:bg-primary-light/40"
-                  >
-                    <td className="px-3 py-3 font-semibold text-foreground">{row.unit.plotNumber}</td>
-                    <td className="max-w-[120px] truncate px-3 py-3 text-foreground/80 sm:max-w-none">
-                      {row.unit.tenantName || "Vacant"}
-                    </td>
-                    <td className="px-3 py-3">
-                      <StatusBadge status={row.isVacant ? "VACANT" : row.effectiveStatus} />
-                    </td>
-                    <td className="px-3 py-3 text-right font-medium text-foreground/80">
-                      ₹{(row.payment?.balanceDue ?? 0).toFixed(0)}
-                    </td>
+            <div className="flex items-center justify-between gap-3 border-b border-primary/10 bg-white px-3 py-2">
+              <p className="text-sm font-semibold text-primary-dark">{selectedYear} monthly rent ledger</p>
+              <p className="whitespace-nowrap text-xs text-foreground/55">Swipe or scroll →</p>
+            </div>
+            <div
+              className="max-w-full touch-pan-x overflow-x-scroll overscroll-x-contain"
+              tabIndex={0}
+              aria-label={`Plot and monthly rent details for ${selectedYear}`}
+            >
+              <table className="w-max min-w-full text-left text-sm">
+                <thead className="bg-primary-light text-primary-dark">
+                  <tr>
+                    <th className="sticky left-0 z-10 min-w-28 whitespace-nowrap border-r border-primary/10 bg-primary-light px-3 py-2.5 font-semibold">
+                      Plot number
+                    </th>
+                    <th className="min-w-52 whitespace-nowrap px-3 py-2.5 font-semibold">Tenant name</th>
+                    <th className="min-w-40 whitespace-nowrap px-3 py-2.5 font-semibold">Phone number</th>
+                    <th className="min-w-40 whitespace-nowrap px-3 py-2.5 text-right font-semibold">Advance amount</th>
+                    <th className="min-w-36 whitespace-nowrap px-3 py-2.5 text-right font-semibold">Monthly rent</th>
+                    {yearMonths.map((yearMonth) => (
+                      <th
+                        key={yearMonth}
+                        className={`min-w-36 whitespace-nowrap px-3 py-2.5 text-center font-semibold ${
+                          yearMonth === month ? "bg-primary/10" : ""
+                        }`}
+                      >
+                        {formatMonthLabel(yearMonth)}
+                      </th>
+                    ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {data.rows.map((row) => (
+                    <tr
+                      key={row.unit.id}
+                      onClick={() => router.push(`/admin/plots/${row.unit.id}?month=${monthParam}`)}
+                      className="cursor-pointer border-t border-primary/5 active:bg-primary-light/60 sm:hover:bg-primary-light/40"
+                    >
+                      <td className="sticky left-0 z-10 whitespace-nowrap border-r border-primary/10 bg-white px-3 py-3 font-semibold text-foreground">
+                        {row.unit.plotNumber}
+                      </td>
+                      <td className="max-w-[220px] truncate px-3 py-3 text-foreground/80">
+                        {row.unit.tenantName || "Vacant"}
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-3 text-foreground/70">
+                        {row.unit.phone || "—"}
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-3 text-right text-foreground/80">
+                        ₹{row.unit.advanceAmount.toFixed(0)}
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-3 text-right font-medium text-foreground/80">
+                        ₹{row.unit.monthlyRent.toFixed(0)}
+                      </td>
+                      {yearMonths.map((yearMonth) => {
+                        const monthlyPayment = row.monthlyPayments.find(
+                          (payment) => payment.month === yearMonth
+                        );
+                        return (
+                          <td
+                            key={yearMonth}
+                            className={`whitespace-nowrap px-3 py-2 text-center ${
+                              yearMonth === month ? "bg-primary-light/45" : ""
+                            }`}
+                          >
+                            <StatusBadge
+                              status={
+                                row.isVacant
+                                  ? "VACANT"
+                                  : monthlyPayment?.paymentStatus ?? "UNPAID"
+                              }
+                            />
+                            <div className="mt-1 text-xs text-foreground/55">
+                              ₹{(monthlyPayment?.amountPaid ?? 0).toFixed(0)} paid
+                            </div>
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </main>

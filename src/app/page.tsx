@@ -24,11 +24,14 @@ export default function Home() {
       const res = await fetch(`/api/public/status?month=${encodeURIComponent(m)}`, {
         cache: "no-store",
       });
-      if (!res.ok) throw new Error("Failed to load status");
+      if (!res.ok) {
+        const result = await res.json().catch(() => null) as { error?: string } | null;
+        throw new Error(result?.error ?? "Failed to load status");
+      }
       const json: PublicStatusResponse = await res.json();
       setData(json);
-    } catch {
-      setError("Could not load rent status. Please try again.");
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : "Could not load rent status. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -106,7 +109,10 @@ export default function Home() {
 
         {!loading && error && (
           <div className="rounded-2xl border border-unpaid/30 bg-unpaid-bg p-4 text-unpaid">
-            {error}
+            <p className="font-medium">{error}</p>
+            <p className="mt-1 text-sm">
+              Open <Link href="/api/health" className="font-semibold underline">deployment health</Link> to see which Netlify setting is missing.
+            </p>
           </div>
         )}
 

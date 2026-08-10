@@ -8,7 +8,7 @@ A mobile-friendly Next.js rent tracker with one simple username/password adminis
 2. The repository includes the supplied Firebase web configuration for project `koc2-20fb8`. Firebase App and Analytics load in the browser after the page becomes interactive.
 3. Open **Project settings > Service accounts** in that project and generate a private key. The browser configuration alone cannot authorize the protected server routes to write Realtime Database data.
 4. Rename the downloaded file to `firebase-service-account.json` and put it in the repository root. It is gitignored. Copy `.env.example` to `.env`; no private-key editing is needed locally.
-5. Choose `ADMIN_USERNAME`, `ADMIN_PASSWORD`, and a random `SESSION_SECRET` of at least 32 characters.
+5. Choose `ADMIN_USERNAME` and `ADMIN_PASSWORD`. A separate `SESSION_SECRET` is optional.
 6. Install and initialize the login, then import the supplied tenant register:
 
 ```bash
@@ -42,6 +42,15 @@ npm run db:seed
 npm run dev
 ```
 
+`npm run dev` clears the previous `.next` output before starting, so an older
+dashboard bundle cannot be reused after table changes. Local development uses
+Next.js's supported Webpack dev mode because it avoids
+intermittent Turbopack React Server Component `Connection closed` overlays. If a
+browser previously registered a service worker for the same localhost origin,
+reload once after starting the app; the included `/sw.js` cleanup removes that
+stale worker and its caches. Turbopack remains available with
+`npm run dev:turbopack` for troubleshooting.
+
 Open `/admin/login` and enter `ADMIN_USERNAME` and `ADMIN_PASSWORD`. On the first successful login, the server automatically creates the administrator node with an scrypt password hash, so seeding is optional for login. `npm run db:seed` is still useful for loading sample plots. Password changes made from the dashboard are saved directly to Realtime Database.
 
 Browser-console messages from `contentScript.bundle.js` or `api2.amplitude.com` come from a browser extension (often an ad/privacy blocker integration), not this application. They can be ignored or confirmed by testing in a private window with extensions disabled.
@@ -58,23 +67,41 @@ Like the reference KOC app, every public Firebase setting has a built-in fallbac
 
 ## Deploy to Netlify
 
-1. Push this repository to GitHub and select **Add new project > Import an existing project** in Netlify.
-2. Netlify reads `netlify.toml`, runs `npm run build`, and uses its Next.js runtime.
-3. In **Project configuration > Environment variables**, add:
-   - `FIREBASE_PROJECT_ID` (`koc2-20fb8`)
-   - `FIREBASE_DATABASE_URL` (`https://koc2-20fb8-default-rtdb.firebaseio.com`)
-   - `FIREBASE_CLIENT_EMAIL`
-   - `FIREBASE_PRIVATE_KEY` (use literal `\\n` between private-key lines)
-   - `SESSION_SECRET`
-   - `BUILDING_NAME` (optional)
-4. Deploy the site.
-5. From a trusted local computer, run the one-time seed against the same Firebase project:
+The shortest secure setup needs only two secret values:
 
-```bash
-npm run db:seed
-```
+1. Push this repository to GitHub and import it in Netlify. The included
+   `netlify.toml` supplies the build settings.
+2. In **Project configuration > Environment variables**, add:
+   - `FIREBASE_SERVICE_ACCOUNT_JSON`: paste the complete JSON downloaded from
+     **Firebase > Project settings > Service accounts > Generate new private
+     key**. Raw JSON is accepted; do not add quotes around the complete value.
+   - `ADMIN_PASSWORD`: choose a password of at least 10 characters.
+3. Trigger **Deploys > Trigger deploy > Clear cache and deploy site**.
+4. Open `/api/health`. When it reports `{"status":"ok"}`, sign in at
+   `/admin/login` with username `admin` and your `ADMIN_PASSWORD`.
+
+`ADMIN_USERNAME` (defaults to `admin`), `FIREBASE_DATABASE_URL` (derived from
+the service-account project ID), `SESSION_SECRET` (derived securely from the
+private service-account key), and `BUILDING_NAME` are optional. Advanced
+deployments may use the individual `FIREBASE_PROJECT_ID`,
+`FIREBASE_CLIENT_EMAIL`, and `FIREBASE_PRIVATE_KEY` variables instead of
+`FIREBASE_SERVICE_ACCOUNT_JSON`.
 
 Do not put Firebase service-account values in variables prefixed with `NEXT_PUBLIC_`. They must remain server-only. You may remove `ADMIN_PASSWORD` from Netlify after seeding because login checks the hash stored in Realtime Database.
+
+### Troubleshoot a deployed login
+
+Open `https://YOUR-SITE.netlify.app/api/health` after every deployment. A healthy
+deployment returns `{"status":"ok"}`. An unhealthy response lists missing
+configuration without returning secret values. If it reports a Firebase
+connection failure, open the Netlify function log for the `/api/health` request;
+the server records the underlying Firebase error there.
+
+For a new database, keep `ADMIN_PASSWORD` configured until
+the first successful login creates the administrator record. If an administrator
+already exists, the password stored in Firebase is authoritative; changing only
+the Netlify `ADMIN_PASSWORD` value does not reset it. Use
+`npm run admin:set-password` from a trusted computer to reset an existing admin.
 
 ## Commands
 
