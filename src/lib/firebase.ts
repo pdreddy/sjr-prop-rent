@@ -1,3 +1,4 @@
+import "server-only";
 import { createSign } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -7,6 +8,8 @@ export type FirebaseValue = Primitive | Date | FirebaseValue[] | { [key: string]
 
 interface ServiceAccountFile { project_id?: string; client_email?: string; private_key?: string }
 interface FirebaseConfig { projectId: string; clientEmail: string; privateKey: string; databaseUrl: string }
+const REQUEST_TIMEOUT_MS = 15_000;
+const INVALID_KEY_CHARACTERS = /[.#$\[\]/\u0000-\u001F\u007F]/;
 let configCache: FirebaseConfig | undefined;
 
 function requireConfig(): FirebaseConfig {
@@ -48,6 +51,7 @@ async function accessToken() {
   const response = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({ grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer", assertion }),
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
   });
   const result = await response.json() as { access_token?: string; expires_in?: number; error_description?: string };
   if (!response.ok || !result.access_token) throw new Error(result.error_description || "Could not authenticate Firebase service account");
@@ -73,9 +77,18 @@ function decode(value: unknown): FirebaseValue {
 }
 
 async function request(path: string, init?: RequestInit) {
-  const token = encodeURIComponent(await accessToken());
-  const response = await fetch(`${requireConfig().databaseUrl}/${path}.json?access_token=${token}`, {
-    ...init, headers: { "content-type": "application/json", ...init?.headers },
+  if (!path || path.split("/").some((segment) => !segment || INVALID_KEY_CHARACTERS.test(segment))) {
+    throw new Error(`Invalid Firebase Realtime Database path: ${path}`);
+  }
+  const token = await accessToken();
+  const response = await fetch(`${requireConfig().databaseUrl}/${path}.json`, {
+    ...init,
+    signal: init?.signal ?? AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+    headers: {
+      "content-type": "application/json",
+      authorization: `Bearer ${token}`,
+      ...init?.headers,
+    },
   });
   const result = response.status === 204 ? null : await response.json();
   if (!response.ok) throw new Error(result?.error || `Realtime Database request failed (${response.status})`);
