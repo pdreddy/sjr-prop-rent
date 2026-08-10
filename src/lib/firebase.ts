@@ -1,3 +1,4 @@
+import "server-only";
 import { createSign } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -7,23 +8,41 @@ export type FirebaseValue = Primitive | Date | FirebaseValue[] | { [key: string]
 
 interface ServiceAccountFile { project_id?: string; client_email?: string; private_key?: string }
 interface FirebaseConfig { projectId: string; clientEmail: string; privateKey: string; databaseUrl: string }
+const REQUEST_TIMEOUT_MS = 15_000;
+const INVALID_KEY_CHARACTERS = /[.#$\[\]/\u0000-\u001F\u007F]/;
 let configCache: FirebaseConfig | undefined;
+
+function parseServiceAccount(value: string, source: string): ServiceAccountFile {
+  try {
+    const json = value.trim().startsWith("{")
+      ? value
+      : Buffer.from(value, "base64").toString("utf8");
+    return JSON.parse(json) as ServiceAccountFile;
+  } catch (error) {
+    throw new Error(`Could not parse Firebase service account from ${source}`, { cause: error });
+  }
+}
 
 function requireConfig(): FirebaseConfig {
   if (configCache) return configCache;
   let fileConfig: ServiceAccountFile = {};
+  const inlineAccount = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
   const accountPath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH;
-  if (accountPath) {
+  if (inlineAccount) {
+    fileConfig = parseServiceAccount(inlineAccount, "FIREBASE_SERVICE_ACCOUNT_JSON");
+  } else if (accountPath) {
     const absolutePath = resolve(/* turbopackIgnore: true */ process.cwd(), accountPath);
-    try { fileConfig = JSON.parse(readFileSync(absolutePath, "utf8")) as ServiceAccountFile; }
+    let contents: string;
+    try { contents = readFileSync(absolutePath, "utf8"); }
     catch (error) { throw new Error(`Could not read Firebase service account at ${absolutePath}`, { cause: error }); }
+    fileConfig = parseServiceAccount(contents, absolutePath);
   }
   const projectId = process.env.FIREBASE_PROJECT_ID || fileConfig.project_id;
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL || fileConfig.client_email;
   const privateKey = (process.env.FIREBASE_PRIVATE_KEY || fileConfig.private_key)?.replace(/\\n/g, "\n");
   const databaseUrl = process.env.FIREBASE_DATABASE_URL || (projectId ? `https://${projectId}-default-rtdb.firebaseio.com` : undefined);
   if (!projectId || !clientEmail || !privateKey || !databaseUrl) {
-    throw new Error("Firebase credentials are missing. Configure FIREBASE_SERVICE_ACCOUNT_PATH and FIREBASE_DATABASE_URL, or provide the individual service-account variables.");
+    throw new Error("Firebase credentials are missing. Configure FIREBASE_SERVICE_ACCOUNT_JSON, FIREBASE_SERVICE_ACCOUNT_PATH, or the individual service-account variables.");
   }
   configCache = { projectId, clientEmail, privateKey, databaseUrl: databaseUrl.replace(/\/$/, "") };
   return configCache;
@@ -48,6 +67,7 @@ async function accessToken() {
   const response = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({ grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer", assertion }),
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
   });
   const result = await response.json() as { access_token?: string; expires_in?: number; error_description?: string };
   if (!response.ok || !result.access_token) throw new Error(result.error_description || "Could not authenticate Firebase service account");
@@ -73,9 +93,18 @@ function decode(value: unknown): FirebaseValue {
 }
 
 async function request(path: string, init?: RequestInit) {
-  const token = encodeURIComponent(await accessToken());
-  const response = await fetch(`${requireConfig().databaseUrl}/${path}.json?access_token=${token}`, {
-    ...init, headers: { "content-type": "application/json", ...init?.headers },
+  if (!path || path.split("/").some((segment) => !segment || INVALID_KEY_CHARACTERS.test(segment))) {
+    throw new Error(`Invalid Firebase Realtime Database path: ${path}`);
+  }
+  const token = await accessToken();
+  const response = await fetch(`${requireConfig().databaseUrl}/${path}.json`, {
+    ...init,
+    signal: init?.signal ?? AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+    headers: {
+      "content-type": "application/json",
+      authorization: `Bearer ${token}`,
+      ...init?.headers,
+    },
   });
   const result = response.status === 204 ? null : await response.json();
   if (!response.ok) throw new Error(result?.error || `Realtime Database request failed (${response.status})`);

@@ -61,12 +61,18 @@ Like the reference KOC app, every public Firebase setting has a built-in fallbac
 1. Push this repository to GitHub and select **Add new project > Import an existing project** in Netlify.
 2. Netlify reads `netlify.toml`, runs `npm run build`, and uses its Next.js runtime.
 3. In **Project configuration > Environment variables**, add:
-   - `FIREBASE_PROJECT_ID` (`koc2-20fb8`)
    - `FIREBASE_DATABASE_URL` (`https://koc2-20fb8-default-rtdb.firebaseio.com`)
-   - `FIREBASE_CLIENT_EMAIL`
-   - `FIREBASE_PRIVATE_KEY` (use literal `\\n` between private-key lines)
+   - `FIREBASE_SERVICE_ACCOUNT_JSON` containing the complete service-account
+     JSON. Raw JSON and base64-encoded JSON are both accepted. This is the
+     recommended serverless configuration because a local service-account file
+     is not available in Netlify Functions.
    - `SESSION_SECRET`
+   - `ADMIN_USERNAME` and `ADMIN_PASSWORD` for the initial login. Remove
+     `ADMIN_PASSWORD` after the administrator has been created in Firebase.
    - `BUILDING_NAME` (optional)
+   Alternatively, replace `FIREBASE_SERVICE_ACCOUNT_JSON` with
+   `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, and `FIREBASE_PRIVATE_KEY`
+   (use literal `\\n` between private-key lines).
 4. Deploy the site.
 5. From a trusted local computer, run the one-time seed against the same Firebase project:
 
