@@ -230,36 +230,54 @@ export default function AdminDashboard({ username }: { username: string }) {
 
         {!loading && data && data.rows.length > 0 && (
           <div className="overflow-hidden rounded-2xl border border-primary/10 bg-white shadow-sm">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-primary-light text-primary-dark">
-                <tr>
-                  <th className="px-3 py-2.5 font-semibold">Plot</th>
-                  <th className="px-3 py-2.5 font-semibold">Tenant</th>
-                  <th className="px-3 py-2.5 font-semibold">Status</th>
-                  <th className="px-3 py-2.5 text-right font-semibold">Balance</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.rows.map((row) => (
-                  <tr
-                    key={row.unit.id}
-                    onClick={() => router.push(`/admin/plots/${row.unit.id}?month=${monthParam}`)}
-                    className="cursor-pointer border-t border-primary/5 active:bg-primary-light/60 sm:hover:bg-primary-light/40"
-                  >
-                    <td className="px-3 py-3 font-semibold text-foreground">{row.unit.plotNumber}</td>
-                    <td className="max-w-[120px] truncate px-3 py-3 text-foreground/80 sm:max-w-none">
-                      {row.unit.tenantName || "Vacant"}
-                    </td>
-                    <td className="px-3 py-3">
-                      <StatusBadge status={row.isVacant ? "VACANT" : row.effectiveStatus} />
-                    </td>
-                    <td className="px-3 py-3 text-right font-medium text-foreground/80">
-                      ₹{(row.payment?.balanceDue ?? 0).toFixed(0)}
-                    </td>
+            <div className="overflow-x-auto" tabIndex={0} aria-label="Plot and monthly rent details">
+              <table className="min-w-[980px] w-full text-left text-sm">
+                <thead className="bg-primary-light text-primary-dark">
+                  <tr>
+                    <th className="whitespace-nowrap px-3 py-2.5 font-semibold">Plot number</th>
+                    <th className="whitespace-nowrap px-3 py-2.5 font-semibold">Tenant name</th>
+                    <th className="whitespace-nowrap px-3 py-2.5 font-semibold">Phone number</th>
+                    <th className="whitespace-nowrap px-3 py-2.5 text-right font-semibold">Advance amount</th>
+                    <th className="whitespace-nowrap px-3 py-2.5 text-right font-semibold">Monthly rent</th>
+                    <th className="whitespace-nowrap px-3 py-2.5 font-semibold">
+                      {formatMonthLabel(month)} status
+                    </th>
+                    <th className="whitespace-nowrap px-3 py-2.5 text-right font-semibold">Balance</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {data.rows.map((row) => (
+                    <tr
+                      key={row.unit.id}
+                      onClick={() => router.push(`/admin/plots/${row.unit.id}?month=${monthParam}`)}
+                      className="cursor-pointer border-t border-primary/5 active:bg-primary-light/60 sm:hover:bg-primary-light/40"
+                    >
+                      <td className="whitespace-nowrap px-3 py-3 font-semibold text-foreground">
+                        {row.unit.plotNumber}
+                      </td>
+                      <td className="max-w-[220px] truncate px-3 py-3 text-foreground/80">
+                        {row.unit.tenantName || "Vacant"}
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-3 text-foreground/70">
+                        {row.unit.phone || "—"}
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-3 text-right text-foreground/80">
+                        ₹{row.unit.advanceAmount.toFixed(0)}
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-3 text-right font-medium text-foreground/80">
+                        ₹{row.unit.monthlyRent.toFixed(0)}
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-3">
+                        <StatusBadge status={row.isVacant ? "VACANT" : row.effectiveStatus} />
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-3 text-right font-medium text-foreground/80">
+                        ₹{(row.payment?.balanceDue ?? 0).toFixed(0)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </main>
