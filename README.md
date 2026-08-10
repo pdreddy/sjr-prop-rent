@@ -58,29 +58,25 @@ Like the reference KOC app, every public Firebase setting has a built-in fallbac
 
 ## Deploy to Netlify
 
-1. Push this repository to GitHub and select **Add new project > Import an existing project** in Netlify.
-2. Netlify reads `netlify.toml`, runs `npm run build`, and uses its Next.js runtime.
-3. In **Project configuration > Environment variables**, add:
-   - `FIREBASE_DATABASE_URL` (`https://koc2-20fb8-default-rtdb.firebaseio.com`)
-   - `FIREBASE_SERVICE_ACCOUNT_JSON` containing the complete service-account
-     JSON. Raw JSON and base64-encoded JSON are both accepted. This is the
-     recommended serverless configuration because a local service-account file
-     is not available in Netlify Functions.
-   - `SESSION_SECRET`
-   - `ADMIN_USERNAME` and `ADMIN_PASSWORD` for the initial login. Remove
-     `ADMIN_PASSWORD` after the administrator has been created in Firebase.
-   - `BUILDING_NAME` (optional)
-   Alternatively, replace `FIREBASE_SERVICE_ACCOUNT_JSON` with
-   `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, and `FIREBASE_PRIVATE_KEY`
-   (use literal `\\n` between private-key lines).
-4. Deploy the site.
-   Environment-variable changes do not affect an already-running function;
-   trigger a new deploy after adding or editing them.
-5. From a trusted local computer, run the one-time seed against the same Firebase project:
+The shortest secure setup needs only three secret values:
 
-```bash
-npm run db:seed
-```
+1. Push this repository to GitHub and import it in Netlify. The included
+   `netlify.toml` supplies the build settings.
+2. In **Project configuration > Environment variables**, add:
+   - `FIREBASE_SERVICE_ACCOUNT_JSON`: paste the complete JSON downloaded from
+     **Firebase > Project settings > Service accounts > Generate new private
+     key**. Raw JSON is accepted; do not add quotes around the complete value.
+   - `SESSION_SECRET`: paste the output of `openssl rand -base64 48`.
+   - `ADMIN_PASSWORD`: choose a password of at least 10 characters.
+3. Trigger **Deploys > Trigger deploy > Clear cache and deploy site**.
+4. Open `/api/health`. When it reports `{"status":"ok"}`, sign in at
+   `/admin/login` with username `admin` and your `ADMIN_PASSWORD`.
+
+`ADMIN_USERNAME` (defaults to `admin`), `FIREBASE_DATABASE_URL` (derived from
+the service-account project ID), and `BUILDING_NAME` are optional. Advanced
+deployments may use the individual `FIREBASE_PROJECT_ID`,
+`FIREBASE_CLIENT_EMAIL`, and `FIREBASE_PRIVATE_KEY` variables instead of
+`FIREBASE_SERVICE_ACCOUNT_JSON`.
 
 Do not put Firebase service-account values in variables prefixed with `NEXT_PUBLIC_`. They must remain server-only. You may remove `ADMIN_PASSWORD` from Netlify after seeding because login checks the hash stored in Realtime Database.
 
@@ -92,7 +88,7 @@ configuration without returning secret values. If it reports a Firebase
 connection failure, open the Netlify function log for the `/api/health` request;
 the server records the underlying Firebase error there.
 
-For a new database, keep `ADMIN_USERNAME` and `ADMIN_PASSWORD` configured until
+For a new database, keep `ADMIN_PASSWORD` configured until
 the first successful login creates the administrator record. If an administrator
 already exists, the password stored in Firebase is authoritative; changing only
 the Netlify `ADMIN_PASSWORD` value does not reset it. Use

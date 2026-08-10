@@ -25,8 +25,8 @@ export function firebaseEnvironmentIssues(): string[] {
   if (!hasInlineAccount && !hasAccountPath && !hasIndividualAccount) {
     issues.push("Set FIREBASE_SERVICE_ACCOUNT_JSON or all individual Firebase service-account variables.");
   }
-  if (!process.env.FIREBASE_DATABASE_URL && !process.env.FIREBASE_PROJECT_ID) {
-    issues.push("Set FIREBASE_DATABASE_URL.");
+  if (!process.env.FIREBASE_DATABASE_URL && !process.env.FIREBASE_PROJECT_ID && !hasInlineAccount && !hasAccountPath) {
+    issues.push("Set FIREBASE_DATABASE_URL or provide a service account containing project_id.");
   }
   return issues;
 }
