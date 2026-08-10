@@ -12,6 +12,25 @@ const REQUEST_TIMEOUT_MS = 15_000;
 const INVALID_KEY_CHARACTERS = /[.#$\[\]/\u0000-\u001F\u007F]/;
 let configCache: FirebaseConfig | undefined;
 
+export function firebaseEnvironmentIssues(): string[] {
+  const issues: string[] = [];
+  const hasInlineAccount = Boolean(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
+  const hasAccountPath = Boolean(process.env.FIREBASE_SERVICE_ACCOUNT_PATH);
+  const hasIndividualAccount = Boolean(
+    process.env.FIREBASE_PROJECT_ID &&
+    process.env.FIREBASE_CLIENT_EMAIL &&
+    process.env.FIREBASE_PRIVATE_KEY
+  );
+
+  if (!hasInlineAccount && !hasAccountPath && !hasIndividualAccount) {
+    issues.push("Set FIREBASE_SERVICE_ACCOUNT_JSON or all individual Firebase service-account variables.");
+  }
+  if (!process.env.FIREBASE_DATABASE_URL && !process.env.FIREBASE_PROJECT_ID) {
+    issues.push("Set FIREBASE_DATABASE_URL.");
+  }
+  return issues;
+}
+
 function parseServiceAccount(value: string, source: string): ServiceAccountFile {
   try {
     const json = value.trim().startsWith("{")

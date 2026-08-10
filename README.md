@@ -74,6 +74,8 @@ Like the reference KOC app, every public Firebase setting has a built-in fallbac
    `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, and `FIREBASE_PRIVATE_KEY`
    (use literal `\\n` between private-key lines).
 4. Deploy the site.
+   Environment-variable changes do not affect an already-running function;
+   trigger a new deploy after adding or editing them.
 5. From a trusted local computer, run the one-time seed against the same Firebase project:
 
 ```bash
@@ -81,6 +83,20 @@ npm run db:seed
 ```
 
 Do not put Firebase service-account values in variables prefixed with `NEXT_PUBLIC_`. They must remain server-only. You may remove `ADMIN_PASSWORD` from Netlify after seeding because login checks the hash stored in Realtime Database.
+
+### Troubleshoot a deployed login
+
+Open `https://YOUR-SITE.netlify.app/api/health` after every deployment. A healthy
+deployment returns `{"status":"ok"}`. An unhealthy response lists missing
+configuration without returning secret values. If it reports a Firebase
+connection failure, open the Netlify function log for the `/api/health` request;
+the server records the underlying Firebase error there.
+
+For a new database, keep `ADMIN_USERNAME` and `ADMIN_PASSWORD` configured until
+the first successful login creates the administrator record. If an administrator
+already exists, the password stored in Firebase is authoritative; changing only
+the Netlify `ADMIN_PASSWORD` value does not reset it. Use
+`npm run admin:set-password` from a trusted computer to reset an existing admin.
 
 ## Commands
 
