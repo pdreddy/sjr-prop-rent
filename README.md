@@ -8,7 +8,7 @@ A mobile-friendly Next.js rent tracker with one simple username/password adminis
 2. The repository includes the supplied Firebase web configuration for project `koc2-20fb8`. Firebase App and Analytics load in the browser after the page becomes interactive.
 3. Open **Project settings > Service accounts** in that project and generate a private key. The browser configuration alone cannot authorize the protected server routes to write Realtime Database data.
 4. Rename the downloaded file to `firebase-service-account.json` and put it in the repository root. It is gitignored. Copy `.env.example` to `.env`; no private-key editing is needed locally.
-5. Choose `ADMIN_USERNAME`, `ADMIN_PASSWORD`, and a random `SESSION_SECRET` of at least 32 characters.
+5. Choose `ADMIN_USERNAME` and `ADMIN_PASSWORD`. A separate `SESSION_SECRET` is optional.
 6. Install and initialize the login, then import the supplied tenant register:
 
 ```bash
@@ -67,7 +67,7 @@ Like the reference KOC app, every public Firebase setting has a built-in fallbac
 
 ## Deploy to Netlify
 
-The shortest secure setup needs only three secret values:
+The shortest secure setup needs only two secret values:
 
 1. Push this repository to GitHub and import it in Netlify. The included
    `netlify.toml` supplies the build settings.
@@ -75,14 +75,14 @@ The shortest secure setup needs only three secret values:
    - `FIREBASE_SERVICE_ACCOUNT_JSON`: paste the complete JSON downloaded from
      **Firebase > Project settings > Service accounts > Generate new private
      key**. Raw JSON is accepted; do not add quotes around the complete value.
-   - `SESSION_SECRET`: paste the output of `openssl rand -base64 48`.
    - `ADMIN_PASSWORD`: choose a password of at least 10 characters.
 3. Trigger **Deploys > Trigger deploy > Clear cache and deploy site**.
 4. Open `/api/health`. When it reports `{"status":"ok"}`, sign in at
    `/admin/login` with username `admin` and your `ADMIN_PASSWORD`.
 
 `ADMIN_USERNAME` (defaults to `admin`), `FIREBASE_DATABASE_URL` (derived from
-the service-account project ID), and `BUILDING_NAME` are optional. Advanced
+the service-account project ID), `SESSION_SECRET` (derived securely from the
+private service-account key), and `BUILDING_NAME` are optional. Advanced
 deployments may use the individual `FIREBASE_PROJECT_ID`,
 `FIREBASE_CLIENT_EMAIL`, and `FIREBASE_PRIVATE_KEY` variables instead of
 `FIREBASE_SERVICE_ACCOUNT_JSON`.

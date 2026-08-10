@@ -1,5 +1,5 @@
 import "server-only";
-import { createSign } from "node:crypto";
+import { createHash, createSign } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
@@ -67,6 +67,14 @@ function requireConfig(): FirebaseConfig {
   }
   configCache = { projectId, clientEmail, privateKey, databaseUrl: databaseUrl.replace(/\/$/, "") };
   return configCache;
+}
+
+/** Domain-separated fallback for signing sessions when no separate secret is set. */
+export function firebaseSessionSecret() {
+  return createHash("sha256")
+    .update("sjr-rent-session-v1\0")
+    .update(requireConfig().privateKey)
+    .digest("base64url");
 }
 
 const base64url = (value: string | Buffer) => Buffer.from(value).toString("base64url");

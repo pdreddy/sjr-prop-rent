@@ -2,13 +2,14 @@ import "server-only";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 import { SESSION_COOKIE_NAME, SESSION_DURATION_SECONDS } from "./constants";
+import { firebaseSessionSecret } from "./firebase";
 
 export interface SessionPayload { adminId: string; username: string; expiresAt: number }
 
 function secret() {
   const value = process.env.SESSION_SECRET;
-  if (!value || value.length < 32) throw new Error("SESSION_SECRET must contain at least 32 characters");
-  return value;
+  if (value && value.length < 32) throw new Error("SESSION_SECRET must contain at least 32 characters");
+  return value || firebaseSessionSecret();
 }
 
 function signature(payload: string) {

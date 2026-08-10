@@ -6,10 +6,10 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const issues = firebaseEnvironmentIssues();
   let firebaseHealthy = issues.length === 0;
-  const sessionHealthy = Boolean(process.env.SESSION_SECRET && process.env.SESSION_SECRET.length >= 32);
+  const sessionHealthy = !process.env.SESSION_SECRET || process.env.SESSION_SECRET.length >= 32;
 
   if (!sessionHealthy) {
-    issues.push("Set SESSION_SECRET to a value containing at least 32 characters.");
+    issues.push("Remove SESSION_SECRET or set it to a value containing at least 32 characters.");
   }
 
   if (firebaseHealthy) {
