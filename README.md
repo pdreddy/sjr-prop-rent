@@ -42,6 +42,13 @@ npm run db:seed
 npm run dev
 ```
 
+Local development uses Next.js's supported Webpack dev mode because it avoids
+intermittent Turbopack React Server Component `Connection closed` overlays. If a
+browser previously registered a service worker for the same localhost origin,
+reload once after starting the app; the included `/sw.js` cleanup removes that
+stale worker and its caches. Turbopack remains available with
+`npm run dev:turbopack` for troubleshooting.
+
 Open `/admin/login` and enter `ADMIN_USERNAME` and `ADMIN_PASSWORD`. On the first successful login, the server automatically creates the administrator node with an scrypt password hash, so seeding is optional for login. `npm run db:seed` is still useful for loading sample plots. Password changes made from the dashboard are saved directly to Realtime Database.
 
 Browser-console messages from `contentScript.bundle.js` or `api2.amplitude.com` come from a browser extension (often an ad/privacy blocker integration), not this application. They can be ignored or confirmed by testing in a private window with extensions disabled.
