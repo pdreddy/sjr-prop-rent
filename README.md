@@ -42,7 +42,9 @@ npm run db:seed
 npm run dev
 ```
 
-Local development uses Next.js's supported Webpack dev mode because it avoids
+`npm run dev` clears the previous `.next` output before starting, so an older
+dashboard bundle cannot be reused after table changes. Local development uses
+Next.js's supported Webpack dev mode because it avoids
 intermittent Turbopack React Server Component `Connection closed` overlays. If a
 browser previously registered a service worker for the same localhost origin,
 reload once after starting the app; the included `/sw.js` cleanup removes that

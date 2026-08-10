@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --webpack",
+    "clean": "node -e \"require('node:fs').rmSync('.next', { recursive: true, force: true })\"",
+    "dev": "npm run clean && next dev --webpack",
     "dev:turbopack": "next dev",
     "build": "next build",
     "start": "next start",

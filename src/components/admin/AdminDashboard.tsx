@@ -235,9 +235,10 @@ export default function AdminDashboard({ username }: { username: string }) {
 
         {!loading && data && data.rows.length > 0 && (
           <div className="overflow-hidden rounded-2xl border border-primary/10 bg-white shadow-sm">
-            <p className="border-b border-primary/10 bg-white px-3 py-2 text-xs text-foreground/55 sm:hidden">
-              Swipe left to view every month →
-            </p>
+            <div className="flex items-center justify-between gap-3 border-b border-primary/10 bg-white px-3 py-2">
+              <p className="text-sm font-semibold text-primary-dark">{selectedYear} monthly rent ledger</p>
+              <p className="whitespace-nowrap text-xs text-foreground/55">Swipe or scroll →</p>
+            </div>
             <div
               className="max-w-full touch-pan-x overflow-x-scroll overscroll-x-contain"
               tabIndex={0}
@@ -246,7 +247,9 @@ export default function AdminDashboard({ username }: { username: string }) {
               <table className="w-max min-w-full text-left text-sm">
                 <thead className="bg-primary-light text-primary-dark">
                   <tr>
-                    <th className="min-w-28 whitespace-nowrap px-3 py-2.5 font-semibold">Plot number</th>
+                    <th className="sticky left-0 z-10 min-w-28 whitespace-nowrap border-r border-primary/10 bg-primary-light px-3 py-2.5 font-semibold">
+                      Plot number
+                    </th>
                     <th className="min-w-52 whitespace-nowrap px-3 py-2.5 font-semibold">Tenant name</th>
                     <th className="min-w-40 whitespace-nowrap px-3 py-2.5 font-semibold">Phone number</th>
                     <th className="min-w-40 whitespace-nowrap px-3 py-2.5 text-right font-semibold">Advance amount</th>
@@ -270,7 +273,7 @@ export default function AdminDashboard({ username }: { username: string }) {
                       onClick={() => router.push(`/admin/plots/${row.unit.id}?month=${monthParam}`)}
                       className="cursor-pointer border-t border-primary/5 active:bg-primary-light/60 sm:hover:bg-primary-light/40"
                     >
-                      <td className="whitespace-nowrap px-3 py-3 font-semibold text-foreground">
+                      <td className="sticky left-0 z-10 whitespace-nowrap border-r border-primary/10 bg-white px-3 py-3 font-semibold text-foreground">
                         {row.unit.plotNumber}
                       </td>
                       <td className="max-w-[220px] truncate px-3 py-3 text-foreground/80">
