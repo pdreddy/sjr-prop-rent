@@ -4,8 +4,9 @@ import { getAuthedAdmin } from "@/lib/auth";
 import { upsertPaymentSchema } from "@/lib/validation";
 import { recordAuditLog } from "@/lib/audit";
 import { serializePayment } from "@/lib/serialize";
+import { withErrorHandling } from "@/lib/apiHandler";
 
-export async function PUT(request: NextRequest) {
+export const PUT = withErrorHandling(async (request: NextRequest) => {
   const admin = await getAuthedAdmin();
   if (!admin) {
     return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
@@ -65,4 +66,4 @@ export async function PUT(request: NextRequest) {
   });
 
   return NextResponse.json({ payment: serializePayment(payment) });
-}
+});

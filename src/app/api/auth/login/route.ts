@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { login } from "@/lib/auth";
 import { loginSchema } from "@/lib/validation";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
+import { withErrorHandling } from "@/lib/apiHandler";
 
-export async function POST(request: NextRequest) {
+export const POST = withErrorHandling(async (request: NextRequest) => {
   const ip = getClientIp(request);
   const { allowed } = checkRateLimit(`login:${ip}`, 10, 5 * 60 * 1000);
   if (!allowed) {
@@ -19,17 +20,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid username or password." }, { status: 400 });
   }
 
-  try {
-    const result = await login(parsed.data.username, parsed.data.password);
-    if (!result.ok) {
-      return NextResponse.json({ error: result.error }, { status: 401 });
-    }
-    return NextResponse.json({ ok: true });
-  } catch (err) {
-    console.error("Login failed with an unexpected error:", err);
-    return NextResponse.json(
-      { error: "Server error while signing in. Check the server logs for details." },
-      { status: 500 }
-    );
+  const result = await login(parsed.data.username, parsed.data.password);
+  if (!result.ok) {
+    return NextResponse.json({ error: result.error }, { status: 401 });
   }
-}
+  return NextResponse.json({ ok: true });
+});

@@ -4,8 +4,9 @@ import { prisma } from "@/lib/prisma";
 import { getAuthedAdmin } from "@/lib/auth";
 import { changePasswordSchema } from "@/lib/validation";
 import { recordAuditLog } from "@/lib/audit";
+import { withErrorHandling } from "@/lib/apiHandler";
 
-export async function POST(request: NextRequest) {
+export const POST = withErrorHandling(async (request: NextRequest) => {
   const admin = await getAuthedAdmin();
   if (!admin) {
     return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
@@ -44,4 +45,4 @@ export async function POST(request: NextRequest) {
   });
 
   return NextResponse.json({ ok: true });
-}
+});

@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthedAdmin } from "@/lib/auth";
+import { withErrorHandling } from "@/lib/apiHandler";
 
-export async function GET(request: NextRequest) {
+export const GET = withErrorHandling(async (request: NextRequest) => {
   const admin = await getAuthedAdmin();
   if (!admin) {
     return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
@@ -27,4 +28,4 @@ export async function GET(request: NextRequest) {
       createdAt: log.createdAt,
     })),
   });
-}
+});

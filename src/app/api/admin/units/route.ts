@@ -4,8 +4,9 @@ import { getAuthedAdmin } from "@/lib/auth";
 import { createUnitSchema } from "@/lib/validation";
 import { recordAuditLog } from "@/lib/audit";
 import { serializeUnit } from "@/lib/serialize";
+import { withErrorHandling } from "@/lib/apiHandler";
 
-export async function GET(request: NextRequest) {
+export const GET = withErrorHandling(async (request: NextRequest) => {
   const admin = await getAuthedAdmin();
   if (!admin) {
     return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
@@ -27,9 +28,9 @@ export async function GET(request: NextRequest) {
   });
 
   return NextResponse.json({ units: units.map(serializeUnit) });
-}
+});
 
-export async function POST(request: NextRequest) {
+export const POST = withErrorHandling(async (request: NextRequest) => {
   const admin = await getAuthedAdmin();
   if (!admin) {
     return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
@@ -79,4 +80,4 @@ export async function POST(request: NextRequest) {
   });
 
   return NextResponse.json({ unit: serializeUnit(unit) }, { status: 201 });
-}
+});

@@ -44,7 +44,9 @@ export default function UnitEditorModal({ row, month, onClose, onSaved }: Props)
   const [submitting, setSubmitting] = useState(false);
 
   const rentSum = Number(rentAmount || 0) + Number(maintenanceAmount || 0);
-  const balanceDue = Math.max(0, rentSum - Number(amountPaid || 0));
+  // Can go negative to reflect an overpayment/credit — matches the API's
+  // validation range and how imported records are stored.
+  const balanceDue = rentSum - Number(amountPaid || 0);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();

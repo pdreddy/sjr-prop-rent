@@ -4,11 +4,12 @@ import { getAuthedAdmin } from "@/lib/auth";
 import { updateUnitSchema } from "@/lib/validation";
 import { recordAuditLog } from "@/lib/audit";
 import { serializeUnit } from "@/lib/serialize";
+import { withErrorHandling } from "@/lib/apiHandler";
 
-export async function PATCH(
+export const PATCH = withErrorHandling(async (
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
-) {
+) => {
   const admin = await getAuthedAdmin();
   if (!admin) {
     return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
@@ -74,4 +75,4 @@ export async function PATCH(
   });
 
   return NextResponse.json({ unit: serializeUnit(unit) });
-}
+});

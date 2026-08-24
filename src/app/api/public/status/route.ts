@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { BUILDING_NAME } from "@/lib/constants";
 import { isValidMonth, getCurrentMonth } from "@/lib/month";
+import { withErrorHandling } from "@/lib/apiHandler";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(request: NextRequest) {
+export const GET = withErrorHandling(async (request: NextRequest) => {
   const monthParam = request.nextUrl.searchParams.get("month");
   const month = monthParam && isValidMonth(monthParam) ? monthParam : getCurrentMonth();
 
@@ -41,4 +42,4 @@ export async function GET(request: NextRequest) {
     paidCount,
     plots,
   });
-}
+});
