@@ -4,7 +4,7 @@ export interface PublicPlot {
   plotNumber: string;
   tenantName: string | null;
   moveInDate: string | null;
-  status: "PAID" | "UNPAID";
+  status: PaymentStatus;
   amountPaid: number;
   paidDate: string | null;
 }

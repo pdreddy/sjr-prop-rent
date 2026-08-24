@@ -18,8 +18,7 @@ export async function GET(request: NextRequest) {
       plotNumber: unit.plotNumber,
       tenantName: unit.tenantName,
       moveInDate: unit.moveInDate?.toISOString() ?? null,
-      // Public view collapses PARTIAL into "unpaid so far" — only PAID counts as paid.
-      status: payment?.paymentStatus === "PAID" ? "PAID" as const : "UNPAID" as const,
+      status: payment?.paymentStatus ?? ("UNPAID" as const),
       amountPaid: payment?.amountPaid ?? 0,
       paidDate: payment?.paidDate?.toISOString() ?? null,
     };
