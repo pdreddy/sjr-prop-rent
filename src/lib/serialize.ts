@@ -1,19 +1,39 @@
-import type { Unit, Payment } from "@/generated/prisma/client";
+import type { UnitRecord, PaymentRecord } from "./db";
+import type { UnitDTO, PaymentDTO } from "./types";
 
-export function serializeUnit(unit: Unit) {
+function toIso(epochMs: number | null | undefined): string | null {
+  return epochMs === null || epochMs === undefined ? null : new Date(epochMs).toISOString();
+}
+
+export function serializeUnit(unit: UnitRecord): UnitDTO {
   return {
-    ...unit,
-    monthlyRent: Number(unit.monthlyRent),
-    maintenanceAmount: Number(unit.maintenanceAmount),
+    id: unit.id,
+    plotNumber: unit.plotNumber,
+    tenantName: unit.tenantName,
+    moveInDate: toIso(unit.moveInDate),
+    phone: unit.phone,
+    monthlyRent: unit.monthlyRent,
+    maintenanceAmount: unit.maintenanceAmount,
+    active: unit.active,
+    createdAt: toIso(unit.createdAt) as string,
+    updatedAt: toIso(unit.updatedAt) as string,
   };
 }
 
-export function serializePayment(payment: Payment) {
+export function serializePayment(payment: PaymentRecord): PaymentDTO {
   return {
-    ...payment,
-    rentAmount: Number(payment.rentAmount),
-    maintenanceAmount: Number(payment.maintenanceAmount),
-    amountPaid: Number(payment.amountPaid),
-    balanceDue: Number(payment.balanceDue),
+    id: payment.id,
+    unitId: payment.unitId,
+    month: payment.month,
+    paymentStatus: payment.paymentStatus,
+    rentAmount: payment.rentAmount,
+    maintenanceAmount: payment.maintenanceAmount,
+    amountPaid: payment.amountPaid,
+    balanceDue: payment.balanceDue,
+    paidDate: toIso(payment.paidDate),
+    notes: payment.notes,
+    updatedBy: payment.updatedBy,
+    createdAt: toIso(payment.createdAt) as string,
+    updatedAt: toIso(payment.updatedAt) as string,
   };
 }

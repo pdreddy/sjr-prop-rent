@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { getUnitById, getUnitByPlotNumber, updateUnit } from "@/lib/db";
 import { getAuthedAdmin } from "@/lib/auth";
 import { updateUnitSchema } from "@/lib/validation";
 import { recordAuditLog } from "@/lib/audit";
@@ -16,7 +16,7 @@ export const PATCH = withErrorHandling(async (
   }
 
   const { id } = await params;
-  const existing = await prisma.unit.findUnique({ where: { id } });
+  const existing = await getUnitById(id);
   if (!existing) {
     return NextResponse.json({ error: "Plot not found." }, { status: 404 });
   }
@@ -31,9 +31,7 @@ export const PATCH = withErrorHandling(async (
   }
 
   if (parsed.data.plotNumber && parsed.data.plotNumber !== existing.plotNumber) {
-    const conflict = await prisma.unit.findUnique({
-      where: { plotNumber: parsed.data.plotNumber },
-    });
+    const conflict = await getUnitByPlotNumber(parsed.data.plotNumber);
     if (conflict) {
       return NextResponse.json(
         { error: "A plot with this number already exists." },
@@ -50,19 +48,16 @@ export const PATCH = withErrorHandling(async (
     }
   }
 
-  const unit = await prisma.unit.update({
-    where: { id },
-    data: {
-      ...(parsed.data.plotNumber !== undefined && { plotNumber: parsed.data.plotNumber }),
-      ...(parsed.data.tenantName !== undefined && { tenantName: parsed.data.tenantName || null }),
-      ...(moveInDate !== undefined && { moveInDate }),
-      ...(parsed.data.phone !== undefined && { phone: parsed.data.phone || null }),
-      ...(parsed.data.monthlyRent !== undefined && { monthlyRent: parsed.data.monthlyRent }),
-      ...(parsed.data.maintenanceAmount !== undefined && {
-        maintenanceAmount: parsed.data.maintenanceAmount,
-      }),
-      ...(parsed.data.active !== undefined && { active: parsed.data.active }),
-    },
+  const unit = await updateUnit(id, existing.plotNumber, {
+    ...(parsed.data.plotNumber !== undefined && { plotNumber: parsed.data.plotNumber }),
+    ...(parsed.data.tenantName !== undefined && { tenantName: parsed.data.tenantName || null }),
+    ...(moveInDate !== undefined && { moveInDate: moveInDate ? moveInDate.getTime() : null }),
+    ...(parsed.data.phone !== undefined && { phone: parsed.data.phone || null }),
+    ...(parsed.data.monthlyRent !== undefined && { monthlyRent: parsed.data.monthlyRent }),
+    ...(parsed.data.maintenanceAmount !== undefined && {
+      maintenanceAmount: parsed.data.maintenanceAmount,
+    }),
+    ...(parsed.data.active !== undefined && { active: parsed.data.active }),
   });
 
   await recordAuditLog({

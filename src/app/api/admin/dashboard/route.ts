@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { listUnits, getPaymentsForUnits } from "@/lib/db";
 import { getAuthedAdmin } from "@/lib/auth";
 import { isValidMonth, getCurrentMonth } from "@/lib/month";
 import { serializeUnit, serializePayment } from "@/lib/serialize";
@@ -14,34 +14,30 @@ export const GET = withErrorHandling(async (request: NextRequest) => {
   const params = request.nextUrl.searchParams;
   const monthParam = params.get("month");
   const month = monthParam && isValidMonth(monthParam) ? monthParam : getCurrentMonth();
-  const search = params.get("search")?.trim();
+  const search = params.get("search")?.trim().toLowerCase();
   const statusFilter = params.get("status"); // PAID | UNPAID | PARTIAL | VACANT | ALL
 
-  const units = await prisma.unit.findMany({
-    where: {
-      active: true,
-      ...(search
-        ? {
-            OR: [
-              { plotNumber: { contains: search, mode: "insensitive" } },
-              { tenantName: { contains: search, mode: "insensitive" } },
-              { phone: { contains: search, mode: "insensitive" } },
-            ],
-          }
-        : {}),
-    },
-    orderBy: { plotNumber: "asc" },
-    include: {
-      payments: { where: { month } },
-    },
-  });
+  let units = (await listUnits()).filter((u) => u.active);
+  if (search) {
+    units = units.filter(
+      (u) =>
+        u.plotNumber.toLowerCase().includes(search) ||
+        (u.tenantName?.toLowerCase().includes(search) ?? false) ||
+        (u.phone?.toLowerCase().includes(search) ?? false)
+    );
+  }
+  units.sort((a, b) => a.plotNumber.localeCompare(b.plotNumber));
+
+  const payments = await getPaymentsForUnits(
+    units.map((u) => u.id),
+    month
+  );
 
   let rows = units.map((unit) => {
-    const { payments, ...unitFields } = unit;
-    const payment = payments[0] ?? null;
+    const payment = payments.get(unit.id) ?? null;
     const isVacant = !unit.tenantName || unit.tenantName.trim().length === 0;
     return {
-      unit: serializeUnit(unitFields),
+      unit: serializeUnit(unit),
       payment: payment ? serializePayment(payment) : null,
       isVacant,
       effectiveStatus: payment?.paymentStatus ?? "UNPAID",

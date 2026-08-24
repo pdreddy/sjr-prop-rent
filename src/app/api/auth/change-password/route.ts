@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-import { prisma } from "@/lib/prisma";
+import { getAdminByUsername, updateAdmin } from "@/lib/db";
 import { getAuthedAdmin } from "@/lib/auth";
 import { changePasswordSchema } from "@/lib/validation";
 import { recordAuditLog } from "@/lib/audit";
@@ -21,7 +21,7 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
     );
   }
 
-  const record = await prisma.admin.findUnique({ where: { id: admin.id } });
+  const record = await getAdminByUsername(admin.id);
   if (!record) {
     return NextResponse.json({ error: "Admin not found." }, { status: 404 });
   }
@@ -32,10 +32,7 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
   }
 
   const newHash = await bcrypt.hash(parsed.data.newPassword, 12);
-  await prisma.admin.update({
-    where: { id: admin.id },
-    data: { passwordHash: newHash },
-  });
+  await updateAdmin(admin.id, { passwordHash: newHash });
 
   await recordAuditLog({
     adminId: admin.id,

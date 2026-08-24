@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { listUnits, getPaymentsForUnits } from "@/lib/db";
 import { BUILDING_NAME } from "@/lib/constants";
 import { isValidMonth, getCurrentMonth } from "@/lib/month";
 import { withErrorHandling } from "@/lib/apiHandler";
@@ -10,27 +10,22 @@ export const GET = withErrorHandling(async (request: NextRequest) => {
   const monthParam = request.nextUrl.searchParams.get("month");
   const month = monthParam && isValidMonth(monthParam) ? monthParam : getCurrentMonth();
 
-  const units = await prisma.unit.findMany({
-    where: { active: true },
-    orderBy: { plotNumber: "asc" },
-    select: {
-      id: true,
-      plotNumber: true,
-      tenantName: true,
-      moveInDate: true,
-      payments: {
-        where: { month },
-        select: { paymentStatus: true },
-      },
-    },
-  });
+  const allUnits = await listUnits();
+  const units = allUnits
+    .filter((u) => u.active)
+    .sort((a, b) => a.plotNumber.localeCompare(b.plotNumber));
+
+  const payments = await getPaymentsForUnits(
+    units.map((u) => u.id),
+    month
+  );
 
   const plots = units.map((unit) => ({
     plotNumber: unit.plotNumber,
     tenantName: unit.tenantName,
-    moveInDate: unit.moveInDate,
+    moveInDate: unit.moveInDate === null ? null : new Date(unit.moveInDate).toISOString(),
     // Public view collapses PARTIAL into "unpaid so far" — only PAID counts as paid.
-    status: unit.payments[0]?.paymentStatus === "PAID" ? "PAID" : "UNPAID",
+    status: payments.get(unit.id)?.paymentStatus === "PAID" ? "PAID" : "UNPAID",
   }));
 
   const paidCount = plots.filter((p) => p.status === "PAID").length;

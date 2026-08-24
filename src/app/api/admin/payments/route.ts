@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { getUnitById, getPayment, upsertPayment } from "@/lib/db";
 import { getAuthedAdmin } from "@/lib/auth";
 import { upsertPaymentSchema } from "@/lib/validation";
 import { recordAuditLog } from "@/lib/audit";
@@ -21,7 +21,7 @@ export const PUT = withErrorHandling(async (request: NextRequest) => {
     );
   }
 
-  const unit = await prisma.unit.findUnique({ where: { id: parsed.data.unitId } });
+  const unit = await getUnitById(parsed.data.unitId);
   if (!unit) {
     return NextResponse.json({ error: "Plot not found." }, { status: 404 });
   }
@@ -31,29 +31,17 @@ export const PUT = withErrorHandling(async (request: NextRequest) => {
     return NextResponse.json({ error: "Invalid paid date." }, { status: 400 });
   }
 
-  const existing = await prisma.payment.findUnique({
-    where: { unitId_month: { unitId: parsed.data.unitId, month: parsed.data.month } },
-  });
+  const existing = await getPayment(parsed.data.unitId, parsed.data.month);
 
-  const data = {
+  const { payment } = await upsertPayment(parsed.data.unitId, parsed.data.month, {
     paymentStatus: parsed.data.paymentStatus,
     rentAmount: parsed.data.rentAmount,
     maintenanceAmount: parsed.data.maintenanceAmount,
     amountPaid: parsed.data.amountPaid,
     balanceDue: parsed.data.balanceDue,
-    paidDate,
+    paidDate: paidDate ? paidDate.getTime() : null,
     notes: parsed.data.notes || null,
     updatedBy: admin.username,
-  };
-
-  const payment = await prisma.payment.upsert({
-    where: { unitId_month: { unitId: parsed.data.unitId, month: parsed.data.month } },
-    create: {
-      unitId: parsed.data.unitId,
-      month: parsed.data.month,
-      ...data,
-    },
-    update: data,
   });
 
   await recordAuditLog({

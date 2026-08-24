@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { listUnits, getPaymentsForUnits, createPaymentIfAbsent } from "@/lib/db";
 import { getAuthedAdmin } from "@/lib/auth";
 import { copyMonthSchema } from "@/lib/validation";
 import { recordAuditLog } from "@/lib/audit";
@@ -28,47 +28,46 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
     );
   }
 
-  const units = await prisma.unit.findMany({
-    where: { active: true },
-    include: {
-      payments: { where: { month: { in: [sourceMonth, targetMonth] } } },
-    },
-  });
+  const units = (await listUnits()).filter((u) => u.active);
+  const unitIds = units.map((u) => u.id);
+  const [sourcePayments, targetPayments] = await Promise.all([
+    getPaymentsForUnits(unitIds, sourceMonth),
+    getPaymentsForUnits(unitIds, targetMonth),
+  ]);
 
-  const toCreate = units.filter((unit) => {
-    const hasTarget = unit.payments.some((p) => p.month === targetMonth);
-    return !hasTarget;
-  });
+  const toCreate = units.filter((unit) => !targetPayments.has(unit.id));
 
-  const created = await prisma.$transaction(
+  const results = await Promise.all(
     toCreate.map((unit) => {
-      const sourcePayment = unit.payments.find((p) => p.month === sourceMonth);
+      const sourcePayment = sourcePayments.get(unit.id);
       const rentAmount = sourcePayment ? sourcePayment.rentAmount : unit.monthlyRent;
       const maintenanceAmount = sourcePayment
         ? sourcePayment.maintenanceAmount
         : unit.maintenanceAmount;
-      const totalExpected = Number(rentAmount) + Number(maintenanceAmount);
-      return prisma.payment.create({
-        data: {
-          unitId: unit.id,
-          month: targetMonth,
-          paymentStatus: "UNPAID",
-          rentAmount,
-          maintenanceAmount,
-          amountPaid: 0,
-          balanceDue: totalExpected,
-          updatedBy: admin.username,
-        },
+      const totalExpected = rentAmount + maintenanceAmount;
+      return createPaymentIfAbsent(unit.id, targetMonth, {
+        paymentStatus: "UNPAID",
+        rentAmount,
+        maintenanceAmount,
+        amountPaid: 0,
+        balanceDue: totalExpected,
+        paidDate: null,
+        notes: null,
+        updatedBy: admin.username,
       });
     })
   );
+  const createdCount = results.filter(Boolean).length;
 
   await recordAuditLog({
     adminId: admin.id,
     action: "COPY_MONTH",
     recordType: "Payment",
-    newValue: { sourceMonth, targetMonth, createdCount: created.length },
+    newValue: { sourceMonth, targetMonth, createdCount },
   });
 
-  return NextResponse.json({ createdCount: created.length, skippedCount: units.length - toCreate.length });
+  return NextResponse.json({
+    createdCount,
+    skippedCount: units.length - createdCount,
+  });
 });

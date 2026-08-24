@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { listUnits, getUnitByPlotNumber, createUnit } from "@/lib/db";
 import { getAuthedAdmin } from "@/lib/auth";
 import { createUnitSchema } from "@/lib/validation";
 import { recordAuditLog } from "@/lib/audit";
@@ -12,20 +12,18 @@ export const GET = withErrorHandling(async (request: NextRequest) => {
     return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
   }
 
-  const search = request.nextUrl.searchParams.get("search")?.trim();
+  const search = request.nextUrl.searchParams.get("search")?.trim().toLowerCase();
 
-  const units = await prisma.unit.findMany({
-    where: search
-      ? {
-          OR: [
-            { plotNumber: { contains: search, mode: "insensitive" } },
-            { tenantName: { contains: search, mode: "insensitive" } },
-            { phone: { contains: search, mode: "insensitive" } },
-          ],
-        }
-      : undefined,
-    orderBy: { plotNumber: "asc" },
-  });
+  let units = await listUnits();
+  if (search) {
+    units = units.filter(
+      (u) =>
+        u.plotNumber.toLowerCase().includes(search) ||
+        (u.tenantName?.toLowerCase().includes(search) ?? false) ||
+        (u.phone?.toLowerCase().includes(search) ?? false)
+    );
+  }
+  units.sort((a, b) => a.plotNumber.localeCompare(b.plotNumber));
 
   return NextResponse.json({ units: units.map(serializeUnit) });
 });
@@ -45,9 +43,7 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
     );
   }
 
-  const existing = await prisma.unit.findUnique({
-    where: { plotNumber: parsed.data.plotNumber },
-  });
+  const existing = await getUnitByPlotNumber(parsed.data.plotNumber);
   if (existing) {
     return NextResponse.json(
       { error: "A plot with this number already exists." },
@@ -60,15 +56,14 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
     return NextResponse.json({ error: "Invalid move-in date." }, { status: 400 });
   }
 
-  const unit = await prisma.unit.create({
-    data: {
-      plotNumber: parsed.data.plotNumber,
-      tenantName: parsed.data.tenantName || null,
-      moveInDate,
-      phone: parsed.data.phone || null,
-      monthlyRent: parsed.data.monthlyRent,
-      maintenanceAmount: parsed.data.maintenanceAmount ?? 0,
-    },
+  const unit = await createUnit({
+    plotNumber: parsed.data.plotNumber,
+    tenantName: parsed.data.tenantName || null,
+    moveInDate: moveInDate ? moveInDate.getTime() : null,
+    phone: parsed.data.phone || null,
+    monthlyRent: parsed.data.monthlyRent,
+    maintenanceAmount: parsed.data.maintenanceAmount ?? 0,
+    active: true,
   });
 
   await recordAuditLog({

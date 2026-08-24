@@ -1,8 +1,8 @@
 import "server-only";
-import { prisma } from "./prisma";
+import { createAuditLog as createAuditLogRecord } from "./db";
 
 export interface AuditLogInput {
-  adminId: string;
+  adminId: string; // = admin username
   action: string;
   recordType: string;
   recordId?: string | null;
@@ -11,14 +11,12 @@ export interface AuditLogInput {
 }
 
 export async function recordAuditLog(input: AuditLogInput): Promise<void> {
-  await prisma.auditLog.create({
-    data: {
-      adminId: input.adminId,
-      action: input.action,
-      recordType: input.recordType,
-      recordId: input.recordId ?? null,
-      previousValue: input.previousValue === undefined ? undefined : (input.previousValue as object),
-      newValue: input.newValue === undefined ? undefined : (input.newValue as object),
-    },
+  await createAuditLogRecord({
+    adminUsername: input.adminId,
+    action: input.action,
+    recordType: input.recordType,
+    recordId: input.recordId ?? null,
+    previousValue: input.previousValue,
+    newValue: input.newValue,
   });
 }

@@ -1,6 +1,6 @@
 import "server-only";
 import bcrypt from "bcryptjs";
-import { prisma } from "./prisma";
+import { getAdminByUsername, updateAdmin } from "./db";
 import { getSession, setSessionCookie, clearSessionCookie } from "./session";
 import { MAX_FAILED_LOGIN_ATTEMPTS, LOCKOUT_DURATION_MINUTES } from "./constants";
 
@@ -17,7 +17,7 @@ export async function login(
   username: string,
   password: string
 ): Promise<LoginResult> {
-  const admin = await prisma.admin.findUnique({ where: { username } });
+  const admin = await getAdminByUsername(username);
 
   // Always run a bcrypt compare, even for unknown usernames, so response
   // timing doesn't reveal whether the username exists.
@@ -28,10 +28,8 @@ export async function login(
     return { ok: false, error: "Invalid username or password." };
   }
 
-  if (admin.lockedUntil && admin.lockedUntil > new Date()) {
-    const minutesLeft = Math.ceil(
-      (admin.lockedUntil.getTime() - Date.now()) / 60000
-    );
+  if (admin.lockedUntil && admin.lockedUntil > Date.now()) {
+    const minutesLeft = Math.ceil((admin.lockedUntil - Date.now()) / 60000);
     return {
       ok: false,
       error: `Account temporarily locked. Try again in ${minutesLeft} minute(s).`,
@@ -41,22 +39,14 @@ export async function login(
   if (!passwordMatches) {
     const failedAttempts = admin.failedLoginAttempts + 1;
     const shouldLock = failedAttempts >= MAX_FAILED_LOGIN_ATTEMPTS;
-    await prisma.admin.update({
-      where: { id: admin.id },
-      data: {
-        failedLoginAttempts: shouldLock ? 0 : failedAttempts,
-        lockedUntil: shouldLock
-          ? new Date(Date.now() + LOCKOUT_DURATION_MINUTES * 60 * 1000)
-          : null,
-      },
+    await updateAdmin(admin.username, {
+      failedLoginAttempts: shouldLock ? 0 : failedAttempts,
+      lockedUntil: shouldLock ? Date.now() + LOCKOUT_DURATION_MINUTES * 60 * 1000 : null,
     });
     return { ok: false, error: "Invalid username or password." };
   }
 
-  await prisma.admin.update({
-    where: { id: admin.id },
-    data: { failedLoginAttempts: 0, lockedUntil: null },
-  });
+  await updateAdmin(admin.username, { failedLoginAttempts: 0, lockedUntil: null });
 
   await setSessionCookie({ adminId: admin.id, username: admin.username });
   return { ok: true };
@@ -75,10 +65,7 @@ export async function getAuthedAdmin(): Promise<AuthedAdmin | null> {
   const session = await getSession();
   if (!session) return null;
 
-  const admin = await prisma.admin.findUnique({
-    where: { id: session.adminId },
-    select: { id: true, username: true, active: true },
-  });
+  const admin = await getAdminByUsername(session.adminId);
 
   if (!admin || !admin.active || admin.username !== session.username) {
     return null;

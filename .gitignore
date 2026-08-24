@@ -41,10 +41,12 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-/src/generated/prisma
+# Firebase service account credentials — never commit these
+firebase-service-account*.json
+serviceAccountKey.json
 
-# agent skill docs fetched by `prisma init` (tooling reference, not app code)
-/.agents/
-/.claude/
-/.windsurf/
-skills-lock.json
+# Firebase emulator local state
+firebase-debug.log
+database-debug.log
+.firebase/
+emulator-data/
