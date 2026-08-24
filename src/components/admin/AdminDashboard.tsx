@@ -258,7 +258,7 @@ export default function AdminDashboard({ username }: { username: string }) {
                     <th className="sticky left-0 z-20 w-[64px] min-w-[64px] bg-primary-light px-3 py-2.5 font-semibold">Plot#</th>
                     <th className="sticky left-[64px] z-20 w-[140px] min-w-[140px] border-r border-primary/10 bg-primary-light px-3 py-2.5 font-semibold shadow-[2px_0_4px_rgba(0,0,0,0.04)]">Name</th>
                     <th className="w-[100px] min-w-[100px] px-3 py-2.5 font-semibold">Rent sum</th>
-                    <th className="w-[90px] min-w-[90px] px-3 py-2.5 font-semibold">Paid</th>
+                    <th className="w-[130px] min-w-[130px] px-3 py-2.5 font-semibold">Paid</th>
                     <th className="w-[110px] min-w-[110px] px-3 py-2.5 font-semibold">Paid date</th>
                     <th className="w-[100px] min-w-[100px] px-3 py-2.5 font-semibold">Status</th>
                     <th className="w-[90px] min-w-[90px] px-3 py-2.5 font-semibold">Balance</th>
@@ -268,7 +268,7 @@ export default function AdminDashboard({ username }: { username: string }) {
                     <th className="w-[110px] min-w-[110px] px-3 py-2.5 font-semibold">Advance</th>
                     <th className="w-[90px] min-w-[90px] px-3 py-2.5 font-semibold">Rent</th>
                     <th className="w-[100px] min-w-[100px] px-3 py-2.5 font-semibold">Maintenance</th>
-                    <th className="w-[150px] min-w-[150px] px-3 py-2.5 font-semibold">Actions</th>
+                    <th className="sticky right-0 z-20 w-[110px] min-w-[110px] border-l border-primary/10 bg-primary-light px-3 py-2.5 font-semibold shadow-[-2px_0_4px_rgba(0,0,0,0.04)]">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -298,7 +298,7 @@ export default function AdminDashboard({ username }: { username: string }) {
                           {row.unit.tenantName || "Vacant"}
                         </td>
                         <td className="w-[100px] min-w-[100px] px-3 py-3 font-medium">₹{rentSum.toFixed(0)}</td>
-                        <td className="w-[90px] min-w-[90px] px-3 py-3">₹{(row.payment?.amountPaid ?? 0).toFixed(0)}</td>
+                        <td className="w-[130px] min-w-[130px] px-3 py-3">₹{(row.payment?.amountPaid ?? 0).toFixed(0)}</td>
                         <td className="w-[110px] min-w-[110px] px-3 py-3 text-foreground/80">
                           {formatDate(row.payment?.paidDate ?? null)}
                         </td>
@@ -316,7 +316,7 @@ export default function AdminDashboard({ username }: { username: string }) {
                         <td className="w-[110px] min-w-[110px] px-3 py-3">₹{row.unit.advanceAmount.toFixed(0)}</td>
                         <td className="w-[90px] min-w-[90px] px-3 py-3">₹{rentAmount.toFixed(0)}</td>
                         <td className="w-[100px] min-w-[100px] px-3 py-3">₹{maintenanceAmount.toFixed(0)}</td>
-                        <td className="w-[150px] min-w-[150px] px-3 py-3">
+                        <td className="sticky right-0 z-10 w-[110px] min-w-[110px] border-l border-primary/10 bg-white px-3 py-3 shadow-[-2px_0_4px_rgba(0,0,0,0.04)]">
                           <div className="flex gap-1.5">
                             <button
                               onClick={() => setInlineEditingId(row.unit.id)}
@@ -459,8 +459,29 @@ function InlineEditRow({
         <input aria-label="Tenant name" value={tenantName} onChange={(e) => setTenantName(e.target.value)} className={inputClass} />
       </td>
       <td className="w-[100px] min-w-[100px] px-3 py-3 font-semibold">₹{rentSum.toFixed(0)}</td>
-      <td className="w-[90px] min-w-[90px] px-2 py-2">
-        <input aria-label="Amount paid" type="number" min="0" value={amountPaid} onChange={(e) => setAmountPaid(e.target.value)} className={inputClass} />
+      <td className="w-[130px] min-w-[130px] px-2 py-2">
+        <div className="flex items-center gap-1">
+          <input
+            aria-label="Amount paid"
+            type="number"
+            min="0"
+            inputMode="decimal"
+            value={amountPaid}
+            onChange={(e) => setAmountPaid(e.target.value)}
+            className={inputClass}
+          />
+          <button
+            type="button"
+            onClick={() => {
+              setAmountPaid(String(rentSum));
+              if (!paidDate) setPaidDate(new Date().toISOString().slice(0, 10));
+            }}
+            title="Fill full rent sum as paid"
+            className="min-h-9 shrink-0 whitespace-nowrap rounded-lg border border-paid/40 bg-paid-bg px-2 py-1.5 text-xs font-semibold text-paid hover:bg-paid/20"
+          >
+            Full
+          </button>
+        </div>
       </td>
       <td className="w-[110px] min-w-[110px] px-2 py-2">
         <input aria-label="Paid date" type="date" required={paidNumber > 0} value={paidDate} onChange={(e) => setPaidDate(e.target.value)} className={inputClass} />
@@ -487,8 +508,8 @@ function InlineEditRow({
       <td className="w-[100px] min-w-[100px] px-2 py-2">
         <input aria-label="Maintenance" type="number" min="0" value={maintenance} onChange={(e) => setMaintenance(e.target.value)} className={inputClass} />
       </td>
-      <td className="w-[150px] min-w-[150px] px-2 py-2">
-        <div className="flex gap-1">
+      <td className="sticky right-0 z-10 w-[110px] min-w-[110px] border-l border-primary/10 bg-[#f5f8f7] px-2 py-2 shadow-[-2px_0_4px_rgba(0,0,0,0.04)]">
+        <div className="flex flex-col gap-1">
           <button
             type="button"
             onClick={save}
