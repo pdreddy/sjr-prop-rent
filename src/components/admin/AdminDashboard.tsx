@@ -257,16 +257,17 @@ export default function AdminDashboard({ username }: { username: string }) {
                   <tr>
                     <th className="sticky left-0 z-20 w-[64px] min-w-[64px] bg-primary-light px-3 py-2.5 font-semibold">Plot#</th>
                     <th className="sticky left-[64px] z-20 w-[140px] min-w-[140px] border-r border-primary/10 bg-primary-light px-3 py-2.5 font-semibold shadow-[2px_0_4px_rgba(0,0,0,0.04)]">Name</th>
-                    <th className="w-[100px] min-w-[100px] px-3 py-2.5 font-semibold">Maintenance</th>
+                    <th className="w-[100px] min-w-[100px] px-3 py-2.5 font-semibold">Rent sum</th>
                     <th className="w-[90px] min-w-[90px] px-3 py-2.5 font-semibold">Paid</th>
                     <th className="w-[110px] min-w-[110px] px-3 py-2.5 font-semibold">Paid date</th>
-                    <th className="w-[90px] min-w-[90px] px-3 py-2.5 font-semibold">Balance</th>
                     <th className="w-[100px] min-w-[100px] px-3 py-2.5 font-semibold">Status</th>
+                    <th className="w-[90px] min-w-[90px] px-3 py-2.5 font-semibold">Balance</th>
                     <th className="w-[130px] min-w-[130px] px-3 py-2.5 font-semibold">Phone</th>
                     <th className="w-[180px] min-w-[180px] px-3 py-2.5 font-semibold">Notes</th>
-                    <th className="w-[90px] min-w-[90px] px-3 py-2.5 font-semibold">Rent</th>
                     <th className="w-[110px] min-w-[110px] px-3 py-2.5 font-semibold">Joining date</th>
-                    <th className="w-[100px] min-w-[100px] px-3 py-2.5 font-semibold">Rent sum</th>
+                    <th className="w-[110px] min-w-[110px] px-3 py-2.5 font-semibold">Advance</th>
+                    <th className="w-[90px] min-w-[90px] px-3 py-2.5 font-semibold">Rent</th>
+                    <th className="w-[100px] min-w-[100px] px-3 py-2.5 font-semibold">Maintenance</th>
                     <th className="w-[150px] min-w-[150px] px-3 py-2.5 font-semibold">Actions</th>
                   </tr>
                 </thead>
@@ -296,24 +297,25 @@ export default function AdminDashboard({ username }: { username: string }) {
                         <td className="sticky left-[64px] z-10 w-[140px] min-w-[140px] border-r border-primary/10 bg-white px-3 py-3 text-foreground/80 shadow-[2px_0_4px_rgba(0,0,0,0.04)]">
                           {row.unit.tenantName || "Vacant"}
                         </td>
-                        <td className="w-[100px] min-w-[100px] px-3 py-3">₹{maintenanceAmount.toFixed(0)}</td>
+                        <td className="w-[100px] min-w-[100px] px-3 py-3 font-medium">₹{rentSum.toFixed(0)}</td>
                         <td className="w-[90px] min-w-[90px] px-3 py-3">₹{(row.payment?.amountPaid ?? 0).toFixed(0)}</td>
                         <td className="w-[110px] min-w-[110px] px-3 py-3 text-foreground/80">
                           {formatDate(row.payment?.paidDate ?? null)}
                         </td>
-                        <td className="w-[90px] min-w-[90px] px-3 py-3">₹{(row.payment?.balanceDue ?? 0).toFixed(0)}</td>
                         <td className="w-[100px] min-w-[100px] px-3 py-3">
                           <StatusBadge status={row.isVacant ? "VACANT" : row.effectiveStatus} />
                         </td>
+                        <td className="w-[90px] min-w-[90px] px-3 py-3">₹{(row.payment?.balanceDue ?? 0).toFixed(0)}</td>
                         <td className="w-[130px] min-w-[130px] px-3 py-3">{row.unit.phone || "—"}</td>
                         <td className="w-[180px] min-w-[180px] truncate px-3 py-3 text-foreground/70">
                           {row.payment?.notes || "—"}
                         </td>
-                        <td className="w-[90px] min-w-[90px] px-3 py-3">₹{rentAmount.toFixed(0)}</td>
                         <td className="w-[110px] min-w-[110px] px-3 py-3 text-foreground/80">
                           {formatDate(row.unit.moveInDate)}
                         </td>
-                        <td className="w-[100px] min-w-[100px] px-3 py-3 font-medium">₹{rentSum.toFixed(0)}</td>
+                        <td className="w-[110px] min-w-[110px] px-3 py-3">₹{row.unit.advanceAmount.toFixed(0)}</td>
+                        <td className="w-[90px] min-w-[90px] px-3 py-3">₹{rentAmount.toFixed(0)}</td>
+                        <td className="w-[100px] min-w-[100px] px-3 py-3">₹{maintenanceAmount.toFixed(0)}</td>
                         <td className="w-[150px] min-w-[150px] px-3 py-3">
                           <div className="flex gap-1.5">
                             <button
@@ -380,6 +382,7 @@ function InlineEditRow({
   const [tenantName, setTenantName] = useState(row.unit.tenantName ?? "");
   const [moveInDate, setMoveInDate] = useState(row.unit.moveInDate?.slice(0, 10) ?? "");
   const [phone, setPhone] = useState(row.unit.phone ?? "");
+  const [advanceAmount, setAdvanceAmount] = useState(String(row.unit.advanceAmount));
   const [rent, setRent] = useState(String(row.payment?.rentAmount ?? row.unit.monthlyRent));
   const [maintenance, setMaintenance] = useState(
     String(row.payment?.maintenanceAmount ?? row.unit.maintenanceAmount)
@@ -414,6 +417,7 @@ function InlineEditRow({
           tenantName: tenantName || null,
           moveInDate: moveInDate || null,
           phone: phone || null,
+          advanceAmount: Number(advanceAmount || 0),
           monthlyRent: rentNumber,
           maintenanceAmount: maintenanceNumber,
         }),
@@ -454,32 +458,35 @@ function InlineEditRow({
       <td className="sticky left-[64px] z-10 w-[140px] min-w-[140px] border-r border-primary/10 bg-[#f5f8f7] px-2 py-2">
         <input aria-label="Tenant name" value={tenantName} onChange={(e) => setTenantName(e.target.value)} className={inputClass} />
       </td>
-      <td className="w-[100px] min-w-[100px] px-2 py-2">
-        <input aria-label="Maintenance" type="number" min="0" value={maintenance} onChange={(e) => setMaintenance(e.target.value)} className={inputClass} />
-      </td>
+      <td className="w-[100px] min-w-[100px] px-3 py-3 font-semibold">₹{rentSum.toFixed(0)}</td>
       <td className="w-[90px] min-w-[90px] px-2 py-2">
         <input aria-label="Amount paid" type="number" min="0" value={amountPaid} onChange={(e) => setAmountPaid(e.target.value)} className={inputClass} />
       </td>
       <td className="w-[110px] min-w-[110px] px-2 py-2">
         <input aria-label="Paid date" type="date" required={paidNumber > 0} value={paidDate} onChange={(e) => setPaidDate(e.target.value)} className={inputClass} />
       </td>
-      <td className="w-[90px] min-w-[90px] px-3 py-3">₹{balanceDue.toFixed(0)}</td>
       <td className="w-[100px] min-w-[100px] px-3 py-3">
         <StatusBadge status={tenantName.trim() ? status : "VACANT"} />
       </td>
+      <td className="w-[90px] min-w-[90px] px-3 py-3">₹{balanceDue.toFixed(0)}</td>
       <td className="w-[130px] min-w-[130px] px-2 py-2">
         <input aria-label="Phone number" inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className={inputClass} />
       </td>
       <td className="w-[180px] min-w-[180px] px-2 py-2">
         <input aria-label="Notes" value={notes} onChange={(e) => setNotes(e.target.value)} className={inputClass} />
       </td>
-      <td className="w-[90px] min-w-[90px] px-2 py-2">
-        <input aria-label="Rent" type="number" min="0" value={rent} onChange={(e) => setRent(e.target.value)} className={inputClass} />
-      </td>
       <td className="w-[110px] min-w-[110px] px-2 py-2">
         <input aria-label="Joining date" type="date" value={moveInDate} onChange={(e) => setMoveInDate(e.target.value)} className={inputClass} />
       </td>
-      <td className="w-[100px] min-w-[100px] px-3 py-3 font-semibold">₹{rentSum.toFixed(0)}</td>
+      <td className="w-[110px] min-w-[110px] px-2 py-2">
+        <input aria-label="Advance amount" type="number" min="0" value={advanceAmount} onChange={(e) => setAdvanceAmount(e.target.value)} className={inputClass} />
+      </td>
+      <td className="w-[90px] min-w-[90px] px-2 py-2">
+        <input aria-label="Rent" type="number" min="0" value={rent} onChange={(e) => setRent(e.target.value)} className={inputClass} />
+      </td>
+      <td className="w-[100px] min-w-[100px] px-2 py-2">
+        <input aria-label="Maintenance" type="number" min="0" value={maintenance} onChange={(e) => setMaintenance(e.target.value)} className={inputClass} />
+      </td>
       <td className="w-[150px] min-w-[150px] px-2 py-2">
         <div className="flex gap-1">
           <button
