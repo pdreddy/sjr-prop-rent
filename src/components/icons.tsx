@@ -131,3 +131,12 @@ export function IconEdit({ className = base }: IconProps) {
     </svg>
   );
 }
+
+export function IconInfo({ className = base }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M12 11v5.5M12 8v.01" />
+    </svg>
+  );
+}
