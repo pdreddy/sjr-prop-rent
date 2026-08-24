@@ -4,6 +4,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getCurrentMonth, formatMonthLabel } from "@/lib/month";
+import { setFlashMessage } from "@/lib/flash";
 import type { DashboardResponse, DashboardRow, PaymentStatus } from "@/lib/types";
 import { IconArrowLeft, IconTrash } from "@/components/icons";
 
@@ -116,7 +117,6 @@ function PlotForm({ row, month, isNew }: { row: DashboardRow | null; month: stri
 
   const defaultRent = row?.payment?.rentAmount ?? row?.unit.monthlyRent ?? 0;
   const defaultPaymentMaintenance = row?.payment?.maintenanceAmount ?? row?.unit.maintenanceAmount ?? 0;
-  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>(row?.payment?.paymentStatus ?? "UNPAID");
   const [rentAmount, setRentAmount] = useState(String(defaultRent));
   const [maintenanceAmount, setMaintenanceAmount] = useState(String(defaultPaymentMaintenance));
   const [amountPaid, setAmountPaid] = useState(String(row?.payment?.amountPaid ?? 0));
@@ -128,10 +128,16 @@ function PlotForm({ row, month, isNew }: { row: DashboardRow | null; month: stri
   const [deactivating, setDeactivating] = useState(false);
 
   const rentSum = Number(rentAmount || 0) + Number(maintenanceAmount || 0);
-  const balanceDue = Math.max(0, rentSum - Number(amountPaid || 0));
+  const paidNumber = Number(amountPaid || 0);
+  const balanceDue = Math.max(0, rentSum - paidNumber);
+  const paymentStatus: PaymentStatus = paidNumber <= 0 ? "UNPAID" : paidNumber >= rentSum ? "PAID" : "PARTIAL";
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    if (paidNumber > 0 && !paidDate) {
+      setError("Enter a paid date when an amount has been paid.");
+      return;
+    }
     setSubmitting(true);
     setError(null);
 
@@ -200,6 +206,7 @@ function PlotForm({ row, month, isNew }: { row: DashboardRow | null; month: stri
         return;
       }
 
+      setFlashMessage(`Plot ${plotNumber} saved.`);
       router.push(`/admin?month=${encodeURIComponent(month)}`);
       router.refresh();
     } catch {
@@ -220,6 +227,7 @@ function PlotForm({ row, month, isNew }: { row: DashboardRow | null; month: stri
         body: JSON.stringify({ active: false }),
       });
       if (res.ok) {
+        setFlashMessage(`Plot ${row.unit.plotNumber} deactivated.`);
         router.push(`/admin?month=${encodeURIComponent(month)}`);
         router.refresh();
       } else {
@@ -336,25 +344,26 @@ function PlotForm({ row, month, isNew }: { row: DashboardRow | null; month: stri
         <fieldset className={sectionClass}>
           <legend className={legendClass}>Payment — {formatMonthLabel(month)}</legend>
 
-          <div className="flex gap-2">
-            {(["PAID", "PARTIAL", "UNPAID"] as PaymentStatus[]).map((s) => (
-              <button
-                key={s}
-                type="button"
-                onClick={() => setPaymentStatus(s)}
-                className={`min-h-10 flex-1 rounded-lg border px-2 py-2 text-sm font-semibold transition-colors ${
-                  paymentStatus === s
-                    ? s === "PAID"
-                      ? "border-paid bg-paid-bg text-paid"
-                      : s === "PARTIAL"
-                      ? "border-partial bg-partial-bg text-partial"
-                      : "border-unpaid bg-unpaid-bg text-unpaid"
-                    : "border-primary/15 bg-white text-foreground/60"
-                }`}
-              >
-                {s.charAt(0) + s.slice(1).toLowerCase()}
-              </button>
-            ))}
+          <div className="flex flex-col gap-1">
+            <div className="flex gap-2">
+              {(["PAID", "PARTIAL", "UNPAID"] as PaymentStatus[]).map((s) => (
+                <span
+                  key={s}
+                  className={`flex-1 rounded-lg border px-2 py-2 text-center text-sm font-semibold ${
+                    paymentStatus === s
+                      ? s === "PAID"
+                        ? "border-paid bg-paid-bg text-paid"
+                        : s === "PARTIAL"
+                        ? "border-partial bg-partial-bg text-partial"
+                        : "border-unpaid bg-unpaid-bg text-unpaid"
+                      : "border-primary/10 bg-white text-foreground/30"
+                  }`}
+                >
+                  {s.charAt(0) + s.slice(1).toLowerCase()}
+                </span>
+              ))}
+            </div>
+            <span className="text-xs text-foreground/45">Status is set automatically from the amount paid.</span>
           </div>
 
           <div className="grid grid-cols-2 gap-3">

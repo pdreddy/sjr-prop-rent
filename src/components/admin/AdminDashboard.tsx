@@ -12,6 +12,7 @@ import {
   getPreviousMonth,
   formatMonthLabel,
 } from "@/lib/month";
+import { consumeFlashMessage } from "@/lib/flash";
 import type { DashboardResponse } from "@/lib/types";
 import {
   IconBuilding,
@@ -36,6 +37,7 @@ export default function AdminDashboard({ username }: { username: string }) {
   const [error, setError] = useState<string | null>(null);
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [copying, setCopying] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -65,6 +67,18 @@ export default function AdminDashboard({ username }: { username: string }) {
     load();
   }, [load]);
 
+  useEffect(() => {
+    const flash = consumeFlashMessage();
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional one-time read of flash message set before navigating here
+    if (flash) setMessage(flash);
+  }, []);
+
+  useEffect(() => {
+    if (!message) return;
+    const t = setTimeout(() => setMessage(null), 4000);
+    return () => clearTimeout(t);
+  }, [message]);
+
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" });
     router.push("/admin/login");
@@ -91,6 +105,11 @@ export default function AdminDashboard({ username }: { username: string }) {
       });
       const json = await res.json();
       if (res.ok) {
+        setMessage(
+          json.createdCount > 0
+            ? `Copied ${json.createdCount} plot(s) into ${formatMonthLabel(month)}.`
+            : `Nothing to copy — every plot already has a record for ${formatMonthLabel(month)}.`
+        );
         load();
       } else {
         setError(json.error ?? "Failed to copy previous month.");
@@ -138,6 +157,11 @@ export default function AdminDashboard({ username }: { username: string }) {
       </header>
 
       <main className="mx-auto w-full max-w-4xl flex-1 px-3 py-5 sm:px-6">
+        {message && (
+          <div className="mb-4 rounded-lg border border-paid/30 bg-paid-bg px-3 py-2 text-sm text-paid">
+            {message}
+          </div>
+        )}
         {error && (
           <div className="mb-4 rounded-lg border border-unpaid/30 bg-unpaid-bg px-3 py-2 text-sm text-unpaid">
             {error}
