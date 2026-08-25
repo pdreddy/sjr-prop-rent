@@ -6,7 +6,7 @@ import MonthYearSelector from "@/components/MonthYearSelector";
 import StatusBadge from "@/components/StatusBadge";
 import { getCurrentMonth, getMonthOptions, formatDate } from "@/lib/month";
 import type { PublicStatusResponse } from "@/lib/types";
-import { IconBuilding, IconCalendar, IconRupee, IconSearch } from "@/components/icons";
+import { IconBuilding, IconCalendar, IconSearch } from "@/components/icons";
 
 const monthOptions = getMonthOptions();
 
@@ -49,6 +49,14 @@ export default function Home() {
         plot.tenantName?.toLowerCase().includes(needle)
     );
   }, [data, search]);
+
+  const counts = useMemo(() => {
+    const base = { PAID: 0, UNPAID: 0, PARTIAL: 0, VACANT: 0, NA: 0 };
+    for (const plot of data?.plots ?? []) {
+      base[plot.status] += 1;
+    }
+    return base;
+  }, [data]);
 
   const paidPct = data && data.totalPlots > 0 ? Math.round((data.paidCount / data.totalPlots) * 100) : 0;
 
@@ -95,10 +103,10 @@ export default function Home() {
 
         {loading && (
           <div className="flex flex-col gap-3" aria-live="polite" aria-busy="true">
-            <div className="h-28 animate-pulse rounded-2xl bg-primary-light" />
+            <div className="h-24 animate-pulse rounded-2xl bg-primary-light" />
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="h-24 animate-pulse rounded-2xl bg-primary-light" />
+                <div key={i} className="h-20 animate-pulse rounded-2xl bg-primary-light" />
               ))}
             </div>
           </div>
@@ -121,8 +129,8 @@ export default function Home() {
                     <span className="text-lg font-medium text-foreground/40"> / {data.totalPlots} paid</span>
                   </p>
                 </div>
-                <div className="relative flex h-20 w-20 items-center justify-center">
-                  <svg viewBox="0 0 36 36" className="h-20 w-20 -rotate-90">
+                <div className="relative flex h-16 w-16 items-center justify-center sm:h-20 sm:w-20">
+                  <svg viewBox="0 0 36 36" className="h-16 w-16 -rotate-90 sm:h-20 sm:w-20">
                     <circle cx="18" cy="18" r="15.5" fill="none" stroke="var(--color-primary-light)" strokeWidth="3.5" />
                     <circle
                       cx="18"
@@ -138,11 +146,16 @@ export default function Home() {
                   <span className="absolute text-sm font-bold text-primary-dark">{paidPct}%</span>
                 </div>
               </div>
+
               <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-primary-light">
-                <div
-                  className="h-full rounded-full bg-paid transition-all"
-                  style={{ width: `${paidPct}%` }}
-                />
+                <div className="h-full rounded-full bg-paid transition-all" style={{ width: `${paidPct}%` }} />
+              </div>
+
+              <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                <StatChip label="Paid" value={counts.PAID} colorClass="bg-paid-bg text-paid" />
+                <StatChip label="Unpaid" value={counts.UNPAID} colorClass="bg-unpaid-bg text-unpaid" />
+                <StatChip label="Partial" value={counts.PARTIAL} colorClass="bg-partial-bg text-partial" />
+                <StatChip label="Vacant" value={counts.VACANT + counts.NA} colorClass="bg-vacant-bg text-vacant" />
               </div>
             </div>
 
@@ -155,14 +168,14 @@ export default function Home() {
                 {plots.map((plot) => (
                   <li
                     key={plot.plotNumber}
-                    className="rounded-2xl border border-primary/10 bg-white p-4 shadow-sm"
+                    className="rounded-2xl border border-primary/10 bg-white p-4 shadow-sm transition hover:shadow-md"
                   >
                     <div className="flex items-start justify-between gap-2">
-                      <div>
+                      <div className="min-w-0">
                         <p className="text-xs font-semibold uppercase tracking-wide text-foreground/40">
                           Plot {plot.plotNumber}
                         </p>
-                        <p className="text-base font-bold text-foreground">
+                        <p className="truncate text-base font-bold text-foreground">
                           {plot.tenantName || "No tenant"}
                         </p>
                       </div>
@@ -173,11 +186,12 @@ export default function Home() {
                         <IconCalendar className="h-4 w-4 text-foreground/35" />
                         Joined {formatDate(plot.moveInDate)}
                       </span>
-                      <span className="flex items-center gap-1.5">
-                        <IconRupee className="h-4 w-4 text-foreground/35" />
-                        ₹{plot.amountPaid.toFixed(0)} paid
-                        {plot.paidDate ? ` on ${formatDate(plot.paidDate)}` : " · no paid date yet"}
-                      </span>
+                      {plot.status === "PAID" && (
+                        <span className="flex items-center gap-1.5 text-paid">
+                          <span className="h-1.5 w-1.5 rounded-full bg-paid" aria-hidden="true" />
+                          {plot.paidDate ? `Paid on ${formatDate(plot.paidDate)}` : "Paid this month"}
+                        </span>
+                      )}
                     </div>
                   </li>
                 ))}
@@ -188,8 +202,17 @@ export default function Home() {
       </main>
 
       <footer className="px-4 py-6 text-center text-xs text-foreground/40">
-        Phone numbers, rent charges and notes are private. Payment amount and paid date are shown for transparency.
+        Only payment status is shown here. Phone numbers, rent amounts and notes remain private.
       </footer>
+    </div>
+  );
+}
+
+function StatChip({ label, value, colorClass }: { label: string; value: number; colorClass: string }) {
+  return (
+    <div className={`rounded-xl px-3 py-2 text-center ${colorClass}`}>
+      <p className="text-lg font-bold leading-tight">{value}</p>
+      <p className="text-[11px] font-medium uppercase tracking-wide opacity-80">{label}</p>
     </div>
   );
 }

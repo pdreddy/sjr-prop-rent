@@ -20,7 +20,6 @@ export async function GET(request: NextRequest) {
       tenantName: unit.tenantName,
       moveInDate,
       status: isBeforeMoveInMonth(moveInDate, month) ? ("NA" as const) : payment?.paymentStatus ?? ("UNPAID" as const),
-      amountPaid: payment?.amountPaid ?? 0,
       paidDate: payment?.paidDate?.toISOString() ?? null,
     };
   });
