@@ -14,6 +14,7 @@ import {
   formatDate,
   isBeforeMoveInMonth,
 } from "@/lib/month";
+import { ELECTRICITY_RATE_PER_UNIT } from "@/lib/constants";
 import type { DashboardResponse, DashboardRow, PaymentStatus } from "@/lib/types";
 import {
   IconBuilding,
@@ -269,6 +270,8 @@ export default function AdminDashboard({ username }: { username: string }) {
                     <th className="w-[110px] min-w-[110px] px-3 py-2.5 font-semibold">Advance</th>
                     <th className="w-[90px] min-w-[90px] px-3 py-2.5 font-semibold">Rent</th>
                     <th className="w-[100px] min-w-[100px] px-3 py-2.5 font-semibold">Maintenance</th>
+                    <th className="w-[100px] min-w-[100px] px-3 py-2.5 font-semibold">Prev reading</th>
+                    <th className="w-[100px] min-w-[100px] px-3 py-2.5 font-semibold">Curr reading</th>
                     <th className="w-[110px] min-w-[110px] px-3 py-2.5 font-semibold">Electricity</th>
                     <th className="w-[110px] min-w-[110px] px-3 py-2.5 font-semibold">Elec. status</th>
                     <th className="sticky right-0 z-20 w-[110px] min-w-[110px] border-l border-primary/10 bg-primary-light px-3 py-2.5 font-semibold shadow-[-2px_0_4px_rgba(0,0,0,0.04)]">Actions</th>
@@ -321,6 +324,8 @@ export default function AdminDashboard({ username }: { username: string }) {
                         <td className="w-[110px] min-w-[110px] px-3 py-3">₹{row.unit.advanceAmount.toFixed(0)}</td>
                         <td className="w-[90px] min-w-[90px] px-3 py-3">₹{rentAmount.toFixed(0)}</td>
                         <td className="w-[100px] min-w-[100px] px-3 py-3">₹{maintenanceAmount.toFixed(0)}</td>
+                        <td className="w-[100px] min-w-[100px] px-3 py-3">{row.payment?.electricityPreviousReading ?? 0}</td>
+                        <td className="w-[100px] min-w-[100px] px-3 py-3">{row.payment?.electricityCurrentReading ?? 0}</td>
                         <td className="w-[110px] min-w-[110px] px-3 py-3">₹{(row.payment?.electricityAmount ?? 0).toFixed(0)}</td>
                         <td className="w-[110px] min-w-[110px] px-3 py-3">
                           <StatusBadge
@@ -403,7 +408,12 @@ function InlineEditRow({
   const [amountPaid, setAmountPaid] = useState(String(row.payment?.amountPaid ?? 0));
   const [paidDate, setPaidDate] = useState(row.payment?.paidDate?.slice(0, 10) ?? "");
   const [notes, setNotes] = useState(row.payment?.notes ?? "");
-  const [electricityAmount, setElectricityAmount] = useState(String(row.payment?.electricityAmount ?? 0));
+  const [electricityPreviousReading, setElectricityPreviousReading] = useState(
+    String(row.payment?.electricityPreviousReading ?? 0)
+  );
+  const [electricityCurrentReading, setElectricityCurrentReading] = useState(
+    String(row.payment?.electricityCurrentReading ?? 0)
+  );
   const [electricityPaid, setElectricityPaid] = useState(row.payment?.electricityPaid ?? false);
   const [saving, setSaving] = useState(false);
 
@@ -415,12 +425,21 @@ function InlineEditRow({
   const status: PaymentStatus = paidNumber <= 0 ? "UNPAID" : paidNumber >= rentSum ? "PAID" : "PARTIAL";
   const isBeforeMoveIn = isBeforeMoveInMonth(moveInDate || null, month);
   const phones = phonesText.split(",").map((p) => p.trim()).filter(Boolean);
+  const electricityUnits = Math.max(
+    0,
+    Number(electricityCurrentReading || 0) - Number(electricityPreviousReading || 0)
+  );
+  const electricityAmount = electricityUnits * ELECTRICITY_RATE_PER_UNIT;
   const inputClass =
     "w-full min-w-0 rounded-lg border border-primary/25 bg-white px-2 py-1.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30";
 
   async function save() {
     if (paidNumber > 0 && !paidDate) {
       onError("Enter a paid date when an amount has been paid.");
+      return;
+    }
+    if (Number(electricityCurrentReading || 0) < Number(electricityPreviousReading || 0)) {
+      onError("Current meter reading cannot be less than the previous reading.");
       return;
     }
     setSaving(true);
@@ -455,7 +474,9 @@ function InlineEditRow({
           balanceDue,
           paidDate: paidDate || null,
           notes: notes || null,
-          electricityAmount: Number(electricityAmount || 0),
+          electricityPreviousReading: Number(electricityPreviousReading || 0),
+          electricityCurrentReading: Number(electricityCurrentReading || 0),
+          electricityAmount,
           electricityPaid,
         }),
       });
@@ -534,17 +555,29 @@ function InlineEditRow({
       <td className="w-[100px] min-w-[100px] px-2 py-2">
         <input aria-label="Maintenance" type="number" min="0" value={maintenance} onChange={(e) => setMaintenance(e.target.value)} className={inputClass} />
       </td>
-      <td className="w-[110px] min-w-[110px] px-2 py-2">
+      <td className="w-[100px] min-w-[100px] px-2 py-2">
         <input
-          aria-label="Electricity bill amount"
+          aria-label="Previous meter reading"
           type="number"
           min="0"
           inputMode="decimal"
-          value={electricityAmount}
-          onChange={(e) => setElectricityAmount(e.target.value)}
+          value={electricityPreviousReading}
+          onChange={(e) => setElectricityPreviousReading(e.target.value)}
           className={inputClass}
         />
       </td>
+      <td className="w-[100px] min-w-[100px] px-2 py-2">
+        <input
+          aria-label="Current meter reading"
+          type="number"
+          min="0"
+          inputMode="decimal"
+          value={electricityCurrentReading}
+          onChange={(e) => setElectricityCurrentReading(e.target.value)}
+          className={inputClass}
+        />
+      </td>
+      <td className="w-[110px] min-w-[110px] px-3 py-3 font-medium">₹{electricityAmount.toFixed(0)}</td>
       <td className="w-[110px] min-w-[110px] px-2 py-2">
         <button
           type="button"

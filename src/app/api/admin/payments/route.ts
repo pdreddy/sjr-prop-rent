@@ -39,6 +39,8 @@ export async function PUT(request: NextRequest) {
     balanceDue: parsed.data.balanceDue,
     paidDate,
     notes: parsed.data.notes || null,
+    electricityPreviousReading: parsed.data.electricityPreviousReading,
+    electricityCurrentReading: parsed.data.electricityCurrentReading,
     electricityAmount: parsed.data.electricityAmount,
     electricityPaid: parsed.data.electricityPaid,
     updatedBy: admin.username,

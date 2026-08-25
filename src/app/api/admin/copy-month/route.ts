@@ -19,8 +19,10 @@ export async function POST(request: NextRequest) {
     const source = payments.find((p) => p.unitId === unit.id && p.month === sourceMonth);
     const rentAmount = source?.rentAmount ?? unit.monthlyRent;
     const maintenanceAmount = source?.maintenanceAmount ?? unit.maintenanceAmount;
-    const electricityAmount = source?.electricityAmount ?? 0;
-    await savePayment(unit.id, targetMonth, { paymentStatus: "UNPAID", rentAmount, maintenanceAmount, amountPaid: 0, balanceDue: rentAmount + maintenanceAmount, paidDate: null, notes: null, electricityAmount, electricityPaid: false, updatedBy: admin.username });
+    // Carry the previous month's current reading forward as this month's starting
+    // (previous) reading; the new current reading and bill are left for the admin to fill in.
+    const electricityPreviousReading = source?.electricityCurrentReading ?? 0;
+    await savePayment(unit.id, targetMonth, { paymentStatus: "UNPAID", rentAmount, maintenanceAmount, amountPaid: 0, balanceDue: rentAmount + maintenanceAmount, paidDate: null, notes: null, electricityPreviousReading, electricityCurrentReading: electricityPreviousReading, electricityAmount: 0, electricityPaid: false, updatedBy: admin.username });
     createdCount++;
   }
   await recordAuditLog({ adminId: admin.id, adminUsername: admin.username, action: "COPY_MONTH", recordType: "Payment", newValue: { sourceMonth, targetMonth, createdCount } });

@@ -57,8 +57,13 @@ export const upsertPaymentSchema = z.object({
   balanceDue: z.coerce.number().min(-10_000_000).max(10_000_000),
   paidDate: z.string().trim().max(30).optional().nullable(),
   notes: z.string().trim().max(2000).optional().nullable(),
+  electricityPreviousReading: z.coerce.number().min(0).max(10_000_000).default(0),
+  electricityCurrentReading: z.coerce.number().min(0).max(10_000_000).default(0),
   electricityAmount: z.coerce.number().min(0).max(10_000_000).default(0),
   electricityPaid: z.boolean().default(false),
+}).refine((data) => data.electricityCurrentReading >= data.electricityPreviousReading, {
+  message: "Current meter reading cannot be less than the previous reading.",
+  path: ["electricityCurrentReading"],
 });
 
 export const copyMonthSchema = z.object({

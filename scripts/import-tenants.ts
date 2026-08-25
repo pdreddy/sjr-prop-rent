@@ -190,7 +190,7 @@ async function main() {
     const notes = t.amountPaid === "unknown"
       ? [t.notes, "Amount paid for June unclear in source records — needs verification"].filter(Boolean).join(". ")
       : t.notes;
-    await savePayment(unit.id, JUNE_2026, { paymentStatus: paymentStatus(amountPaid, t.rentSum), rentAmount: t.rent, maintenanceAmount: t.maintenance, amountPaid, balanceDue: t.rentSum - amountPaid, paidDate: null, notes, electricityAmount: 0, electricityPaid: false, updatedBy: null });
+    await savePayment(unit.id, JUNE_2026, { paymentStatus: paymentStatus(amountPaid, t.rentSum), rentAmount: t.rent, maintenanceAmount: t.maintenance, amountPaid, balanceDue: t.rentSum - amountPaid, paidDate: null, notes, electricityPreviousReading: 0, electricityCurrentReading: 0, electricityAmount: 0, electricityPaid: false, updatedBy: null });
     console.log(`Imported plot ${t.plotNumber} (${t.tenantName})`);
   }
   for (const j of newJoiners) {

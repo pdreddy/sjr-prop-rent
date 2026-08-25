@@ -23,6 +23,8 @@ export async function GET(request: NextRequest) {
       status: isBeforeMoveIn ? ("NA" as const) : payment?.paymentStatus ?? ("UNPAID" as const),
       amountPaid: payment?.amountPaid ?? 0,
       paidDate: payment?.paidDate?.toISOString() ?? null,
+      electricityPreviousReading: payment?.electricityPreviousReading ?? 0,
+      electricityCurrentReading: payment?.electricityCurrentReading ?? 0,
       electricityAmount: payment?.electricityAmount ?? 0,
       electricityStatus: isBeforeMoveIn ? ("NA" as const) : payment?.electricityPaid ? ("PAID" as const) : ("UNPAID" as const),
     };

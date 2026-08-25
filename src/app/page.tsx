@@ -201,11 +201,19 @@ export default function Home() {
                       </span>
                     </div>
 
-                    <div className="mt-3 flex items-center justify-between gap-2 rounded-xl bg-primary-light/50 px-3 py-2">
-                      <span className="text-sm text-foreground/70">
-                        Electricity{plot.electricityStatus !== "NA" ? `: ₹${plot.electricityAmount.toFixed(0)}` : ""}
-                      </span>
-                      <StatusBadge status={plot.electricityStatus} />
+                    <div className="mt-3 rounded-xl bg-primary-light/50 px-3 py-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-sm text-foreground/70">
+                          Electricity{plot.electricityStatus !== "NA" ? `: ₹${plot.electricityAmount.toFixed(0)}` : ""}
+                        </span>
+                        <StatusBadge status={plot.electricityStatus} />
+                      </div>
+                      {plot.electricityStatus !== "NA" && (
+                        <p className="mt-1 text-xs text-foreground/50">
+                          {plot.electricityPreviousReading} → {plot.electricityCurrentReading} (
+                          {plot.electricityCurrentReading - plot.electricityPreviousReading} units)
+                        </p>
+                      )}
                     </div>
                   </li>
                 ))}
