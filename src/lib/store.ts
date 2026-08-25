@@ -1,4 +1,5 @@
 import { getDocument, listDocuments, newDocumentId, setDocument, type FirebaseValue } from "./firebase";
+import { computeElectricityAmount } from "./electricity";
 import type { PaymentDTO, PaymentStatus, UnitDTO } from "./types";
 
 type StoredUnit = Omit<UnitDTO, "id" | "createdAt" | "updatedAt" | "moveInDate"> & { moveInDate: Date | null; createdAt: Date; updatedAt: Date };
@@ -7,7 +8,20 @@ export interface AuditRecord { id: string; adminId: string; adminUsername: strin
 
 const iso = (date: Date | null) => date?.toISOString() ?? null;
 export const unitDTO = (unit: StoredUnit & { id: string }): UnitDTO => ({ ...unit, advanceAmount: unit.advanceAmount ?? 0, moveInDate: iso(unit.moveInDate), createdAt: unit.createdAt.toISOString(), updatedAt: unit.updatedAt.toISOString() });
-export const paymentDTO = (payment: StoredPayment & { id: string }): PaymentDTO => ({ ...payment, paidDate: iso(payment.paidDate), createdAt: payment.createdAt.toISOString(), updatedAt: payment.updatedAt.toISOString() });
+export const paymentDTO = (payment: StoredPayment & { id: string }): PaymentDTO => {
+  const prevReading = payment.prevReading ?? 0;
+  const currReading = payment.currReading ?? 0;
+  return {
+    ...payment,
+    prevReading,
+    currReading,
+    electricityAmount: computeElectricityAmount(prevReading, currReading),
+    electricityPaid: payment.electricityPaid ?? false,
+    paidDate: iso(payment.paidDate),
+    createdAt: payment.createdAt.toISOString(),
+    updatedAt: payment.updatedAt.toISOString(),
+  };
+};
 
 export async function allUnits() { return (await listDocuments<StoredUnit>("units")).sort((a, b) => a.plotNumber.localeCompare(b.plotNumber, undefined, { numeric: true })); }
 export async function unitById(id: string) { return getDocument<StoredUnit>(`units/${id}`); }

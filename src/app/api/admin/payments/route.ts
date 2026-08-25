@@ -3,6 +3,7 @@ import { paymentDTO, paymentFor, savePayment, unitById } from "@/lib/store";
 import { getAuthedAdmin } from "@/lib/auth";
 import { upsertPaymentSchema } from "@/lib/validation";
 import { recordAuditLog } from "@/lib/audit";
+import { computeElectricityAmount } from "@/lib/electricity";
 
 export async function PUT(request: NextRequest) {
   const admin = await getAuthedAdmin();
@@ -39,6 +40,10 @@ export async function PUT(request: NextRequest) {
     balanceDue: parsed.data.balanceDue,
     paidDate,
     notes: parsed.data.notes || null,
+    prevReading: parsed.data.prevReading,
+    currReading: parsed.data.currReading,
+    electricityAmount: computeElectricityAmount(parsed.data.prevReading, parsed.data.currReading),
+    electricityPaid: parsed.data.electricityPaid,
     updatedBy: admin.username,
   };
 

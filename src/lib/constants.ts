@@ -8,3 +8,5 @@ export const LOCKOUT_DURATION_MINUTES = 15;
 
 export const PAYMENT_STATUSES = ["PAID", "UNPAID", "PARTIAL"] as const;
 export type PaymentStatusValue = (typeof PAYMENT_STATUSES)[number];
+
+export const ELECTRICITY_RATE_PER_UNIT = 7;

@@ -52,17 +52,25 @@ export const updateUnitSchema = z.object({
 
 export const paymentStatusEnum = z.enum(["PAID", "UNPAID", "PARTIAL"]);
 
-export const upsertPaymentSchema = z.object({
-  unitId: z.string().min(1),
-  month: monthSchema,
-  paymentStatus: paymentStatusEnum,
-  rentAmount: z.coerce.number().min(0).max(10_000_000),
-  maintenanceAmount: z.coerce.number().min(0).max(10_000_000).default(0),
-  amountPaid: z.coerce.number().min(0).max(10_000_000),
-  balanceDue: z.coerce.number().min(-10_000_000).max(10_000_000),
-  paidDate: z.string().trim().max(30).optional().nullable(),
-  notes: z.string().trim().max(2000).optional().nullable(),
-});
+export const upsertPaymentSchema = z
+  .object({
+    unitId: z.string().min(1),
+    month: monthSchema,
+    paymentStatus: paymentStatusEnum,
+    rentAmount: z.coerce.number().min(0).max(10_000_000),
+    maintenanceAmount: z.coerce.number().min(0).max(10_000_000).default(0),
+    amountPaid: z.coerce.number().min(0).max(10_000_000),
+    balanceDue: z.coerce.number().min(-10_000_000).max(10_000_000),
+    paidDate: z.string().trim().max(30).optional().nullable(),
+    notes: z.string().trim().max(2000).optional().nullable(),
+    prevReading: z.coerce.number().min(0).max(10_000_000).default(0),
+    currReading: z.coerce.number().min(0).max(10_000_000).default(0),
+    electricityPaid: z.coerce.boolean().default(false),
+  })
+  .refine((data) => data.currReading >= data.prevReading, {
+    message: "Current meter reading must be greater than or equal to the previous reading.",
+    path: ["currReading"],
+  });
 
 export const copyMonthSchema = z.object({
   sourceMonth: monthSchema,

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { allPayments, allUnits } from "@/lib/store";
 import { BUILDING_NAME } from "@/lib/constants";
 import { isValidMonth, getCurrentMonth, isBeforeMoveInMonth } from "@/lib/month";
+import { computeElectricityAmount } from "@/lib/electricity";
 
 export const dynamic = "force-dynamic";
 
@@ -15,12 +16,19 @@ export async function GET(request: NextRequest) {
   const plots = units.map((unit) => {
     const payment = payments.find((item) => item.unitId === unit.id && item.month === month);
     const moveInDate = unit.moveInDate?.toISOString() ?? null;
+    const isBeforeMoveIn = isBeforeMoveInMonth(moveInDate, month);
+    const prevReading = payment?.prevReading ?? 0;
+    const currReading = payment?.currReading ?? 0;
     return {
       plotNumber: unit.plotNumber,
       tenantName: unit.tenantName,
       moveInDate,
-      status: isBeforeMoveInMonth(moveInDate, month) ? ("NA" as const) : payment?.paymentStatus ?? ("UNPAID" as const),
+      status: isBeforeMoveIn ? ("NA" as const) : payment?.paymentStatus ?? ("UNPAID" as const),
       paidDate: payment?.paidDate?.toISOString() ?? null,
+      electricityStatus: isBeforeMoveIn ? ("NA" as const) : payment?.electricityPaid ? ("PAID" as const) : ("UNPAID" as const),
+      electricityAmount: computeElectricityAmount(prevReading, currReading),
+      prevReading,
+      currReading,
     };
   });
 

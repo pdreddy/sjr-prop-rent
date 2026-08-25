@@ -16,6 +16,7 @@ import {
 } from "@/lib/month";
 import type { DashboardResponse, DashboardRow, DashboardTotals, PaymentStatus } from "@/lib/types";
 import { stripElectricityNote, withElectricityNote } from "@/lib/notes";
+import { computeElectricityAmount, computeElectricityUnits } from "@/lib/electricity";
 import {
   IconBuilding,
   IconCopy,
@@ -30,7 +31,7 @@ import {
 const monthOptions = getMonthOptions();
 const STATUS_FILTERS = ["ALL", "PAID", "UNPAID", "PARTIAL", "VACANT"] as const;
 type StatusFilter = (typeof STATUS_FILTERS)[number];
-const TABLE_COLUMNS = 8;
+const TABLE_COLUMNS = 9;
 
 export default function AdminDashboard({ username }: { username: string }) {
   const router = useRouter();
@@ -248,6 +249,7 @@ export default function AdminDashboard({ username }: { username: string }) {
                     <th className="min-w-[130px] px-3 py-3 font-semibold">This month</th>
                     <th className="min-w-[110px] px-3 py-3 font-semibold">Status</th>
                     <th className="min-w-[100px] px-3 py-3 font-semibold">Balance</th>
+                    <th className="min-w-[150px] px-3 py-3 font-semibold">Electricity</th>
                     <th className="min-w-[170px] px-3 py-3 font-semibold">Notes</th>
                     <th className="min-w-[170px] px-3 py-3 font-semibold">Plot info</th>
                     <th className="min-w-[140px] px-3 py-3 font-semibold">Contact</th>
@@ -361,6 +363,10 @@ function ReadRow({
   const rentSum = rentAmount + maintenanceAmount;
   const balanceDue = row.payment?.balanceDue ?? 0;
   const status = row.isBeforeMoveIn ? "NA" : row.isVacant ? "VACANT" : row.effectiveStatus;
+  const prevReading = row.payment?.prevReading ?? 0;
+  const currReading = row.payment?.currReading ?? 0;
+  const electricityAmount = row.payment?.electricityAmount ?? 0;
+  const electricityStatus = row.isBeforeMoveIn ? "NA" : row.payment?.electricityPaid ? "PAID" : "UNPAID";
   const rowBg = striped ? "bg-primary-light/25" : "bg-white";
 
   return (
@@ -383,6 +389,21 @@ function ReadRow({
         <span className={`font-semibold ${balanceDue > 0 ? "text-unpaid" : "text-foreground/50"}`}>
           ₹{balanceDue.toFixed(0)}
         </span>
+      </td>
+      <td className="px-3 py-3">
+        {row.isBeforeMoveIn ? (
+          <StatusBadge status="NA" />
+        ) : (
+          <>
+            <div className="flex items-center gap-1.5">
+              <span className="font-semibold text-foreground">₹{electricityAmount.toFixed(0)}</span>
+              <StatusBadge status={electricityStatus} />
+            </div>
+            <p className="text-foreground/60">
+              {prevReading} → {currReading} ({currReading - prevReading} units)
+            </p>
+          </>
+        )}
       </td>
       <td className="max-w-[200px] whitespace-pre-line px-3 py-3 text-foreground/70 line-clamp-2">{row.payment?.notes || "—"}</td>
       <td className="px-3 py-3 text-foreground/70">
@@ -440,6 +461,9 @@ function EditPanelRow({
   const [amountPaid, setAmountPaid] = useState(String(row.payment?.amountPaid ?? 0));
   const [paidDate, setPaidDate] = useState(row.payment?.paidDate?.slice(0, 10) ?? "");
   const [notes, setNotes] = useState(stripElectricityNote(row.payment?.notes));
+  const [prevReading, setPrevReading] = useState(String(row.payment?.prevReading ?? 0));
+  const [currReading, setCurrReading] = useState(String(row.payment?.currReading ?? 0));
+  const [electricityPaid, setElectricityPaid] = useState(row.payment?.electricityPaid ?? false);
   const [saving, setSaving] = useState(false);
 
   const rentNumber = Number(rent || 0);
@@ -451,6 +475,12 @@ function EditPanelRow({
   const status: PaymentStatus = paidNumber <= 0 ? "UNPAID" : paidNumber >= rentSum ? "PAID" : "PARTIAL";
   const isBeforeMoveIn = isBeforeMoveInMonth(moveInDate || null, month);
 
+  const prevReadingNumber = Number(prevReading || 0);
+  const currReadingNumber = Number(currReading || 0);
+  const readingError = currReadingNumber < prevReadingNumber;
+  const electricityUnits = computeElectricityUnits(prevReadingNumber, currReadingNumber);
+  const electricityAmount = computeElectricityAmount(prevReadingNumber, currReadingNumber);
+
   const inputClass =
     "min-h-10 w-full rounded-lg border border-primary/25 bg-white px-2.5 py-1.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20";
   const labelClass = "text-xs font-semibold uppercase tracking-wide text-foreground/45";
@@ -458,6 +488,10 @@ function EditPanelRow({
   async function save() {
     if (paidNumber > 0 && !paidDate) {
       onError("Enter a paid date when an amount has been paid.");
+      return;
+    }
+    if (readingError) {
+      onError("Current meter reading must be greater than or equal to the previous reading.");
       return;
     }
     setSaving(true);
@@ -494,6 +528,9 @@ function EditPanelRow({
           balanceDue,
           paidDate: paidDate || null,
           notes: finalNotes,
+          prevReading: prevReadingNumber,
+          currReading: currReadingNumber,
+          electricityPaid,
         }),
       });
       const paymentJson = await paymentRes.json();
@@ -553,6 +590,64 @@ function EditPanelRow({
               <span className={labelClass}>Rent sum</span>
               <div className="flex min-h-10 items-center rounded-lg bg-primary-light px-2.5 text-sm font-semibold text-primary-dark">
                 ₹{rentSum.toFixed(0)}
+              </div>
+            </div>
+          </div>
+
+          <div className="my-4 border-t border-primary/10" />
+
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <label className="flex flex-col gap-1">
+              <span className={labelClass}>Prev reading</span>
+              <input
+                type="number"
+                min="0"
+                value={prevReading}
+                onChange={(e) => setPrevReading(e.target.value)}
+                className={inputClass}
+              />
+            </label>
+            <label className="flex flex-col gap-1">
+              <span className={labelClass}>Curr reading</span>
+              <input
+                type="number"
+                min="0"
+                value={currReading}
+                onChange={(e) => setCurrReading(e.target.value)}
+                className={`${inputClass} ${readingError ? "border-unpaid focus:border-unpaid focus:ring-unpaid/20" : ""}`}
+              />
+              {readingError && (
+                <p className="text-xs font-medium text-unpaid">Must be ≥ previous reading.</p>
+              )}
+            </label>
+            <div className="flex flex-col gap-1">
+              <span className={labelClass}>Electricity (₹)</span>
+              <div className="flex min-h-10 items-center rounded-lg bg-primary-light px-2.5 text-sm font-semibold text-primary-dark">
+                ₹{electricityAmount.toFixed(0)}
+                <span className="ml-1.5 font-normal text-primary-dark/60">({electricityUnits} units)</span>
+              </div>
+            </div>
+            <div className="flex flex-col gap-1">
+              <span className={labelClass}>Elec. status</span>
+              <div className="flex overflow-hidden rounded-lg border border-primary/25">
+                <button
+                  type="button"
+                  onClick={() => setElectricityPaid(true)}
+                  className={`min-h-10 flex-1 text-sm font-semibold transition-colors ${
+                    electricityPaid ? "bg-paid text-white" : "bg-white text-foreground/60 hover:bg-paid-bg"
+                  }`}
+                >
+                  Paid
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setElectricityPaid(false)}
+                  className={`min-h-10 flex-1 text-sm font-semibold transition-colors ${
+                    !electricityPaid ? "bg-unpaid text-white" : "bg-white text-foreground/60 hover:bg-unpaid-bg"
+                  }`}
+                >
+                  Unpaid
+                </button>
               </div>
             </div>
           </div>
@@ -632,7 +727,7 @@ function EditPanelRow({
             <button
               type="button"
               onClick={save}
-              disabled={saving}
+              disabled={saving || readingError}
               className="min-h-10 rounded-xl bg-primary px-5 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-60"
             >
               {saving ? "Saving…" : "Save changes"}

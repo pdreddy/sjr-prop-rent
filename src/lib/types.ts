@@ -6,6 +6,10 @@ export interface PublicPlot {
   moveInDate: string | null;
   status: PaymentStatus | "NA";
   paidDate: string | null;
+  electricityStatus: "PAID" | "UNPAID" | "NA";
+  electricityAmount: number;
+  prevReading: number;
+  currReading: number;
 }
 
 export interface PublicStatusResponse {
@@ -41,6 +45,10 @@ export interface PaymentDTO {
   balanceDue: number;
   paidDate: string | null;
   notes: string | null;
+  prevReading: number;
+  currReading: number;
+  electricityAmount: number;
+  electricityPaid: boolean;
   updatedBy: string | null;
   createdAt: string;
   updatedAt: string;

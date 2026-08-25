@@ -193,6 +193,21 @@ export default function Home() {
                         </span>
                       )}
                     </div>
+
+                    <div className="mt-3 flex items-center justify-between gap-2 rounded-xl bg-background px-3 py-2">
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-foreground/40">Electricity</p>
+                        <p className="text-sm font-bold text-foreground">
+                          {plot.electricityStatus === "NA" ? "N/A" : `₹${plot.electricityAmount.toFixed(0)}`}
+                        </p>
+                        {plot.electricityStatus !== "NA" && (
+                          <p className="text-xs text-foreground/50">
+                            {plot.prevReading} → {plot.currReading} ({plot.currReading - plot.prevReading} units)
+                          </p>
+                        )}
+                      </div>
+                      <StatusBadge status={plot.electricityStatus} />
+                    </div>
                   </li>
                 ))}
               </ul>

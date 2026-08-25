@@ -3,6 +3,7 @@ import { getAuthedAdmin } from "@/lib/auth";
 import { copyMonthSchema } from "@/lib/validation";
 import { allPayments, allUnits, savePayment } from "@/lib/store";
 import { recordAuditLog } from "@/lib/audit";
+import { computeElectricityAmount } from "@/lib/electricity";
 
 export async function POST(request: NextRequest) {
   const admin = await getAuthedAdmin();
@@ -19,7 +20,24 @@ export async function POST(request: NextRequest) {
     const source = payments.find((p) => p.unitId === unit.id && p.month === sourceMonth);
     const rentAmount = source?.rentAmount ?? unit.monthlyRent;
     const maintenanceAmount = source?.maintenanceAmount ?? unit.maintenanceAmount;
-    await savePayment(unit.id, targetMonth, { paymentStatus: "UNPAID", rentAmount, maintenanceAmount, amountPaid: 0, balanceDue: rentAmount + maintenanceAmount, paidDate: null, notes: null, updatedBy: admin.username });
+    // Carry forward last month's current meter reading as this month's starting point —
+    // admins only need to fill in the new current reading once it's next read.
+    const prevReading = source?.currReading ?? 0; // ?? also covers legacy records saved before this field existed
+    const currReading = prevReading;
+    await savePayment(unit.id, targetMonth, {
+      paymentStatus: "UNPAID",
+      rentAmount,
+      maintenanceAmount,
+      amountPaid: 0,
+      balanceDue: rentAmount + maintenanceAmount,
+      paidDate: null,
+      notes: null,
+      prevReading,
+      currReading,
+      electricityAmount: computeElectricityAmount(prevReading, currReading),
+      electricityPaid: false,
+      updatedBy: admin.username,
+    });
     createdCount++;
   }
   await recordAuditLog({ adminId: admin.id, adminUsername: admin.username, action: "COPY_MONTH", recordType: "Payment", newValue: { sourceMonth, targetMonth, createdCount } });
