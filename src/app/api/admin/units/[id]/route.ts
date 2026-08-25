@@ -12,6 +12,9 @@ export async function PATCH(
   if (!admin) {
     return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
   }
+  if (admin.role !== "ADMIN") {
+    return NextResponse.json({ error: "Not authorized." }, { status: 403 });
+  }
 
   const { id } = await params;
   const existing = await unitById(id);

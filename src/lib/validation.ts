@@ -72,6 +72,19 @@ export const upsertPaymentSchema = z
     path: ["currReading"],
   });
 
+export const electricityUpsertSchema = z
+  .object({
+    unitId: z.string().min(1),
+    month: monthSchema,
+    prevReading: z.coerce.number().min(0).max(10_000_000),
+    currReading: z.coerce.number().min(0).max(10_000_000),
+    electricityPaid: z.coerce.boolean().default(false),
+  })
+  .refine((data) => data.currReading >= data.prevReading, {
+    message: "Current meter reading must be greater than or equal to the previous reading.",
+    path: ["currReading"],
+  });
+
 export const copyMonthSchema = z.object({
   sourceMonth: monthSchema,
   targetMonth: monthSchema,

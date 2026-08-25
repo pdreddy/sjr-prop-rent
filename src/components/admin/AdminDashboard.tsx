@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import MonthYearSelector from "@/components/MonthYearSelector";
 import StatusBadge from "@/components/StatusBadge";
 import ChangePasswordModal from "./ChangePasswordModal";
@@ -139,6 +140,13 @@ export default function AdminDashboard({ username }: { username: string }) {
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
+            <Link
+              href="/admin/electricity"
+              className="inline-flex min-h-10 items-center gap-1.5 rounded-full border border-primary/20 px-3.5 py-1.5 text-sm font-medium text-primary-dark hover:bg-primary-light"
+            >
+              <span className="hidden sm:inline">Meter readings</span>
+              <span className="sm:hidden">Readings</span>
+            </Link>
             <button
               onClick={() => setShowChangePassword(true)}
               className="inline-flex min-h-10 items-center gap-1.5 rounded-full border border-primary/20 px-3.5 py-1.5 text-sm font-medium text-primary-dark hover:bg-primary-light"

@@ -1,4 +1,21 @@
 export type PaymentStatus = "PAID" | "UNPAID" | "PARTIAL";
+export type AdminRole = "ADMIN" | "SECURITY";
+
+export interface ElectricityRow {
+  unitId: string;
+  plotNumber: string;
+  tenantName: string | null;
+  isBeforeMoveIn: boolean;
+  prevReading: number;
+  currReading: number;
+  electricityAmount: number;
+  electricityPaid: boolean;
+}
+
+export interface ElectricityListResponse {
+  month: string;
+  rows: ElectricityRow[];
+}
 
 export interface PublicPlot {
   plotNumber: string;

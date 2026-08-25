@@ -8,6 +8,7 @@ import { computeElectricityAmount } from "@/lib/electricity";
 export async function POST(request: NextRequest) {
   const admin = await getAuthedAdmin();
   if (!admin) return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
+  if (admin.role !== "ADMIN") return NextResponse.json({ error: "Not authorized." }, { status: 403 });
   const parsed = copyMonthSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Invalid input." }, { status: 400 });
   const { sourceMonth, targetMonth } = parsed.data;

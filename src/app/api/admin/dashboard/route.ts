@@ -4,7 +4,9 @@ import { isValidMonth, getCurrentMonth, isBeforeMoveInMonth } from "@/lib/month"
 import { allPayments, allUnits, paymentDTO, unitDTO } from "@/lib/store";
 
 export async function GET(request: NextRequest) {
-  if (!(await getAuthedAdmin())) return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
+  const admin = await getAuthedAdmin();
+  if (!admin) return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
+  if (admin.role !== "ADMIN") return NextResponse.json({ error: "Not authorized." }, { status: 403 });
   const params = request.nextUrl.searchParams;
   const monthParam = params.get("month");
   const month = monthParam && isValidMonth(monthParam) ? monthParam : getCurrentMonth();

@@ -9,6 +9,9 @@ export async function GET(request: NextRequest) {
   if (!admin) {
     return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
   }
+  if (admin.role !== "ADMIN") {
+    return NextResponse.json({ error: "Not authorized." }, { status: 403 });
+  }
 
   const search = request.nextUrl.searchParams.get("search")?.trim();
 
@@ -25,6 +28,9 @@ export async function POST(request: NextRequest) {
   const admin = await getAuthedAdmin();
   if (!admin) {
     return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
+  }
+  if (admin.role !== "ADMIN") {
+    return NextResponse.json({ error: "Not authorized." }, { status: 403 });
   }
 
   const body = await request.json().catch(() => null);

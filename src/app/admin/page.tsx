@@ -7,6 +7,9 @@ export default async function AdminPage() {
   if (!admin) {
     redirect("/admin/login");
   }
+  if (admin.role === "SECURITY") {
+    redirect("/admin/electricity");
+  }
 
   return <AdminDashboard username={admin.username} />;
 }
