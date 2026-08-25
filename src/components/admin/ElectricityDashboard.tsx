@@ -56,7 +56,7 @@ export default function ElectricityDashboard({ username, role }: { username: str
 
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" });
-    router.push("/admin/login");
+    router.push("/");
     router.refresh();
   }
 

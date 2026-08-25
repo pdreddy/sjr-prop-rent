@@ -9,10 +9,27 @@ import type { PublicStatusResponse } from "@/lib/types";
 import { IconBuilding, IconCalendar, IconSearch } from "@/components/icons";
 
 const monthOptions = getMonthOptions();
+const RENT_FILTERS = ["ALL", "PAID", "UNPAID", "PARTIAL", "NA"] as const;
+const ELECTRICITY_FILTERS = ["ALL", "PAID", "UNPAID", "NA"] as const;
+const RENT_FILTER_LABELS: Record<(typeof RENT_FILTERS)[number], string> = {
+  ALL: "All",
+  PAID: "Paid",
+  UNPAID: "Unpaid",
+  PARTIAL: "Partial",
+  NA: "N/A",
+};
+const ELECTRICITY_FILTER_LABELS: Record<(typeof ELECTRICITY_FILTERS)[number], string> = {
+  ALL: "All",
+  PAID: "Paid",
+  UNPAID: "Unpaid",
+  NA: "N/A",
+};
 
 export default function Home() {
   const [month, setMonth] = useState(getCurrentMonth());
   const [search, setSearch] = useState("");
+  const [rentFilter, setRentFilter] = useState<(typeof RENT_FILTERS)[number]>("ALL");
+  const [electricityFilter, setElectricityFilter] = useState<(typeof ELECTRICITY_FILTERS)[number]>("ALL");
   const [data, setData] = useState<PublicStatusResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -42,13 +59,16 @@ export default function Home() {
   const plots = useMemo(() => {
     if (!data) return [];
     const needle = search.trim().toLowerCase();
-    if (!needle) return data.plots;
-    return data.plots.filter(
-      (plot) =>
+    return data.plots.filter((plot) => {
+      const matchesSearch =
+        !needle ||
         plot.plotNumber.toLowerCase().includes(needle) ||
-        plot.tenantName?.toLowerCase().includes(needle)
-    );
-  }, [data, search]);
+        plot.tenantName?.toLowerCase().includes(needle);
+      const matchesRent = rentFilter === "ALL" || plot.status === rentFilter;
+      const matchesElectricity = electricityFilter === "ALL" || plot.electricityStatus === electricityFilter;
+      return matchesSearch && matchesRent && matchesElectricity;
+    });
+  }, [data, search, rentFilter, electricityFilter]);
 
   const counts = useMemo(() => {
     const base = { PAID: 0, UNPAID: 0, PARTIAL: 0, VACANT: 0, NA: 0 };
@@ -99,6 +119,45 @@ export default function Home() {
               />
             </div>
           </label>
+        </div>
+
+        <div className="mb-5 flex flex-wrap gap-x-6 gap-y-2">
+          <div className="flex flex-col gap-1">
+            <span className="text-xs font-semibold uppercase tracking-wide text-foreground/45">Rent status</span>
+            <div className="flex flex-wrap gap-1.5">
+              {RENT_FILTERS.map((f) => (
+                <button
+                  key={f}
+                  onClick={() => setRentFilter(f)}
+                  className={`min-h-8 rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                    rentFilter === f
+                      ? "border-primary bg-primary text-white"
+                      : "border-primary/20 bg-white text-foreground/70 hover:bg-primary-light"
+                  }`}
+                >
+                  {RENT_FILTER_LABELS[f]}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="flex flex-col gap-1">
+            <span className="text-xs font-semibold uppercase tracking-wide text-foreground/45">Electricity status</span>
+            <div className="flex flex-wrap gap-1.5">
+              {ELECTRICITY_FILTERS.map((f) => (
+                <button
+                  key={f}
+                  onClick={() => setElectricityFilter(f)}
+                  className={`min-h-8 rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                    electricityFilter === f
+                      ? "border-primary bg-primary text-white"
+                      : "border-primary/20 bg-white text-foreground/70 hover:bg-primary-light"
+                  }`}
+                >
+                  {ELECTRICITY_FILTER_LABELS[f]}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
         {loading && (
@@ -161,7 +220,7 @@ export default function Home() {
 
             {plots.length === 0 ? (
               <div className="rounded-2xl border border-primary/15 bg-white p-8 text-center text-foreground/60">
-                {data.plots.length === 0 ? "No plots have been added yet." : "No plots match your search."}
+                {data.plots.length === 0 ? "No plots have been added yet." : "No plots match your search or filters."}
               </div>
             ) : (
               <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
