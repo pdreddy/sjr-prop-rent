@@ -1,3 +1,5 @@
+import { BUILDING_READY_MONTH } from "./constants";
+
 const MONTH_REGEX = /^\d{4}-(0[1-9]|1[0-2])$/;
 
 export function isValidMonth(month: string): boolean {
@@ -45,11 +47,14 @@ export function isBeforeMoveInMonth(moveInDate: string | Date | null, month: str
   return iso.slice(0, 7) >= month;
 }
 
+// Never offers a month before BUILDING_READY_MONTH — the building didn't exist yet,
+// so there's no rent or electricity data to show for it.
 export function getMonthOptions(count = 24): string[] {
   const options: string[] = [];
   let month = getCurrentMonth();
   for (let i = 0; i < count; i++) {
     options.push(month);
+    if (month <= BUILDING_READY_MONTH) break;
     month = getPreviousMonth(month);
   }
   return options;

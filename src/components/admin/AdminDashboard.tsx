@@ -16,6 +16,7 @@ import {
   formatDate,
 } from "@/lib/month";
 import type { DashboardResponse, DashboardRow, DashboardTotals } from "@/lib/types";
+import { BUILDING_READY_MONTH } from "@/lib/constants";
 import {
   IconBuilding,
   IconCopy,
@@ -221,7 +222,8 @@ export default function AdminDashboard({ username }: { username: string }) {
             </button>
             <button
               onClick={handleCopyPreviousMonth}
-              disabled={copying}
+              disabled={copying || month <= BUILDING_READY_MONTH}
+              title={month <= BUILDING_READY_MONTH ? "No earlier month exists — the building opened this month." : undefined}
               className="inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-full border border-primary/30 bg-white px-4 py-2.5 text-sm font-semibold text-primary-dark hover:bg-primary-light disabled:opacity-60 sm:flex-none"
             >
               <IconCopy className="h-4 w-4" />
