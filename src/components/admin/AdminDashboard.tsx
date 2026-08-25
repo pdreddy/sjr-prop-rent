@@ -30,6 +30,9 @@ const monthOptions = getMonthOptions();
 const STATUS_FILTERS = ["ALL", "PAID", "UNPAID", "PARTIAL", "VACANT"] as const;
 type StatusFilter = (typeof STATUS_FILTERS)[number];
 const TABLE_COLUMNS = 8;
+// Strips a previously auto-generated "Paid electricity: ₹123" prefix so it can be
+// recomputed from the current amount paid instead of accumulating stale copies.
+const ELECTRICITY_NOTE_REGEX = /^Paid electricity:\s*₹[\d,.]+\s*(?:·\s*)?/i;
 
 export default function AdminDashboard({ username }: { username: string }) {
   const router = useRouter();
@@ -247,9 +250,9 @@ export default function AdminDashboard({ username }: { username: string }) {
                     <th className="min-w-[130px] px-3 py-3 font-semibold">This month</th>
                     <th className="min-w-[110px] px-3 py-3 font-semibold">Status</th>
                     <th className="min-w-[100px] px-3 py-3 font-semibold">Balance</th>
-                    <th className="min-w-[140px] px-3 py-3 font-semibold">Contact</th>
                     <th className="min-w-[170px] px-3 py-3 font-semibold">Notes</th>
-                    <th className="min-w-[160px] px-3 py-3 font-semibold">Plot info</th>
+                    <th className="min-w-[170px] px-3 py-3 font-semibold">Plot info</th>
+                    <th className="min-w-[140px] px-3 py-3 font-semibold">Contact</th>
                     <th className="sticky right-0 z-20 min-w-[100px] bg-primary-dark px-3 py-3 text-right font-semibold">Actions</th>
                   </tr>
                 </thead>
@@ -383,12 +386,13 @@ function ReadRow({
           ₹{balanceDue.toFixed(0)}
         </span>
       </td>
-      <td className="px-3 py-3 text-foreground/80">{row.unit.phone || "—"}</td>
       <td className="max-w-[200px] truncate px-3 py-3 text-foreground/70">{row.payment?.notes || "—"}</td>
       <td className="px-3 py-3 text-foreground/70">
         <p>Joined {formatDate(row.unit.moveInDate)}</p>
+        <p>Total rent ₹{rentSum.toFixed(0)}</p>
         <p>Advance ₹{row.unit.advanceAmount.toFixed(0)}</p>
       </td>
+      <td className="px-3 py-3 text-foreground/80">{row.unit.phone || "—"}</td>
       <td className={`sticky right-0 z-10 px-3 py-3 ${rowBg}`}>
         <div className="flex justify-end gap-1.5">
           <button
@@ -437,7 +441,7 @@ function EditPanelRow({
   );
   const [amountPaid, setAmountPaid] = useState(String(row.payment?.amountPaid ?? 0));
   const [paidDate, setPaidDate] = useState(row.payment?.paidDate?.slice(0, 10) ?? "");
-  const [notes, setNotes] = useState(row.payment?.notes ?? "");
+  const [notes, setNotes] = useState((row.payment?.notes ?? "").replace(ELECTRICITY_NOTE_REGEX, ""));
   const [saving, setSaving] = useState(false);
 
   const rentNumber = Number(rent || 0);
@@ -445,6 +449,7 @@ function EditPanelRow({
   const rentSum = rentNumber + maintenanceNumber;
   const paidNumber = Number(amountPaid || 0);
   const balanceDue = Math.max(0, rentSum - paidNumber);
+  const excessAmount = Math.max(0, paidNumber - rentSum);
   const status: PaymentStatus = paidNumber <= 0 ? "UNPAID" : paidNumber >= rentSum ? "PAID" : "PARTIAL";
   const isBeforeMoveIn = isBeforeMoveInMonth(moveInDate || null, month);
 
@@ -476,6 +481,12 @@ function EditPanelRow({
       const unitJson = await unitRes.json();
       if (!unitRes.ok) throw new Error(unitJson.error ?? "Failed to update plot.");
 
+      const trimmedNotes = notes.trim();
+      const finalNotes =
+        excessAmount > 0
+          ? `Paid electricity: ₹${excessAmount.toFixed(0)}${trimmedNotes ? ` · ${trimmedNotes}` : ""}`
+          : trimmedNotes || null;
+
       const paymentRes = await fetch("/api/admin/payments", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -488,7 +499,7 @@ function EditPanelRow({
           amountPaid: paidNumber,
           balanceDue,
           paidDate: paidDate || null,
-          notes: notes || null,
+          notes: finalNotes,
         }),
       });
       const paymentJson = await paymentRes.json();
@@ -520,12 +531,12 @@ function EditPanelRow({
               <input value={tenantName} onChange={(e) => setTenantName(e.target.value)} className={inputClass} />
             </label>
             <label className="flex flex-col gap-1">
-              <span className={labelClass}>Phone</span>
-              <input value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" className={inputClass} />
-            </label>
-            <label className="flex flex-col gap-1">
               <span className={labelClass}>Joining date</span>
               <input type="date" value={moveInDate} onChange={(e) => setMoveInDate(e.target.value)} className={inputClass} />
+            </label>
+            <label className="flex flex-col gap-1">
+              <span className={labelClass}>Phone</span>
+              <input value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" className={inputClass} />
             </label>
           </div>
 
@@ -578,6 +589,11 @@ function EditPanelRow({
                   Full
                 </button>
               </div>
+              {excessAmount > 0 && (
+                <p className="text-xs font-medium text-partial">
+                  ₹{excessAmount.toFixed(0)} over rent — will be logged in notes as electricity paid.
+                </p>
+              )}
             </label>
             <label className="flex flex-col gap-1">
               <span className={labelClass}>Paid date</span>
@@ -601,7 +617,12 @@ function EditPanelRow({
             </div>
             <label className="col-span-2 flex flex-col gap-1 sm:col-span-1">
               <span className={labelClass}>Notes</span>
-              <input value={notes} onChange={(e) => setNotes(e.target.value)} className={inputClass} />
+              <input
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder={excessAmount > 0 ? "Other notes (optional)" : undefined}
+                className={inputClass}
+              />
             </label>
           </div>
 

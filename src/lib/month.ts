@@ -37,12 +37,12 @@ export function formatDate(value: string | null): string {
   });
 }
 
-// True when `moveInDate` falls in a month after `month` (YYYY-MM) — i.e. the tenant
-// hadn't moved in yet during that month, so rent isn't applicable.
+// True when `moveInDate` falls in `month` (YYYY-MM) or later — i.e. the tenant hadn't
+// completed a full month yet, so rent for their move-in month itself isn't collected.
 export function isBeforeMoveInMonth(moveInDate: string | Date | null, month: string): boolean {
   if (!moveInDate) return false;
   const iso = moveInDate instanceof Date ? moveInDate.toISOString() : moveInDate;
-  return iso.slice(0, 7) > month;
+  return iso.slice(0, 7) >= month;
 }
 
 export function getMonthOptions(count = 24): string[] {

@@ -127,18 +127,12 @@ export default function PlotDetailsModal({ row, onClose, onSaved }: Props) {
           />
         </label>
 
-        <div className="grid grid-cols-2 gap-3">
-          <label className="flex flex-col gap-1">
-            <span className={labelClass}>
-              Move-in date <span className="font-normal text-foreground/40">(public)</span>
-            </span>
-            <input type="date" value={moveInDate} onChange={(e) => setMoveInDate(e.target.value)} className={inputClass} />
-          </label>
-          <label className="flex flex-col gap-1">
-            <span className={labelClass}>Phone number</span>
-            <input value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" className={inputClass} />
-          </label>
-        </div>
+        <label className="flex flex-col gap-1">
+          <span className={labelClass}>
+            Move-in date <span className="font-normal text-foreground/40">(public)</span>
+          </span>
+          <input type="date" value={moveInDate} onChange={(e) => setMoveInDate(e.target.value)} className={inputClass} />
+        </label>
 
         <label className="flex flex-col gap-1">
           <span className={labelClass}>Advance amount (₹)</span>
@@ -180,6 +174,11 @@ export default function PlotDetailsModal({ row, onClose, onSaved }: Props) {
         <p className="-mt-2 text-xs text-foreground/45">
           Used as the rent for a month until it&apos;s marked paid for that month in the table.
         </p>
+
+        <label className="flex flex-col gap-1">
+          <span className={labelClass}>Phone number</span>
+          <input value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" className={inputClass} />
+        </label>
 
         <div className="flex gap-3 border-t border-primary/10 pt-4">
           {!isNew && (
