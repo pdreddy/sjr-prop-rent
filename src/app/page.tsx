@@ -87,13 +87,13 @@ export default function Home() {
   return (
     <div className="flex flex-1 flex-col bg-background">
       <header className="sticky top-0 z-10 border-b border-primary/10 bg-white/85 px-4 py-3.5 backdrop-blur sm:px-6">
-        <div className="mx-auto flex max-w-3xl items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-white">
+        <div className="mx-auto flex max-w-3xl items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-white">
               <IconBuilding className="h-5 w-5" />
             </span>
-            <div>
-              <h1 className="text-base font-bold leading-tight text-primary-dark sm:text-lg">
+            <div className="min-w-0">
+              <h1 className="truncate text-base font-bold leading-tight text-primary-dark sm:text-lg">
                 {data?.buildingName ?? "SJR Building"}
               </h1>
               <p className="text-xs text-foreground/45">Rent status</p>
@@ -101,7 +101,7 @@ export default function Home() {
           </div>
           <Link
             href="/admin/login"
-            className="rounded-full border border-primary/20 px-3.5 py-1.5 text-sm font-medium text-primary-dark hover:bg-primary-light"
+            className="shrink-0 rounded-full border border-primary/20 px-3.5 py-1.5 text-sm font-medium text-primary-dark hover:bg-primary-light"
           >
             Admin
           </Link>

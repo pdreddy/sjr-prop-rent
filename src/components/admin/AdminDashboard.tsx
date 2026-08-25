@@ -7,17 +7,15 @@ import MonthYearSelector from "@/components/MonthYearSelector";
 import StatusBadge from "@/components/StatusBadge";
 import ChangePasswordModal from "./ChangePasswordModal";
 import PlotDetailsModal from "./PlotDetailsModal";
+import EditPaymentModal from "./EditPaymentModal";
 import {
   getCurrentMonth,
   getMonthOptions,
   getPreviousMonth,
   formatMonthLabel,
   formatDate,
-  isBeforeMoveInMonth,
 } from "@/lib/month";
-import type { DashboardResponse, DashboardRow, DashboardTotals, PaymentStatus } from "@/lib/types";
-import { stripElectricityNote, withElectricityNote } from "@/lib/notes";
-import { computeElectricityAmount, computeElectricityUnits } from "@/lib/electricity";
+import type { DashboardResponse, DashboardRow, DashboardTotals } from "@/lib/types";
 import {
   IconBuilding,
   IconCopy,
@@ -32,7 +30,6 @@ import {
 const monthOptions = getMonthOptions();
 const STATUS_FILTERS = ["ALL", "PAID", "UNPAID", "PARTIAL", "VACANT"] as const;
 type StatusFilter = (typeof STATUS_FILTERS)[number];
-const TABLE_COLUMNS = 9;
 
 export default function AdminDashboard({ username }: { username: string }) {
   const router = useRouter();
@@ -44,7 +41,7 @@ export default function AdminDashboard({ username }: { username: string }) {
   const [error, setError] = useState<string | null>(null);
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [detailsRow, setDetailsRow] = useState<DashboardRow | null | "new">(null);
-  const [inlineEditingId, setInlineEditingId] = useState<string | null>(null);
+  const [editingRow, setEditingRow] = useState<DashboardRow | null>(null);
   const [copying, setCopying] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -128,15 +125,15 @@ export default function AdminDashboard({ username }: { username: string }) {
     <div className="flex flex-1 flex-col bg-background">
       <header className="sticky top-0 z-20 border-b border-primary/10 bg-white/90 px-4 py-3 backdrop-blur sm:px-6">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-white">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-white">
               <IconBuilding className="h-5 w-5" />
             </span>
-            <div>
+            <div className="min-w-0">
               <h1 className="text-base font-bold leading-tight text-primary-dark sm:text-lg">
                 SJR Rent Tracker
               </h1>
-              <p className="text-xs text-foreground/45">Signed in as {username}</p>
+              <p className="truncate text-xs text-foreground/45">Signed in as {username}</p>
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -248,51 +245,49 @@ export default function AdminDashboard({ username }: { username: string }) {
         )}
 
         {!loading && data && data.rows.length > 0 && (
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-primary/10 bg-white shadow-sm">
-            <div className="max-h-[68vh] overflow-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="sticky top-0 z-20 bg-primary-dark text-white shadow-[0_1px_0_rgba(0,0,0,0.08)]">
-                  <tr>
-                    <th className="sticky left-0 z-20 min-w-[150px] bg-primary-dark px-4 py-3 font-semibold">Plot &amp; tenant</th>
-                    <th className="min-w-[130px] px-3 py-3 font-semibold">This month</th>
-                    <th className="min-w-[110px] px-3 py-3 font-semibold">Status</th>
-                    <th className="min-w-[100px] px-3 py-3 font-semibold">Balance</th>
-                    <th className="min-w-[150px] px-3 py-3 font-semibold">Electricity</th>
-                    <th className="min-w-[170px] px-3 py-3 font-semibold">Notes</th>
-                    <th className="min-w-[170px] px-3 py-3 font-semibold">Plot info</th>
-                    <th className="min-w-[140px] px-3 py-3 font-semibold">Contact</th>
-                    <th className="sticky right-0 z-20 min-w-[100px] bg-primary-dark px-3 py-3 text-right font-semibold">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.rows.map((row, i) =>
-                    inlineEditingId === row.unit.id ? (
-                      <EditPanelRow
-                        key={row.unit.id}
-                        row={row}
-                        month={month}
-                        onCancel={() => setInlineEditingId(null)}
-                        onSaved={(msg) => {
-                          setInlineEditingId(null);
-                          setMessage(msg);
-                          load();
-                        }}
-                        onError={setError}
-                      />
-                    ) : (
+          <>
+            <ul className="flex flex-col gap-2.5 sm:hidden">
+              {data.rows.map((row) => (
+                <MobileRowCard
+                  key={row.unit.id}
+                  row={row}
+                  onEdit={() => setEditingRow(row)}
+                  onDetails={() => setDetailsRow(row)}
+                />
+              ))}
+            </ul>
+
+            <div className="hidden min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-primary/10 bg-white shadow-sm sm:flex">
+              <div className="max-h-[68vh] overflow-auto">
+                <table className="w-full text-left text-sm">
+                  <thead className="sticky top-0 z-20 bg-primary-dark text-white shadow-[0_1px_0_rgba(0,0,0,0.08)]">
+                    <tr>
+                      <th className="sticky left-0 z-20 min-w-[150px] bg-primary-dark px-4 py-3 font-semibold">Plot &amp; tenant</th>
+                      <th className="min-w-[130px] px-3 py-3 font-semibold">This month</th>
+                      <th className="min-w-[110px] px-3 py-3 font-semibold">Status</th>
+                      <th className="min-w-[100px] px-3 py-3 font-semibold">Balance</th>
+                      <th className="min-w-[150px] px-3 py-3 font-semibold">Electricity</th>
+                      <th className="min-w-[170px] px-3 py-3 font-semibold">Notes</th>
+                      <th className="min-w-[170px] px-3 py-3 font-semibold">Plot info</th>
+                      <th className="min-w-[140px] px-3 py-3 font-semibold">Contact</th>
+                      <th className="sticky right-0 z-20 min-w-[100px] bg-primary-dark px-3 py-3 text-right font-semibold">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.rows.map((row, i) => (
                       <ReadRow
                         key={row.unit.id}
                         row={row}
                         striped={i % 2 === 1}
-                        onEdit={() => setInlineEditingId(row.unit.id)}
+                        onEdit={() => setEditingRow(row)}
                         onDetails={() => setDetailsRow(row)}
                       />
-                    )
-                  )}
-                </tbody>
-              </table>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
+          </>
         )}
       </main>
 
@@ -302,6 +297,19 @@ export default function AdminDashboard({ username }: { username: string }) {
           onClose={() => setDetailsRow(null)}
           onSaved={(msg) => {
             setDetailsRow(null);
+            setMessage(msg);
+            load();
+          }}
+        />
+      )}
+
+      {editingRow && (
+        <EditPaymentModal
+          row={editingRow}
+          month={month}
+          onClose={() => setEditingRow(null)}
+          onSaved={(msg) => {
+            setEditingRow(null);
             setMessage(msg);
             load();
           }}
@@ -444,305 +452,83 @@ function ReadRow({
   );
 }
 
-function EditPanelRow({
+function MobileRowCard({
   row,
-  month,
-  onCancel,
-  onSaved,
-  onError,
+  onEdit,
+  onDetails,
 }: {
   row: DashboardRow;
-  month: string;
-  onCancel: () => void;
-  onSaved: (message: string) => void;
-  onError: (message: string | null) => void;
+  onEdit: () => void;
+  onDetails: () => void;
 }) {
-  const [plotNumber, setPlotNumber] = useState(row.unit.plotNumber);
-  const [tenantName, setTenantName] = useState(row.unit.tenantName ?? "");
-  const [moveInDate, setMoveInDate] = useState(row.unit.moveInDate?.slice(0, 10) ?? "");
-  const [phone, setPhone] = useState(row.unit.phone ?? "");
-  const [advanceAmount, setAdvanceAmount] = useState(String(row.unit.advanceAmount));
-  const [rent, setRent] = useState(String(row.payment?.rentAmount ?? row.unit.monthlyRent));
-  const [maintenance, setMaintenance] = useState(
-    String(row.payment?.maintenanceAmount ?? row.unit.maintenanceAmount)
-  );
-  const [amountPaid, setAmountPaid] = useState(String(row.payment?.amountPaid ?? 0));
-  const [paidDate, setPaidDate] = useState(row.payment?.paidDate?.slice(0, 10) ?? "");
-  const [notes, setNotes] = useState(stripElectricityNote(row.payment?.notes));
-  const [prevReading, setPrevReading] = useState(String(row.payment?.prevReading ?? 0));
-  const [currReading, setCurrReading] = useState(String(row.payment?.currReading ?? 0));
-  const [electricityPaid, setElectricityPaid] = useState(row.payment?.electricityPaid ?? false);
-  const [saving, setSaving] = useState(false);
-
-  const rentNumber = Number(rent || 0);
-  const maintenanceNumber = Number(maintenance || 0);
-  const rentSum = rentNumber + maintenanceNumber;
-  const paidNumber = Number(amountPaid || 0);
-  const balanceDue = Math.max(0, rentSum - paidNumber);
-  const excessAmount = Math.max(0, paidNumber - rentSum);
-  const status: PaymentStatus = paidNumber <= 0 ? "UNPAID" : paidNumber >= rentSum ? "PAID" : "PARTIAL";
-  const isBeforeMoveIn = isBeforeMoveInMonth(moveInDate || null, month);
-
-  const prevReadingNumber = Number(prevReading || 0);
-  const currReadingNumber = Number(currReading || 0);
-  const readingError = currReadingNumber < prevReadingNumber;
-  const electricityUnits = computeElectricityUnits(prevReadingNumber, currReadingNumber);
-  const electricityAmount = computeElectricityAmount(prevReadingNumber, currReadingNumber);
-
-  const inputClass =
-    "min-h-10 w-full rounded-lg border border-primary/25 bg-white px-2.5 py-1.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20";
-  const labelClass = "text-xs font-semibold uppercase tracking-wide text-foreground/45";
-
-  async function save() {
-    if (paidNumber > 0 && !paidDate) {
-      onError("Enter a paid date when an amount has been paid.");
-      return;
-    }
-    if (readingError) {
-      onError("Current meter reading must be greater than or equal to the previous reading.");
-      return;
-    }
-    setSaving(true);
-    onError(null);
-    try {
-      const unitRes = await fetch(`/api/admin/units/${row.unit.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          plotNumber,
-          tenantName: tenantName || null,
-          moveInDate: moveInDate || null,
-          phone: phone || null,
-          advanceAmount: Number(advanceAmount || 0),
-          monthlyRent: rentNumber,
-          maintenanceAmount: maintenanceNumber,
-        }),
-      });
-      const unitJson = await unitRes.json();
-      if (!unitRes.ok) throw new Error(unitJson.error ?? "Failed to update plot.");
-
-      const finalNotes = withElectricityNote(notes, excessAmount);
-
-      const paymentRes = await fetch("/api/admin/payments", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          unitId: row.unit.id,
-          month,
-          paymentStatus: status,
-          rentAmount: rentNumber,
-          maintenanceAmount: maintenanceNumber,
-          amountPaid: paidNumber,
-          balanceDue,
-          paidDate: paidDate || null,
-          notes: finalNotes,
-          prevReading: prevReadingNumber,
-          currReading: currReadingNumber,
-          electricityPaid,
-        }),
-      });
-      const paymentJson = await paymentRes.json();
-      if (!paymentRes.ok) throw new Error(paymentJson.error ?? "Failed to update payment.");
-      onSaved(`Plot ${plotNumber} saved.`);
-    } catch (error) {
-      onError(error instanceof Error ? error.message : "Could not save this row.");
-    } finally {
-      setSaving(false);
-    }
-  }
+  const rentAmount = row.payment?.rentAmount ?? row.unit.monthlyRent;
+  const maintenanceAmount = row.payment?.maintenanceAmount ?? row.unit.maintenanceAmount;
+  const rentSum = rentAmount + maintenanceAmount;
+  const balanceDue = row.payment?.balanceDue ?? 0;
+  const status = row.isBeforeMoveIn ? "NA" : row.isVacant ? "VACANT" : row.effectiveStatus;
+  const prevReading = row.payment?.prevReading ?? 0;
+  const currReading = row.payment?.currReading ?? 0;
+  const electricityAmount = row.payment?.electricityAmount ?? 0;
+  const electricityStatus = row.isBeforeMoveIn ? "NA" : row.payment?.electricityPaid ? "PAID" : "UNPAID";
 
   return (
-    <tr className="border-t border-primary/10 bg-primary-light/40">
-      <td colSpan={TABLE_COLUMNS} className="px-4 py-4 sm:px-5">
-        <div className="rounded-2xl border border-primary/15 bg-white p-4 shadow-sm sm:p-5">
-          <div className="mb-4 flex items-center justify-between gap-3">
-            <h3 className="text-base font-bold text-primary-dark">Editing plot {row.unit.plotNumber}</h3>
-            <StatusBadge status={isBeforeMoveIn ? "NA" : tenantName.trim() ? status : "VACANT"} />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <label className="flex flex-col gap-1">
-              <span className={labelClass}>Plot number</span>
-              <input required value={plotNumber} onChange={(e) => setPlotNumber(e.target.value)} className={inputClass} />
-            </label>
-            <label className="col-span-2 flex flex-col gap-1 sm:col-span-1">
-              <span className={labelClass}>Tenant name</span>
-              <input value={tenantName} onChange={(e) => setTenantName(e.target.value)} className={inputClass} />
-            </label>
-            <label className="flex flex-col gap-1">
-              <span className={labelClass}>Joining date</span>
-              <input type="date" value={moveInDate} onChange={(e) => setMoveInDate(e.target.value)} className={inputClass} />
-            </label>
-            <label className="flex flex-col gap-1">
-              <span className={labelClass}>Phone</span>
-              <input value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" className={inputClass} />
-            </label>
-          </div>
-
-          <div className="my-4 border-t border-primary/10" />
-
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <label className="flex flex-col gap-1">
-              <span className={labelClass}>Rent (₹)</span>
-              <input type="number" min="0" value={rent} onChange={(e) => setRent(e.target.value)} className={inputClass} />
-            </label>
-            <label className="flex flex-col gap-1">
-              <span className={labelClass}>Maintenance (₹)</span>
-              <input type="number" min="0" value={maintenance} onChange={(e) => setMaintenance(e.target.value)} className={inputClass} />
-            </label>
-            <label className="flex flex-col gap-1">
-              <span className={labelClass}>Advance (₹)</span>
-              <input type="number" min="0" value={advanceAmount} onChange={(e) => setAdvanceAmount(e.target.value)} className={inputClass} />
-            </label>
-            <div className="flex flex-col gap-1">
-              <span className={labelClass}>Rent sum</span>
-              <div className="flex min-h-10 items-center rounded-lg bg-primary-light px-2.5 text-sm font-semibold text-primary-dark">
-                ₹{rentSum.toFixed(0)}
-              </div>
-            </div>
-          </div>
-
-          <div className="my-4 border-t border-primary/10" />
-
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <label className="flex flex-col gap-1">
-              <span className={labelClass}>Prev reading</span>
-              <input
-                type="number"
-                min="0"
-                value={prevReading}
-                onChange={(e) => setPrevReading(e.target.value)}
-                className={inputClass}
-              />
-            </label>
-            <label className="flex flex-col gap-1">
-              <span className={labelClass}>Curr reading</span>
-              <input
-                type="number"
-                min="0"
-                value={currReading}
-                onChange={(e) => setCurrReading(e.target.value)}
-                className={`${inputClass} ${readingError ? "border-unpaid focus:border-unpaid focus:ring-unpaid/20" : ""}`}
-              />
-              {readingError && (
-                <p className="text-xs font-medium text-unpaid">Must be ≥ previous reading.</p>
-              )}
-            </label>
-            <div className="flex flex-col gap-1">
-              <span className={labelClass}>Electricity (₹)</span>
-              <div className="flex min-h-10 items-center rounded-lg bg-primary-light px-2.5 text-sm font-semibold text-primary-dark">
-                ₹{electricityAmount.toFixed(0)}
-                <span className="ml-1.5 font-normal text-primary-dark/60">({electricityUnits} units)</span>
-              </div>
-            </div>
-            <div className="flex flex-col gap-1">
-              <span className={labelClass}>Elec. status</span>
-              <div className="flex overflow-hidden rounded-lg border border-primary/25">
-                <button
-                  type="button"
-                  onClick={() => setElectricityPaid(true)}
-                  className={`min-h-10 flex-1 text-sm font-semibold transition-colors ${
-                    electricityPaid ? "bg-paid text-white" : "bg-white text-foreground/60 hover:bg-paid-bg"
-                  }`}
-                >
-                  Paid
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setElectricityPaid(false)}
-                  className={`min-h-10 flex-1 text-sm font-semibold transition-colors ${
-                    !electricityPaid ? "bg-unpaid text-white" : "bg-white text-foreground/60 hover:bg-unpaid-bg"
-                  }`}
-                >
-                  Unpaid
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div className="my-4 border-t border-primary/10" />
-
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <label className="flex flex-col gap-1">
-              <span className={labelClass}>Amount paid (₹)</span>
-              <div className="flex items-center gap-1.5">
-                <input
-                  type="number"
-                  min="0"
-                  inputMode="decimal"
-                  value={amountPaid}
-                  onChange={(e) => setAmountPaid(e.target.value)}
-                  className={inputClass}
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAmountPaid(String(rentSum));
-                    if (!paidDate) setPaidDate(new Date().toISOString().slice(0, 10));
-                  }}
-                  title="Fill full rent sum as paid"
-                  className="min-h-10 shrink-0 whitespace-nowrap rounded-lg border border-paid/40 bg-paid-bg px-2.5 text-xs font-semibold text-paid hover:bg-paid/20"
-                >
-                  Full
-                </button>
-              </div>
-              {excessAmount > 0 && (
-                <p className="text-xs font-medium text-partial">
-                  ₹{excessAmount.toFixed(0)} over rent — will be logged in notes as &quot;Paid Electricity&quot;.
-                </p>
-              )}
-            </label>
-            <label className="flex flex-col gap-1">
-              <span className={labelClass}>Paid date</span>
-              <input
-                type="date"
-                required={paidNumber > 0}
-                value={paidDate}
-                onChange={(e) => setPaidDate(e.target.value)}
-                className={inputClass}
-              />
-            </label>
-            <div className="flex flex-col gap-1">
-              <span className={labelClass}>Balance due</span>
-              <div
-                className={`flex min-h-10 items-center rounded-lg px-2.5 text-sm font-semibold ${
-                  balanceDue > 0 ? "bg-unpaid-bg text-unpaid" : "bg-paid-bg text-paid"
-                }`}
-              >
-                ₹{balanceDue.toFixed(0)}
-              </div>
-            </div>
-            <label className="col-span-2 flex flex-col gap-1 sm:col-span-1">
-              <span className={labelClass}>Notes</span>
-              <input
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder={excessAmount > 0 ? "Other notes (optional)" : undefined}
-                className={inputClass}
-              />
-            </label>
-          </div>
-
-          <div className="mt-5 flex justify-end gap-2 border-t border-primary/10 pt-4">
-            <button
-              type="button"
-              onClick={onCancel}
-              disabled={saving}
-              className="min-h-10 rounded-xl border border-primary/20 bg-white px-4 text-sm font-semibold text-foreground/70 hover:bg-primary-light disabled:opacity-60"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={save}
-              disabled={saving || readingError}
-              className="min-h-10 rounded-xl bg-primary px-5 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-60"
-            >
-              {saving ? "Saving…" : "Save changes"}
-            </button>
-          </div>
+    <li className="rounded-2xl border border-primary/10 bg-white p-4 shadow-sm">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="text-xs font-semibold uppercase tracking-wide text-foreground/40">Plot {row.unit.plotNumber}</p>
+          <p className="truncate font-bold text-foreground">{row.unit.tenantName || "Vacant"}</p>
         </div>
-      </td>
-    </tr>
+        <StatusBadge status={status} />
+      </div>
+
+      <div className="mt-2.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-sm text-foreground/70">
+        <span className="font-semibold text-foreground">₹{rentSum.toFixed(0)} due</span>
+        <span>
+          ₹{(row.payment?.amountPaid ?? 0).toFixed(0)} paid
+          {row.payment?.paidDate ? ` · ${formatDate(row.payment.paidDate)}` : ""}
+        </span>
+        <span className={`font-semibold ${balanceDue > 0 ? "text-unpaid" : "text-foreground/50"}`}>
+          ₹{balanceDue.toFixed(0)} balance
+        </span>
+      </div>
+
+      <div className="mt-2.5 flex items-center justify-between gap-2 rounded-xl bg-background px-3 py-2">
+        <div className="min-w-0 text-sm">
+          {row.isBeforeMoveIn ? (
+            <span className="text-foreground/50">Electricity N/A</span>
+          ) : (
+            <>
+              <span className="font-semibold text-foreground">₹{electricityAmount.toFixed(0)}</span>
+              <span className="ml-1.5 text-foreground/50">
+                ({prevReading} → {currReading})
+              </span>
+            </>
+          )}
+        </div>
+        {!row.isBeforeMoveIn && <StatusBadge status={electricityStatus} />}
+      </div>
+
+      {row.payment?.notes && (
+        <p className="mt-2.5 whitespace-pre-line text-sm text-foreground/60">{row.payment.notes}</p>
+      )}
+
+      <div className="mt-3 flex gap-2 border-t border-primary/10 pt-3">
+        <button
+          onClick={onEdit}
+          className="inline-flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-lg border border-primary/25 text-sm font-semibold text-primary-dark hover:bg-primary-light"
+        >
+          <IconEdit className="h-4 w-4" />
+          Edit
+        </button>
+        <button
+          onClick={onDetails}
+          className="inline-flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-lg border border-primary/25 text-sm font-semibold text-primary-dark hover:bg-primary-light"
+        >
+          <IconInfo className="h-4 w-4" />
+          Details
+        </button>
+      </div>
+    </li>
   );
 }
+
