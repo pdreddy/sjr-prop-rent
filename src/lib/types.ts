@@ -4,7 +4,7 @@ export interface PublicPlot {
   plotNumber: string;
   tenantName: string | null;
   moveInDate: string | null;
-  status: PaymentStatus;
+  status: PaymentStatus | "NA";
   amountPaid: number;
   paidDate: string | null;
 }
@@ -51,6 +51,7 @@ export interface DashboardRow {
   unit: UnitDTO;
   payment: PaymentDTO | null;
   isVacant: boolean;
+  isBeforeMoveIn: boolean;
   effectiveStatus: PaymentStatus;
 }
 

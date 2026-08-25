@@ -1,10 +1,11 @@
-type Status = "PAID" | "UNPAID" | "PARTIAL" | "VACANT";
+type Status = "PAID" | "UNPAID" | "PARTIAL" | "VACANT" | "NA";
 
 const STYLES: Record<Status, string> = {
   PAID: "bg-paid-bg text-paid",
   UNPAID: "bg-unpaid-bg text-unpaid",
   PARTIAL: "bg-partial-bg text-partial",
   VACANT: "bg-vacant-bg text-vacant",
+  NA: "bg-vacant-bg text-vacant",
 };
 
 const DOT: Record<Status, string> = {
@@ -12,6 +13,7 @@ const DOT: Record<Status, string> = {
   UNPAID: "bg-unpaid",
   PARTIAL: "bg-partial",
   VACANT: "bg-vacant",
+  NA: "bg-vacant",
 };
 
 const LABELS: Record<Status, string> = {
@@ -19,6 +21,7 @@ const LABELS: Record<Status, string> = {
   UNPAID: "Unpaid",
   PARTIAL: "Partial",
   VACANT: "Vacant",
+  NA: "N/A",
 };
 
 export default function StatusBadge({ status }: { status: Status }) {

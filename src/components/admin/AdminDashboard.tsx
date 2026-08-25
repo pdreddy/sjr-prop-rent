@@ -12,6 +12,7 @@ import {
   getPreviousMonth,
   formatMonthLabel,
   formatDate,
+  isBeforeMoveInMonth,
 } from "@/lib/month";
 import type { DashboardResponse, DashboardRow, PaymentStatus } from "@/lib/types";
 import {
@@ -303,7 +304,7 @@ export default function AdminDashboard({ username }: { username: string }) {
                           {formatDate(row.payment?.paidDate ?? null)}
                         </td>
                         <td className="w-[100px] min-w-[100px] px-3 py-3">
-                          <StatusBadge status={row.isVacant ? "VACANT" : row.effectiveStatus} />
+                          <StatusBadge status={row.isBeforeMoveIn ? "NA" : row.isVacant ? "VACANT" : row.effectiveStatus} />
                         </td>
                         <td className="w-[90px] min-w-[90px] px-3 py-3">₹{(row.payment?.balanceDue ?? 0).toFixed(0)}</td>
                         <td className="w-[130px] min-w-[130px] px-3 py-3">{row.unit.phone || "—"}</td>
@@ -398,6 +399,7 @@ function InlineEditRow({
   const paidNumber = Number(amountPaid || 0);
   const balanceDue = Math.max(0, rentSum - paidNumber);
   const status: PaymentStatus = paidNumber <= 0 ? "UNPAID" : paidNumber >= rentSum ? "PAID" : "PARTIAL";
+  const isBeforeMoveIn = isBeforeMoveInMonth(moveInDate || null, month);
   const inputClass =
     "w-full min-w-0 rounded-lg border border-primary/25 bg-white px-2 py-1.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30";
 
@@ -487,7 +489,7 @@ function InlineEditRow({
         <input aria-label="Paid date" type="date" required={paidNumber > 0} value={paidDate} onChange={(e) => setPaidDate(e.target.value)} className={inputClass} />
       </td>
       <td className="w-[100px] min-w-[100px] px-3 py-3">
-        <StatusBadge status={tenantName.trim() ? status : "VACANT"} />
+        <StatusBadge status={isBeforeMoveIn ? "NA" : tenantName.trim() ? status : "VACANT"} />
       </td>
       <td className="w-[90px] min-w-[90px] px-3 py-3">₹{balanceDue.toFixed(0)}</td>
       <td className="w-[130px] min-w-[130px] px-2 py-2">
