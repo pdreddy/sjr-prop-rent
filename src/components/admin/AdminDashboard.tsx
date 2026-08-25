@@ -15,6 +15,7 @@ import {
   isBeforeMoveInMonth,
 } from "@/lib/month";
 import type { DashboardResponse, DashboardRow, DashboardTotals, PaymentStatus } from "@/lib/types";
+import { stripElectricityNote, withElectricityNote } from "@/lib/notes";
 import {
   IconBuilding,
   IconCopy,
@@ -30,9 +31,6 @@ const monthOptions = getMonthOptions();
 const STATUS_FILTERS = ["ALL", "PAID", "UNPAID", "PARTIAL", "VACANT"] as const;
 type StatusFilter = (typeof STATUS_FILTERS)[number];
 const TABLE_COLUMNS = 8;
-// Strips a previously auto-generated "Paid electricity: ₹123" prefix so it can be
-// recomputed from the current amount paid instead of accumulating stale copies.
-const ELECTRICITY_NOTE_REGEX = /^Paid electricity:\s*₹[\d,.]+\s*(?:·\s*)?/i;
 
 export default function AdminDashboard({ username }: { username: string }) {
   const router = useRouter();
@@ -441,7 +439,7 @@ function EditPanelRow({
   );
   const [amountPaid, setAmountPaid] = useState(String(row.payment?.amountPaid ?? 0));
   const [paidDate, setPaidDate] = useState(row.payment?.paidDate?.slice(0, 10) ?? "");
-  const [notes, setNotes] = useState((row.payment?.notes ?? "").replace(ELECTRICITY_NOTE_REGEX, ""));
+  const [notes, setNotes] = useState(stripElectricityNote(row.payment?.notes));
   const [saving, setSaving] = useState(false);
 
   const rentNumber = Number(rent || 0);
@@ -481,11 +479,7 @@ function EditPanelRow({
       const unitJson = await unitRes.json();
       if (!unitRes.ok) throw new Error(unitJson.error ?? "Failed to update plot.");
 
-      const trimmedNotes = notes.trim();
-      const finalNotes =
-        excessAmount > 0
-          ? `Paid electricity: ₹${excessAmount.toFixed(0)}${trimmedNotes ? ` · ${trimmedNotes}` : ""}`
-          : trimmedNotes || null;
+      const finalNotes = withElectricityNote(notes, excessAmount);
 
       const paymentRes = await fetch("/api/admin/payments", {
         method: "PUT",
