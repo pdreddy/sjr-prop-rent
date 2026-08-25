@@ -1,15 +1,23 @@
-// Matches a previously auto-generated "Paid electricity: ₹123" prefix so it can be
-// recomputed instead of accumulating stale copies across edits.
-const ELECTRICITY_NOTE_REGEX = /^Paid electricity:\s*₹[\d,.]+\s*(?:·\s*)?/i;
+// Matches a previously auto-generated "Paid Electricity: ₹123" prefix (old lowercase
+// "Paid electricity:" and " · " joins included) so it can be recomputed instead of
+// accumulating stale copies across edits.
+const ELECTRICITY_PREFIX_REGEX = /^paid electricity:\s*₹[\d,.]+\s*(?:\n|·\s*)?/i;
+
+// A manually typed note that just restates "paid electricity" (with the common
+// "Piad" typo) is redundant once we're already prefixing an auto-generated
+// "Paid Electricity: ₹<amount>" note, so drop it instead of duplicating it.
+const REDUNDANT_ELECTRICITY_REGEX = /^p[ai]{2}d\s+electricity$/i;
 
 export function stripElectricityNote(notes: string | null | undefined): string {
-  return (notes ?? "").replace(ELECTRICITY_NOTE_REGEX, "").trim();
+  const rest = (notes ?? "").replace(ELECTRICITY_PREFIX_REGEX, "").trim();
+  return REDUNDANT_ELECTRICITY_REGEX.test(rest) ? "" : rest;
 }
 
 export function withElectricityNote(notes: string | null | undefined, excessAmount: number): string | null {
   const rest = stripElectricityNote(notes);
   if (excessAmount > 0) {
-    return `Paid electricity: ₹${excessAmount.toFixed(0)}${rest ? ` · ${rest}` : ""}`;
+    const prefix = `Paid Electricity: ₹${excessAmount.toFixed(0)}`;
+    return rest ? `${prefix}\n${rest}` : prefix;
   }
   return rest || null;
 }

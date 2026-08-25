@@ -384,7 +384,7 @@ function ReadRow({
           ₹{balanceDue.toFixed(0)}
         </span>
       </td>
-      <td className="max-w-[200px] truncate px-3 py-3 text-foreground/70">{row.payment?.notes || "—"}</td>
+      <td className="max-w-[200px] whitespace-pre-line px-3 py-3 text-foreground/70 line-clamp-2">{row.payment?.notes || "—"}</td>
       <td className="px-3 py-3 text-foreground/70">
         <p>Joined {formatDate(row.unit.moveInDate)}</p>
         <p>Total rent ₹{rentSum.toFixed(0)}</p>
@@ -585,7 +585,7 @@ function EditPanelRow({
               </div>
               {excessAmount > 0 && (
                 <p className="text-xs font-medium text-partial">
-                  ₹{excessAmount.toFixed(0)} over rent — will be logged in notes as electricity paid.
+                  ₹{excessAmount.toFixed(0)} over rent — will be logged in notes as &quot;Paid Electricity&quot;.
                 </p>
               )}
             </label>
