@@ -15,13 +15,16 @@ export async function GET(request: NextRequest) {
   const plots = units.map((unit) => {
     const payment = payments.find((item) => item.unitId === unit.id && item.month === month);
     const moveInDate = unit.moveInDate?.toISOString() ?? null;
+    const isBeforeMoveIn = isBeforeMoveInMonth(moveInDate, month);
     return {
       plotNumber: unit.plotNumber,
       tenantName: unit.tenantName,
       moveInDate,
-      status: isBeforeMoveInMonth(moveInDate, month) ? ("NA" as const) : payment?.paymentStatus ?? ("UNPAID" as const),
+      status: isBeforeMoveIn ? ("NA" as const) : payment?.paymentStatus ?? ("UNPAID" as const),
       amountPaid: payment?.amountPaid ?? 0,
       paidDate: payment?.paidDate?.toISOString() ?? null,
+      electricityAmount: payment?.electricityAmount ?? 0,
+      electricityStatus: isBeforeMoveIn ? ("NA" as const) : payment?.electricityPaid ? ("PAID" as const) : ("UNPAID" as const),
     };
   });
 

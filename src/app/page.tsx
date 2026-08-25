@@ -9,10 +9,13 @@ import type { PublicStatusResponse } from "@/lib/types";
 import { IconBuilding, IconCalendar, IconRupee, IconSearch } from "@/components/icons";
 
 const monthOptions = getMonthOptions();
+const STATUS_FILTERS = ["ALL", "PAID", "PARTIAL", "UNPAID"] as const;
+type StatusFilter = (typeof STATUS_FILTERS)[number];
 
 export default function Home() {
   const [month, setMonth] = useState(getCurrentMonth());
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
   const [data, setData] = useState<PublicStatusResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -42,13 +45,15 @@ export default function Home() {
   const plots = useMemo(() => {
     if (!data) return [];
     const needle = search.trim().toLowerCase();
-    if (!needle) return data.plots;
-    return data.plots.filter(
-      (plot) =>
+    return data.plots.filter((plot) => {
+      const matchesSearch =
+        !needle ||
         plot.plotNumber.toLowerCase().includes(needle) ||
-        plot.tenantName?.toLowerCase().includes(needle)
-    );
-  }, [data, search]);
+        plot.tenantName?.toLowerCase().includes(needle);
+      const matchesStatus = statusFilter === "ALL" || plot.status === statusFilter;
+      return matchesSearch && matchesStatus;
+    });
+  }, [data, search, statusFilter]);
 
   const paidPct = data && data.totalPlots > 0 ? Math.round((data.paidCount / data.totalPlots) * 100) : 0;
 
@@ -91,6 +96,22 @@ export default function Home() {
               />
             </div>
           </label>
+        </div>
+
+        <div className="mb-5 flex flex-wrap gap-1.5">
+          {STATUS_FILTERS.map((s) => (
+            <button
+              key={s}
+              onClick={() => setStatusFilter(s)}
+              className={`min-h-9 rounded-full border px-3 py-1.5 text-sm font-medium ${
+                statusFilter === s
+                  ? "border-primary bg-primary text-white"
+                  : "border-primary/20 bg-white text-foreground/70"
+              }`}
+            >
+              {s.charAt(0) + s.slice(1).toLowerCase()}
+            </button>
+          ))}
         </div>
 
         {loading && (
@@ -178,6 +199,13 @@ export default function Home() {
                         ₹{plot.amountPaid.toFixed(0)} paid
                         {plot.paidDate ? ` on ${formatDate(plot.paidDate)}` : " · no paid date yet"}
                       </span>
+                    </div>
+
+                    <div className="mt-3 flex items-center justify-between gap-2 rounded-xl bg-primary-light/50 px-3 py-2">
+                      <span className="text-sm text-foreground/70">
+                        Electricity{plot.electricityStatus !== "NA" ? `: ₹${plot.electricityAmount.toFixed(0)}` : ""}
+                      </span>
+                      <StatusBadge status={plot.electricityStatus} />
                     </div>
                   </li>
                 ))}

@@ -269,6 +269,8 @@ export default function AdminDashboard({ username }: { username: string }) {
                     <th className="w-[110px] min-w-[110px] px-3 py-2.5 font-semibold">Advance</th>
                     <th className="w-[90px] min-w-[90px] px-3 py-2.5 font-semibold">Rent</th>
                     <th className="w-[100px] min-w-[100px] px-3 py-2.5 font-semibold">Maintenance</th>
+                    <th className="w-[110px] min-w-[110px] px-3 py-2.5 font-semibold">Electricity</th>
+                    <th className="w-[110px] min-w-[110px] px-3 py-2.5 font-semibold">Elec. status</th>
                     <th className="sticky right-0 z-20 w-[110px] min-w-[110px] border-l border-primary/10 bg-primary-light px-3 py-2.5 font-semibold shadow-[-2px_0_4px_rgba(0,0,0,0.04)]">Actions</th>
                   </tr>
                 </thead>
@@ -319,6 +321,14 @@ export default function AdminDashboard({ username }: { username: string }) {
                         <td className="w-[110px] min-w-[110px] px-3 py-3">₹{row.unit.advanceAmount.toFixed(0)}</td>
                         <td className="w-[90px] min-w-[90px] px-3 py-3">₹{rentAmount.toFixed(0)}</td>
                         <td className="w-[100px] min-w-[100px] px-3 py-3">₹{maintenanceAmount.toFixed(0)}</td>
+                        <td className="w-[110px] min-w-[110px] px-3 py-3">₹{(row.payment?.electricityAmount ?? 0).toFixed(0)}</td>
+                        <td className="w-[110px] min-w-[110px] px-3 py-3">
+                          <StatusBadge
+                            status={
+                              row.isBeforeMoveIn ? "NA" : row.payment?.electricityPaid ? "PAID" : "UNPAID"
+                            }
+                          />
+                        </td>
                         <td className="sticky right-0 z-10 w-[110px] min-w-[110px] border-l border-primary/10 bg-white px-3 py-3 shadow-[-2px_0_4px_rgba(0,0,0,0.04)]">
                           <div className="flex gap-1.5">
                             <button
@@ -393,6 +403,8 @@ function InlineEditRow({
   const [amountPaid, setAmountPaid] = useState(String(row.payment?.amountPaid ?? 0));
   const [paidDate, setPaidDate] = useState(row.payment?.paidDate?.slice(0, 10) ?? "");
   const [notes, setNotes] = useState(row.payment?.notes ?? "");
+  const [electricityAmount, setElectricityAmount] = useState(String(row.payment?.electricityAmount ?? 0));
+  const [electricityPaid, setElectricityPaid] = useState(row.payment?.electricityPaid ?? false);
   const [saving, setSaving] = useState(false);
 
   const rentNumber = Number(rent || 0);
@@ -443,6 +455,8 @@ function InlineEditRow({
           balanceDue,
           paidDate: paidDate || null,
           notes: notes || null,
+          electricityAmount: Number(electricityAmount || 0),
+          electricityPaid,
         }),
       });
       const paymentJson = await paymentRes.json();
@@ -519,6 +533,28 @@ function InlineEditRow({
       </td>
       <td className="w-[100px] min-w-[100px] px-2 py-2">
         <input aria-label="Maintenance" type="number" min="0" value={maintenance} onChange={(e) => setMaintenance(e.target.value)} className={inputClass} />
+      </td>
+      <td className="w-[110px] min-w-[110px] px-2 py-2">
+        <input
+          aria-label="Electricity bill amount"
+          type="number"
+          min="0"
+          inputMode="decimal"
+          value={electricityAmount}
+          onChange={(e) => setElectricityAmount(e.target.value)}
+          className={inputClass}
+        />
+      </td>
+      <td className="w-[110px] min-w-[110px] px-2 py-2">
+        <button
+          type="button"
+          onClick={() => setElectricityPaid((prev) => !prev)}
+          className={`min-h-9 w-full rounded-lg border px-2 py-1.5 text-sm font-semibold ${
+            electricityPaid ? "border-paid bg-paid-bg text-paid" : "border-unpaid bg-unpaid-bg text-unpaid"
+          }`}
+        >
+          {electricityPaid ? "Paid" : "Unpaid"}
+        </button>
       </td>
       <td className="sticky right-0 z-10 w-[110px] min-w-[110px] border-l border-primary/10 bg-[#f5f8f7] px-2 py-2 shadow-[-2px_0_4px_rgba(0,0,0,0.04)]">
         <div className="flex flex-col gap-1">

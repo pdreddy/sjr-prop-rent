@@ -7,6 +7,8 @@ export interface PublicPlot {
   status: PaymentStatus | "NA";
   amountPaid: number;
   paidDate: string | null;
+  electricityAmount: number;
+  electricityStatus: "PAID" | "UNPAID" | "NA";
 }
 
 export interface PublicStatusResponse {
@@ -42,6 +44,8 @@ export interface PaymentDTO {
   balanceDue: number;
   paidDate: string | null;
   notes: string | null;
+  electricityAmount: number;
+  electricityPaid: boolean;
   updatedBy: string | null;
   createdAt: string;
   updatedAt: string;

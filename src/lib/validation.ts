@@ -57,6 +57,8 @@ export const upsertPaymentSchema = z.object({
   balanceDue: z.coerce.number().min(-10_000_000).max(10_000_000),
   paidDate: z.string().trim().max(30).optional().nullable(),
   notes: z.string().trim().max(2000).optional().nullable(),
+  electricityAmount: z.coerce.number().min(0).max(10_000_000).default(0),
+  electricityPaid: z.boolean().default(false),
 });
 
 export const copyMonthSchema = z.object({
