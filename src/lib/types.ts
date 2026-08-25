@@ -4,9 +4,13 @@ export interface PublicPlot {
   plotNumber: string;
   tenantName: string | null;
   moveInDate: string | null;
-  status: "PAID" | "UNPAID";
+  status: PaymentStatus | "NA";
   amountPaid: number;
   paidDate: string | null;
+  electricityPreviousReading: number;
+  electricityCurrentReading: number;
+  electricityAmount: number;
+  electricityStatus: "PAID" | "UNPAID" | "NA";
 }
 
 export interface PublicStatusResponse {
@@ -22,7 +26,8 @@ export interface UnitDTO {
   plotNumber: string;
   tenantName: string | null;
   moveInDate: string | null;
-  phone: string | null;
+  phones: string[];
+  advanceAmount: number;
   monthlyRent: number;
   maintenanceAmount: number;
   active: boolean;
@@ -41,6 +46,10 @@ export interface PaymentDTO {
   balanceDue: number;
   paidDate: string | null;
   notes: string | null;
+  electricityPreviousReading: number;
+  electricityCurrentReading: number;
+  electricityAmount: number;
+  electricityPaid: boolean;
   updatedBy: string | null;
   createdAt: string;
   updatedAt: string;
@@ -50,6 +59,7 @@ export interface DashboardRow {
   unit: UnitDTO;
   payment: PaymentDTO | null;
   isVacant: boolean;
+  isBeforeMoveIn: boolean;
   effectiveStatus: PaymentStatus;
 }
 

@@ -20,7 +20,14 @@ function requireConfig(): FirebaseConfig {
   }
   const projectId = process.env.FIREBASE_PROJECT_ID || fileConfig.project_id;
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL || fileConfig.client_email;
-  const privateKey = (process.env.FIREBASE_PRIVATE_KEY || fileConfig.private_key)?.replace(/\\n/g, "\n");
+  // FIREBASE_PRIVATE_KEY_BASE64 (the PEM key, base64-encoded) is preferred on platforms like
+  // Netlify/Vercel where pasting a multi-line PEM into an env var UI can silently mangle its
+  // line breaks and produce an unparsable key (Node throws ERR_OSSL_UNSUPPORTED). Base64 is a
+  // single unbroken line, so it survives that round-trip intact.
+  const privateKeyBase64 = process.env.FIREBASE_PRIVATE_KEY_BASE64;
+  const privateKey = privateKeyBase64
+    ? Buffer.from(privateKeyBase64, "base64").toString("utf8")
+    : (process.env.FIREBASE_PRIVATE_KEY || fileConfig.private_key)?.replace(/\\n/g, "\n").replace(/\r\n/g, "\n");
   const databaseUrl = process.env.FIREBASE_DATABASE_URL || (projectId ? `https://${projectId}-default-rtdb.firebaseio.com` : undefined);
   if (!projectId || !clientEmail || !privateKey || !databaseUrl) {
     throw new Error("Firebase credentials are missing. Configure FIREBASE_SERVICE_ACCOUNT_PATH and FIREBASE_DATABASE_URL, or provide the individual service-account variables.");

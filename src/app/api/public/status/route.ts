@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { allPayments, allUnits } from "@/lib/store";
 import { BUILDING_NAME } from "@/lib/constants";
-import { isValidMonth, getCurrentMonth } from "@/lib/month";
+import { isValidMonth, getCurrentMonth, isBeforeMoveInMonth } from "@/lib/month";
 
 export const dynamic = "force-dynamic";
 
@@ -14,14 +14,19 @@ export async function GET(request: NextRequest) {
 
   const plots = units.map((unit) => {
     const payment = payments.find((item) => item.unitId === unit.id && item.month === month);
+    const moveInDate = unit.moveInDate?.toISOString() ?? null;
+    const isBeforeMoveIn = isBeforeMoveInMonth(moveInDate, month);
     return {
       plotNumber: unit.plotNumber,
       tenantName: unit.tenantName,
-      moveInDate: unit.moveInDate?.toISOString() ?? null,
-      // Public view collapses PARTIAL into "unpaid so far" — only PAID counts as paid.
-      status: payment?.paymentStatus === "PAID" ? "PAID" as const : "UNPAID" as const,
+      moveInDate,
+      status: isBeforeMoveIn ? ("NA" as const) : payment?.paymentStatus ?? ("UNPAID" as const),
       amountPaid: payment?.amountPaid ?? 0,
       paidDate: payment?.paidDate?.toISOString() ?? null,
+      electricityPreviousReading: payment?.electricityPreviousReading ?? 0,
+      electricityCurrentReading: payment?.electricityCurrentReading ?? 0,
+      electricityAmount: payment?.electricityAmount ?? 0,
+      electricityStatus: isBeforeMoveIn ? ("NA" as const) : payment?.electricityPaid ? ("PAID" as const) : ("UNPAID" as const),
     };
   });
 

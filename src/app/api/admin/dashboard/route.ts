@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthedAdmin } from "@/lib/auth";
-import { isValidMonth, getCurrentMonth } from "@/lib/month";
+import { isValidMonth, getCurrentMonth, isBeforeMoveInMonth } from "@/lib/month";
 import { allPayments, allUnits, paymentDTO, unitDTO } from "@/lib/store";
 
 export async function GET(request: NextRequest) {
@@ -11,13 +11,20 @@ export async function GET(request: NextRequest) {
   const search = params.get("search")?.trim().toLowerCase();
   const statusFilter = params.get("status");
   const [unitRecords, paymentRecords] = await Promise.all([allUnits(), allPayments()]);
-  let rows = unitRecords.filter((unit) => unit.active && (!search || [unit.plotNumber, unit.tenantName, unit.phone].some((v) => v?.toLowerCase().includes(search)))).map((unit) => {
+  let rows = unitRecords.filter((unit) => unit.active && (!search || [unit.plotNumber, unit.tenantName, ...(unit.phones ?? [])].some((v) => v?.toLowerCase().includes(search)))).map((unit) => {
     const payment = paymentRecords.find((p) => p.unitId === unit.id && p.month === month) ?? null;
     const isVacant = !unit.tenantName?.trim();
-    return { unit: unitDTO(unit), payment: payment ? paymentDTO(payment) : null, isVacant, effectiveStatus: payment?.paymentStatus ?? "UNPAID" };
+    const isBeforeMoveIn = isBeforeMoveInMonth(unit.moveInDate, month);
+    return { unit: unitDTO(unit), payment: payment ? paymentDTO(payment) : null, isVacant, isBeforeMoveIn, effectiveStatus: payment?.paymentStatus ?? "UNPAID" };
   });
-  if (statusFilter && statusFilter !== "ALL") rows = rows.filter((row) => statusFilter === "VACANT" ? row.isVacant : row.effectiveStatus === statusFilter);
+  if (statusFilter && statusFilter !== "ALL") {
+    rows = rows.filter((row) => {
+      if (statusFilter === "VACANT") return row.isVacant;
+      return !row.isBeforeMoveIn && row.effectiveStatus === statusFilter;
+    });
+  }
   const totals = rows.reduce((acc, row) => {
+    if (row.isBeforeMoveIn) return acc;
     const expected = row.payment ? row.payment.rentAmount + row.payment.maintenanceAmount : row.unit.monthlyRent + row.unit.maintenanceAmount;
     acc.totalExpected += expected; acc.totalCollected += row.payment?.amountPaid ?? 0;
     if (row.effectiveStatus === "PAID") acc.numPaid++; else if (row.effectiveStatus === "PARTIAL") acc.numPartial++; else acc.numUnpaid++;
