@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo, type ReactNode } from "react";
 import Link from "next/link";
 import MonthYearSelector from "@/components/MonthYearSelector";
 import StatusBadge from "@/components/StatusBadge";
@@ -71,14 +71,18 @@ export default function Home() {
   }, [data, search, rentFilter, electricityFilter]);
 
   const counts = useMemo(() => {
-    const base = { PAID: 0, UNPAID: 0, PARTIAL: 0, VACANT: 0, NA: 0 };
+    const rent = { PAID: 0, UNPAID: 0, PARTIAL: 0, NA: 0 };
+    const electricity = { PAID: 0, UNPAID: 0, NA: 0 };
     for (const plot of data?.plots ?? []) {
-      base[plot.status] += 1;
+      rent[plot.status] += 1;
+      electricity[plot.electricityStatus] += 1;
     }
-    return base;
+    return { rent, electricity };
   }, [data]);
 
   const paidPct = data && data.totalPlots > 0 ? Math.round((data.paidCount / data.totalPlots) * 100) : 0;
+  const electricityPct =
+    data && data.totalPlots > 0 ? Math.round((counts.electricity.PAID / data.totalPlots) * 100) : 0;
 
   return (
     <div className="flex flex-1 flex-col bg-background">
@@ -179,43 +183,29 @@ export default function Home() {
 
         {!loading && !error && data && (
           <>
-            <div className="mb-6 overflow-hidden rounded-2xl border border-primary/10 bg-white p-5 shadow-sm">
-              <div className="flex flex-wrap items-center justify-between gap-4">
-                <div>
-                  <p className="text-sm font-medium text-foreground/60">Rent collection summary</p>
-                  <p className="mt-1 text-3xl font-bold text-primary-dark">
-                    {data.paidCount}
-                    <span className="text-lg font-medium text-foreground/40"> / {data.totalPlots} paid</span>
-                  </p>
-                </div>
-                <div className="relative flex h-16 w-16 items-center justify-center sm:h-20 sm:w-20">
-                  <svg viewBox="0 0 36 36" className="h-16 w-16 -rotate-90 sm:h-20 sm:w-20">
-                    <circle cx="18" cy="18" r="15.5" fill="none" stroke="var(--color-primary-light)" strokeWidth="3.5" />
-                    <circle
-                      cx="18"
-                      cy="18"
-                      r="15.5"
-                      fill="none"
-                      stroke="var(--color-paid)"
-                      strokeWidth="3.5"
-                      strokeLinecap="round"
-                      strokeDasharray={`${(paidPct / 100) * 97.4} 97.4`}
-                    />
-                  </svg>
-                  <span className="absolute text-sm font-bold text-primary-dark">{paidPct}%</span>
-                </div>
-              </div>
+            <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <SummaryCard
+                title="Rent collection"
+                paidCount={data.paidCount}
+                totalCount={data.totalPlots}
+                pct={paidPct}
+              >
+                <MiniChip label="Paid" value={counts.rent.PAID} colorClass="bg-paid-bg text-paid" />
+                <MiniChip label="Unpaid" value={counts.rent.UNPAID} colorClass="bg-unpaid-bg text-unpaid" />
+                <MiniChip label="Partial" value={counts.rent.PARTIAL} colorClass="bg-partial-bg text-partial" />
+                <MiniChip label="N/A" value={counts.rent.NA} colorClass="bg-vacant-bg text-vacant" />
+              </SummaryCard>
 
-              <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-primary-light">
-                <div className="h-full rounded-full bg-paid transition-all" style={{ width: `${paidPct}%` }} />
-              </div>
-
-              <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-                <StatChip label="Paid" value={counts.PAID} colorClass="bg-paid-bg text-paid" />
-                <StatChip label="Unpaid" value={counts.UNPAID} colorClass="bg-unpaid-bg text-unpaid" />
-                <StatChip label="Partial" value={counts.PARTIAL} colorClass="bg-partial-bg text-partial" />
-                <StatChip label="Vacant" value={counts.VACANT + counts.NA} colorClass="bg-vacant-bg text-vacant" />
-              </div>
+              <SummaryCard
+                title="Electricity collection"
+                paidCount={counts.electricity.PAID}
+                totalCount={data.totalPlots}
+                pct={electricityPct}
+              >
+                <MiniChip label="Paid" value={counts.electricity.PAID} colorClass="bg-paid-bg text-paid" />
+                <MiniChip label="Unpaid" value={counts.electricity.UNPAID} colorClass="bg-unpaid-bg text-unpaid" />
+                <MiniChip label="N/A" value={counts.electricity.NA} colorClass="bg-vacant-bg text-vacant" />
+              </SummaryCard>
             </div>
 
             {plots.length === 0 ? (
@@ -282,11 +272,45 @@ export default function Home() {
   );
 }
 
-function StatChip({ label, value, colorClass }: { label: string; value: number; colorClass: string }) {
+function SummaryCard({
+  title,
+  paidCount,
+  totalCount,
+  pct,
+  children,
+}: {
+  title: string;
+  paidCount: number;
+  totalCount: number;
+  pct: number;
+  children: ReactNode;
+}) {
   return (
-    <div className={`rounded-xl px-3 py-2 text-center ${colorClass}`}>
-      <p className="text-lg font-bold leading-tight">{value}</p>
-      <p className="text-[11px] font-medium uppercase tracking-wide opacity-80">{label}</p>
+    <div className="rounded-2xl border border-primary/10 bg-white p-3.5 shadow-sm">
+      <div className="flex items-center justify-between gap-2">
+        <div className="min-w-0">
+          <p className="text-xs font-medium text-foreground/55">{title}</p>
+          <p className="text-lg font-bold leading-tight text-primary-dark">
+            {paidCount}
+            <span className="text-sm font-medium text-foreground/40"> / {totalCount}</span>
+          </p>
+        </div>
+        <span className="shrink-0 rounded-full bg-primary-light px-2.5 py-1 text-xs font-bold text-primary-dark">
+          {pct}%
+        </span>
+      </div>
+      <div className="mt-2.5 h-1.5 w-full overflow-hidden rounded-full bg-primary-light">
+        <div className="h-full rounded-full bg-paid transition-all" style={{ width: `${pct}%` }} />
+      </div>
+      <div className="mt-2.5 flex flex-wrap gap-1.5">{children}</div>
     </div>
+  );
+}
+
+function MiniChip({ label, value, colorClass }: { label: string; value: number; colorClass: string }) {
+  return (
+    <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${colorClass}`}>
+      {value} {label}
+    </span>
   );
 }
