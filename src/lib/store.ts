@@ -6,7 +6,7 @@ type StoredPayment = Omit<PaymentDTO, "id" | "createdAt" | "updatedAt" | "paidDa
 export interface AuditRecord { id: string; adminId: string; adminUsername: string; action: string; recordType: string; recordId: string | null; previousValue: FirebaseValue; newValue: FirebaseValue; createdAt: Date }
 
 const iso = (date: Date | null) => date?.toISOString() ?? null;
-export const unitDTO = (unit: StoredUnit & { id: string }): UnitDTO => ({ ...unit, advanceAmount: unit.advanceAmount ?? 0, moveInDate: iso(unit.moveInDate), createdAt: unit.createdAt.toISOString(), updatedAt: unit.updatedAt.toISOString() });
+export const unitDTO = (unit: StoredUnit & { id: string }): UnitDTO => ({ ...unit, advanceAmount: unit.advanceAmount ?? 0, phones: unit.phones ?? [], moveInDate: iso(unit.moveInDate), createdAt: unit.createdAt.toISOString(), updatedAt: unit.updatedAt.toISOString() });
 export const paymentDTO = (payment: StoredPayment & { id: string }): PaymentDTO => ({ ...payment, paidDate: iso(payment.paidDate), createdAt: payment.createdAt.toISOString(), updatedAt: payment.updatedAt.toISOString() });
 
 export async function allUnits() { return (await listDocuments<StoredUnit>("units")).sort((a, b) => a.plotNumber.localeCompare(b.plotNumber, undefined, { numeric: true })); }

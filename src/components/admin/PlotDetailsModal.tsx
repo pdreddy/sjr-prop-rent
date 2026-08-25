@@ -3,7 +3,7 @@
 import { useState, type FormEvent } from "react";
 import type { DashboardRow } from "@/lib/types";
 import ModalShell from "./ModalShell";
-import { IconTrash } from "@/components/icons";
+import { IconClose, IconPlus, IconTrash } from "@/components/icons";
 
 interface Props {
   row: DashboardRow | null; // null = creating a new plot
@@ -22,7 +22,7 @@ export default function PlotDetailsModal({ row, onClose, onSaved }: Props) {
   const [moveInDate, setMoveInDate] = useState(
     row?.unit.moveInDate ? row.unit.moveInDate.slice(0, 10) : ""
   );
-  const [phone, setPhone] = useState(row?.unit.phone ?? "");
+  const [phones, setPhones] = useState<string[]>(row?.unit.phones.length ? row.unit.phones : [""]);
   const [advanceAmount, setAdvanceAmount] = useState(row ? String(row.unit.advanceAmount) : "0");
   const [monthlyRent, setMonthlyRent] = useState(row ? String(row.unit.monthlyRent) : "0");
   const [maintenanceAmount, setMaintenanceAmount] = useState(
@@ -42,7 +42,7 @@ export default function PlotDetailsModal({ row, onClose, onSaved }: Props) {
         plotNumber,
         tenantName: tenantName || null,
         moveInDate: moveInDate || null,
-        phone: phone || null,
+        phones: phones.map((p) => p.trim()).filter(Boolean),
         advanceAmount: Number(advanceAmount),
         monthlyRent: Number(monthlyRent),
         maintenanceAmount: Number(maintenanceAmount),
@@ -127,17 +127,49 @@ export default function PlotDetailsModal({ row, onClose, onSaved }: Props) {
           />
         </label>
 
-        <div className="grid grid-cols-2 gap-3">
-          <label className="flex flex-col gap-1">
-            <span className={labelClass}>
-              Move-in date <span className="font-normal text-foreground/40">(public)</span>
-            </span>
-            <input type="date" value={moveInDate} onChange={(e) => setMoveInDate(e.target.value)} className={inputClass} />
-          </label>
-          <label className="flex flex-col gap-1">
-            <span className={labelClass}>Phone number</span>
-            <input value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" className={inputClass} />
-          </label>
+        <label className="flex flex-col gap-1">
+          <span className={labelClass}>
+            Move-in date <span className="font-normal text-foreground/40">(public)</span>
+          </span>
+          <input type="date" value={moveInDate} onChange={(e) => setMoveInDate(e.target.value)} className={inputClass} />
+        </label>
+
+        <div className="flex flex-col gap-1">
+          <span className={labelClass}>Phone numbers</span>
+          <div className="flex flex-col gap-2">
+            {phones.map((value, index) => (
+              <div key={index} className="flex gap-2">
+                <input
+                  value={value}
+                  onChange={(e) =>
+                    setPhones((prev) => prev.map((p, i) => (i === index ? e.target.value : p)))
+                  }
+                  inputMode="tel"
+                  placeholder="9876543210"
+                  className={inputClass}
+                />
+                <button
+                  type="button"
+                  onClick={() => setPhones((prev) => prev.filter((_, i) => i !== index))}
+                  disabled={phones.length === 1}
+                  aria-label="Remove phone number"
+                  className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-primary/20 text-foreground/50 hover:bg-foreground/5 disabled:opacity-40"
+                >
+                  <IconClose className="h-4 w-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+          {phones.length < 5 && (
+            <button
+              type="button"
+              onClick={() => setPhones((prev) => [...prev, ""])}
+              className="mt-1 inline-flex items-center gap-1.5 self-start text-sm font-medium text-primary hover:underline"
+            >
+              <IconPlus className="h-3.5 w-3.5" />
+              Add another number
+            </button>
+          )}
         </div>
 
         <label className="flex flex-col gap-1">

@@ -1,5 +1,12 @@
 import { z } from "zod";
 
+const phoneNumberSchema = z
+  .string()
+  .trim()
+  .max(30)
+  .regex(/^[0-9+\-() ]+$/, "Phone number contains invalid characters");
+const phonesSchema = z.array(phoneNumberSchema).max(5, "Up to 5 phone numbers allowed").optional();
+
 export const loginSchema = z.object({
   username: z.string().trim().min(1).max(100),
   password: z.string().min(1).max(200),
@@ -21,13 +28,7 @@ export const createUnitSchema = z.object({
   plotNumber: z.string().trim().min(1).max(50),
   tenantName: z.string().trim().max(200).optional().nullable(),
   moveInDate: z.string().trim().max(30).optional().nullable(),
-  phone: z
-    .string()
-    .trim()
-    .max(30)
-    .regex(/^[0-9+\-() ]*$/, "Phone number contains invalid characters")
-    .optional()
-    .nullable(),
+  phones: phonesSchema,
   advanceAmount: z.coerce.number().min(0).max(10_000_000).optional(),
   monthlyRent: z.coerce.number().min(0).max(10_000_000),
   maintenanceAmount: z.coerce.number().min(0).max(10_000_000).optional(),
@@ -37,13 +38,7 @@ export const updateUnitSchema = z.object({
   plotNumber: z.string().trim().min(1).max(50).optional(),
   tenantName: z.string().trim().max(200).optional().nullable(),
   moveInDate: z.string().trim().max(30).optional().nullable(),
-  phone: z
-    .string()
-    .trim()
-    .max(30)
-    .regex(/^[0-9+\-() ]*$/, "Phone number contains invalid characters")
-    .optional()
-    .nullable(),
+  phones: phonesSchema,
   advanceAmount: z.coerce.number().min(0).max(10_000_000).optional(),
   monthlyRent: z.coerce.number().min(0).max(10_000_000).optional(),
   maintenanceAmount: z.coerce.number().min(0).max(10_000_000).optional(),

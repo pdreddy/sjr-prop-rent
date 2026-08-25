@@ -263,7 +263,7 @@ export default function AdminDashboard({ username }: { username: string }) {
                     <th className="w-[110px] min-w-[110px] px-3 py-2.5 font-semibold">Paid date</th>
                     <th className="w-[100px] min-w-[100px] px-3 py-2.5 font-semibold">Status</th>
                     <th className="w-[90px] min-w-[90px] px-3 py-2.5 font-semibold">Balance</th>
-                    <th className="w-[130px] min-w-[130px] px-3 py-2.5 font-semibold">Phone</th>
+                    <th className="w-[170px] min-w-[170px] px-3 py-2.5 font-semibold">Phone</th>
                     <th className="w-[180px] min-w-[180px] px-3 py-2.5 font-semibold">Notes</th>
                     <th className="w-[110px] min-w-[110px] px-3 py-2.5 font-semibold">Joining date</th>
                     <th className="w-[110px] min-w-[110px] px-3 py-2.5 font-semibold">Advance</th>
@@ -307,7 +307,9 @@ export default function AdminDashboard({ username }: { username: string }) {
                           <StatusBadge status={row.isBeforeMoveIn ? "NA" : row.isVacant ? "VACANT" : row.effectiveStatus} />
                         </td>
                         <td className="w-[90px] min-w-[90px] px-3 py-3">₹{(row.payment?.balanceDue ?? 0).toFixed(0)}</td>
-                        <td className="w-[130px] min-w-[130px] px-3 py-3">{row.unit.phone || "—"}</td>
+                        <td className="w-[170px] min-w-[170px] truncate px-3 py-3">
+                          {row.unit.phones.length ? row.unit.phones.join(", ") : "—"}
+                        </td>
                         <td className="w-[180px] min-w-[180px] truncate px-3 py-3 text-foreground/70">
                           {row.payment?.notes || "—"}
                         </td>
@@ -382,7 +384,7 @@ function InlineEditRow({
   const [plotNumber, setPlotNumber] = useState(row.unit.plotNumber);
   const [tenantName, setTenantName] = useState(row.unit.tenantName ?? "");
   const [moveInDate, setMoveInDate] = useState(row.unit.moveInDate?.slice(0, 10) ?? "");
-  const [phone, setPhone] = useState(row.unit.phone ?? "");
+  const [phonesText, setPhonesText] = useState(row.unit.phones.join(", "));
   const [advanceAmount, setAdvanceAmount] = useState(String(row.unit.advanceAmount));
   const [rent, setRent] = useState(String(row.payment?.rentAmount ?? row.unit.monthlyRent));
   const [maintenance, setMaintenance] = useState(
@@ -400,6 +402,7 @@ function InlineEditRow({
   const balanceDue = Math.max(0, rentSum - paidNumber);
   const status: PaymentStatus = paidNumber <= 0 ? "UNPAID" : paidNumber >= rentSum ? "PAID" : "PARTIAL";
   const isBeforeMoveIn = isBeforeMoveInMonth(moveInDate || null, month);
+  const phones = phonesText.split(",").map((p) => p.trim()).filter(Boolean);
   const inputClass =
     "w-full min-w-0 rounded-lg border border-primary/25 bg-white px-2 py-1.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30";
 
@@ -418,7 +421,7 @@ function InlineEditRow({
           plotNumber,
           tenantName: tenantName || null,
           moveInDate: moveInDate || null,
-          phone: phone || null,
+          phones,
           advanceAmount: Number(advanceAmount || 0),
           monthlyRent: rentNumber,
           maintenanceAmount: maintenanceNumber,
@@ -492,8 +495,15 @@ function InlineEditRow({
         <StatusBadge status={isBeforeMoveIn ? "NA" : tenantName.trim() ? status : "VACANT"} />
       </td>
       <td className="w-[90px] min-w-[90px] px-3 py-3">₹{balanceDue.toFixed(0)}</td>
-      <td className="w-[130px] min-w-[130px] px-2 py-2">
-        <input aria-label="Phone number" inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className={inputClass} />
+      <td className="w-[170px] min-w-[170px] px-2 py-2">
+        <input
+          aria-label="Phone numbers, comma separated"
+          inputMode="tel"
+          placeholder="9876543210, 9123456789"
+          value={phonesText}
+          onChange={(e) => setPhonesText(e.target.value)}
+          className={inputClass}
+        />
       </td>
       <td className="w-[180px] min-w-[180px] px-2 py-2">
         <input aria-label="Notes" value={notes} onChange={(e) => setNotes(e.target.value)} className={inputClass} />

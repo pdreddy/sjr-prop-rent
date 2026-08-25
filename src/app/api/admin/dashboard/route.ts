@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
   const search = params.get("search")?.trim().toLowerCase();
   const statusFilter = params.get("status");
   const [unitRecords, paymentRecords] = await Promise.all([allUnits(), allPayments()]);
-  let rows = unitRecords.filter((unit) => unit.active && (!search || [unit.plotNumber, unit.tenantName, unit.phone].some((v) => v?.toLowerCase().includes(search)))).map((unit) => {
+  let rows = unitRecords.filter((unit) => unit.active && (!search || [unit.plotNumber, unit.tenantName, ...(unit.phones ?? [])].some((v) => v?.toLowerCase().includes(search)))).map((unit) => {
     const payment = paymentRecords.find((p) => p.unitId === unit.id && p.month === month) ?? null;
     const isVacant = !unit.tenantName?.trim();
     const isBeforeMoveIn = isBeforeMoveInMonth(unit.moveInDate, month);

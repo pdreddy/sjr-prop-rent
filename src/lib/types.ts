@@ -22,7 +22,7 @@ export interface UnitDTO {
   plotNumber: string;
   tenantName: string | null;
   moveInDate: string | null;
-  phone: string | null;
+  phones: string[];
   advanceAmount: number;
   monthlyRent: number;
   maintenanceAmount: number;

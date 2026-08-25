@@ -50,7 +50,7 @@ export async function PATCH(
       ...(parsed.data.plotNumber !== undefined && { plotNumber: parsed.data.plotNumber }),
       ...(parsed.data.tenantName !== undefined && { tenantName: parsed.data.tenantName || null }),
       ...(moveInDate !== undefined && { moveInDate }),
-      ...(parsed.data.phone !== undefined && { phone: parsed.data.phone || null }),
+      ...(parsed.data.phones !== undefined && { phones: parsed.data.phones }),
       ...(parsed.data.advanceAmount !== undefined && { advanceAmount: parsed.data.advanceAmount }),
       ...(parsed.data.monthlyRent !== undefined && { monthlyRent: parsed.data.monthlyRent }),
       ...(parsed.data.maintenanceAmount !== undefined && {
