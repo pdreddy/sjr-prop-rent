@@ -21,6 +21,7 @@ export const unitDTO = (unit: StoredUnit & { id: string } & { phone?: string | n
     advanceAmount: unit.advanceAmount ?? 0,
     advancePaid: unit.advancePaid ?? 0,
     advancePaidDate: iso(unit.advancePaidDate),
+    advanceNotes: unit.advanceNotes ?? null,
     moveInDate: iso(unit.moveInDate),
     createdAt: unit.createdAt.toISOString(),
     updatedAt: unit.updatedAt.toISOString(),

@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { formatMonthLabel } from "@/lib/month";
-import { stripElectricityNote, withElectricityNote } from "@/lib/notes";
 import type { DashboardRow } from "@/lib/types";
 import { IconEdit, IconPlus, IconTrash } from "@/components/icons";
 
@@ -24,7 +23,7 @@ function buildEditableRow(row: DashboardRow): EditableRow {
     maintenance: String(row.payment?.maintenanceAmount ?? row.unit.maintenanceAmount),
     advancePaid: String(row.unit.advancePaid),
     advancePaidDate: row.unit.advancePaidDate?.slice(0, 10) ?? "",
-    notes: stripElectricityNote(row.payment?.notes),
+    notes: row.unit.advanceNotes ?? "",
   };
 }
 
@@ -81,6 +80,7 @@ export default function AllDetailsView({
             advanceAmount: Number(e.advanceAmount || 0),
             advancePaid: advancePaidNumber,
             advancePaidDate: e.advancePaidDate || null,
+            advanceNotes: e.notes.trim() || null,
             monthlyRent: rentNumber,
             maintenanceAmount: maintenanceNumber,
           }),
@@ -90,12 +90,11 @@ export default function AllDetailsView({
           throw new Error(json.error ?? `Failed to save plot ${row.unit.plotNumber}.`);
         }
 
-        // Rent payment status/amount-paid/balance for the month are untouched here —
-        // this tab only tracks the advance — so carry them forward unchanged and just
-        // sync rent/maintenance/notes onto the existing monthly payment record.
+        // Rent payment status/amount-paid/balance/notes for the month are untouched
+        // here — this tab only tracks the advance — so carry them forward unchanged
+        // and just sync rent/maintenance onto the existing monthly payment record.
         const existingAmountPaid = row.payment?.amountPaid ?? 0;
         const rentSum = rentNumber + maintenanceNumber;
-        const excessAmount = Math.max(0, existingAmountPaid - rentSum);
 
         const paymentRes = await fetch("/api/admin/payments", {
           method: "PUT",
@@ -109,7 +108,7 @@ export default function AllDetailsView({
             amountPaid: existingAmountPaid,
             balanceDue: row.payment?.balanceDue ?? Math.max(0, rentSum - existingAmountPaid),
             paidDate: row.payment?.paidDate ?? null,
-            notes: withElectricityNote(e.notes, excessAmount),
+            notes: row.payment?.notes ?? null,
             prevReading: row.payment?.prevReading ?? 0,
             currReading: row.payment?.currReading ?? 0,
             electricityPaid: row.payment?.electricityPaid ?? false,
@@ -134,7 +133,7 @@ export default function AllDetailsView({
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-primary/10 bg-white p-3.5 shadow-sm">
         <p className="text-sm text-foreground/60">
           Full plot details for <span className="font-semibold text-foreground">{formatMonthLabel(month)}</span> —
-          amount paid / paid date below is the advance, not rent.
+          amount paid, paid date and notes below are about the advance, not rent.
         </p>
         {editMode ? (
           <div className="flex gap-2">
@@ -338,7 +337,7 @@ function DetailTableRow({
       <td className="px-3 py-3 font-semibold text-foreground">₹{rentSum.toFixed(0)}</td>
       <td className="px-3 py-3">₹{row.unit.advancePaid.toFixed(0)}</td>
       <td className="px-3 py-3 text-foreground/70">{row.unit.advancePaidDate?.slice(0, 10) || "—"}</td>
-      <td className="max-w-[220px] whitespace-pre-line px-3 py-3 text-foreground/70 line-clamp-2">{row.payment?.notes || "—"}</td>
+      <td className="max-w-[220px] whitespace-pre-line px-3 py-3 text-foreground/70 line-clamp-2">{row.unit.advanceNotes || "—"}</td>
     </tr>
   );
 }
@@ -429,7 +428,7 @@ function DetailCard({
         <span>Paid (advance) ₹{row.unit.advancePaid.toFixed(0)}</span>
         <span>Paid date {row.unit.advancePaidDate?.slice(0, 10) || "—"}</span>
       </div>
-      {row.payment?.notes && <p className="mt-2 whitespace-pre-line text-sm text-foreground/60">{row.payment.notes}</p>}
+      {row.unit.advanceNotes && <p className="mt-2 whitespace-pre-line text-sm text-foreground/60">{row.unit.advanceNotes}</p>}
     </li>
   );
 }

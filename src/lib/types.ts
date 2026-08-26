@@ -46,6 +46,7 @@ export interface UnitDTO {
   advanceAmount: number;
   advancePaid: number;
   advancePaidDate: string | null;
+  advanceNotes: string | null;
   monthlyRent: number;
   maintenanceAmount: number;
   active: boolean;

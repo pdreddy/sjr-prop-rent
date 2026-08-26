@@ -34,6 +34,7 @@ export const createUnitSchema = z.object({
   advanceAmount: z.coerce.number().min(0).max(10_000_000).optional(),
   advancePaid: z.coerce.number().min(0).max(10_000_000).optional(),
   advancePaidDate: z.string().trim().max(30).optional().nullable(),
+  advanceNotes: z.string().trim().max(2000).optional().nullable(),
   monthlyRent: z.coerce.number().min(0).max(10_000_000),
   maintenanceAmount: z.coerce.number().min(0).max(10_000_000).optional(),
 });
@@ -46,6 +47,7 @@ export const updateUnitSchema = z.object({
   advanceAmount: z.coerce.number().min(0).max(10_000_000).optional(),
   advancePaid: z.coerce.number().min(0).max(10_000_000).optional(),
   advancePaidDate: z.string().trim().max(30).optional().nullable(),
+  advanceNotes: z.string().trim().max(2000).optional().nullable(),
   monthlyRent: z.coerce.number().min(0).max(10_000_000).optional(),
   maintenanceAmount: z.coerce.number().min(0).max(10_000_000).optional(),
   active: z.boolean().optional(),

@@ -65,6 +65,7 @@ export async function PATCH(
       ...(parsed.data.advanceAmount !== undefined && { advanceAmount: parsed.data.advanceAmount }),
       ...(parsed.data.advancePaid !== undefined && { advancePaid: parsed.data.advancePaid }),
       ...(advancePaidDate !== undefined && { advancePaidDate }),
+      ...(parsed.data.advanceNotes !== undefined && { advanceNotes: parsed.data.advanceNotes || null }),
       ...(parsed.data.monthlyRent !== undefined && { monthlyRent: parsed.data.monthlyRent }),
       ...(parsed.data.maintenanceAmount !== undefined && {
         maintenanceAmount: parsed.data.maintenanceAmount,

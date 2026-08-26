@@ -70,6 +70,7 @@ export async function POST(request: NextRequest) {
       advanceAmount: parsed.data.advanceAmount ?? 0,
       advancePaid: parsed.data.advancePaid ?? 0,
       advancePaidDate,
+      advanceNotes: parsed.data.advanceNotes || null,
       monthlyRent: parsed.data.monthlyRent,
       maintenanceAmount: parsed.data.maintenanceAmount ?? 0,
       active: true,
