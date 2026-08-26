@@ -313,6 +313,7 @@ export default function AdminDashboard({ username }: { username: string }) {
         {!loading && data && tab === "all-details" && (
           <AllDetailsView
             rows={data.rows}
+            month={month}
             onSaved={(msg) => {
               setMessage(msg);
               load();
