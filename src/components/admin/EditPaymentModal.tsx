@@ -23,7 +23,6 @@ export default function EditPaymentModal({ row, month, onClose, onSaved }: Props
   const [plotNumber, setPlotNumber] = useState(row.unit.plotNumber);
   const [tenantName, setTenantName] = useState(row.unit.tenantName ?? "");
   const [moveInDate, setMoveInDate] = useState(row.unit.moveInDate?.slice(0, 10) ?? "");
-  const [advanceAmount, setAdvanceAmount] = useState(String(row.unit.advanceAmount));
   const [rent, setRent] = useState(String(row.payment?.rentAmount ?? row.unit.monthlyRent));
   const [maintenance, setMaintenance] = useState(
     String(row.payment?.maintenanceAmount ?? row.unit.maintenanceAmount)
@@ -71,7 +70,6 @@ export default function EditPaymentModal({ row, month, onClose, onSaved }: Props
           plotNumber,
           tenantName: tenantName || null,
           moveInDate: moveInDate || null,
-          advanceAmount: Number(advanceAmount || 0),
           monthlyRent: rentNumber,
           maintenanceAmount: maintenanceNumber,
         }),
@@ -156,16 +154,10 @@ export default function EditPaymentModal({ row, month, onClose, onSaved }: Props
               <input type="number" min="0" value={maintenance} onChange={(e) => setMaintenance(e.target.value)} className={inputClass} />
             </label>
           </div>
-          <div className="mt-3 grid grid-cols-2 gap-3">
-            <label className="flex flex-col gap-1">
-              <span className={labelClass}>Advance (₹)</span>
-              <input type="number" min="0" value={advanceAmount} onChange={(e) => setAdvanceAmount(e.target.value)} className={inputClass} />
-            </label>
-            <div className="flex flex-col gap-1">
-              <span className={labelClass}>Rent sum</span>
-              <div className="flex min-h-11 items-center rounded-xl bg-primary-light px-3 text-base font-semibold text-primary-dark">
-                ₹{rentSum.toFixed(0)}
-              </div>
+          <div className="mt-3 flex flex-col gap-1">
+            <span className={labelClass}>Rent sum</span>
+            <div className="flex min-h-11 items-center rounded-xl bg-primary-light px-3 text-base font-semibold text-primary-dark">
+              ₹{rentSum.toFixed(0)}
             </div>
           </div>
         </div>

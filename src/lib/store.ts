@@ -2,7 +2,12 @@ import { getDocument, listDocuments, newDocumentId, setDocument, type FirebaseVa
 import { computeElectricityAmount } from "./electricity";
 import type { PaymentDTO, PaymentStatus, UnitDTO } from "./types";
 
-type StoredUnit = Omit<UnitDTO, "id" | "createdAt" | "updatedAt" | "moveInDate"> & { moveInDate: Date | null; createdAt: Date; updatedAt: Date };
+type StoredUnit = Omit<UnitDTO, "id" | "createdAt" | "updatedAt" | "moveInDate" | "advancePaidDate"> & {
+  moveInDate: Date | null;
+  advancePaidDate: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+};
 type StoredPayment = Omit<PaymentDTO, "id" | "createdAt" | "updatedAt" | "paidDate"> & { paidDate: Date | null; createdAt: Date; updatedAt: Date };
 export interface AuditRecord { id: string; adminId: string; adminUsername: string; action: string; recordType: string; recordId: string | null; previousValue: FirebaseValue; newValue: FirebaseValue; createdAt: Date }
 
@@ -14,6 +19,8 @@ export const unitDTO = (unit: StoredUnit & { id: string } & { phone?: string | n
     ...rest,
     phoneNumbers: unit.phoneNumbers ?? (phone ? [phone] : []),
     advanceAmount: unit.advanceAmount ?? 0,
+    advancePaid: unit.advancePaid ?? 0,
+    advancePaidDate: iso(unit.advancePaidDate),
     moveInDate: iso(unit.moveInDate),
     createdAt: unit.createdAt.toISOString(),
     updatedAt: unit.updatedAt.toISOString(),

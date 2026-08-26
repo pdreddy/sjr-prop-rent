@@ -44,6 +44,8 @@ export interface UnitDTO {
   moveInDate: string | null;
   phoneNumbers: string[];
   advanceAmount: number;
+  advancePaid: number;
+  advancePaidDate: string | null;
   monthlyRent: number;
   maintenanceAmount: number;
   active: boolean;

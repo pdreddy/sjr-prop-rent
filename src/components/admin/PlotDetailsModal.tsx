@@ -22,7 +22,6 @@ export default function PlotDetailsModal({ row, onClose, onSaved }: Props) {
   const [moveInDate, setMoveInDate] = useState(
     row?.unit.moveInDate ? row.unit.moveInDate.slice(0, 10) : ""
   );
-  const [advanceAmount, setAdvanceAmount] = useState(row ? String(row.unit.advanceAmount) : "0");
   const [monthlyRent, setMonthlyRent] = useState(row ? String(row.unit.monthlyRent) : "0");
   const [maintenanceAmount, setMaintenanceAmount] = useState(
     row ? String(row.unit.maintenanceAmount) : "0"
@@ -41,7 +40,6 @@ export default function PlotDetailsModal({ row, onClose, onSaved }: Props) {
         plotNumber,
         tenantName: tenantName || null,
         moveInDate: moveInDate || null,
-        advanceAmount: Number(advanceAmount),
         monthlyRent: Number(monthlyRent),
         maintenanceAmount: Number(maintenanceAmount),
       });
@@ -132,18 +130,6 @@ export default function PlotDetailsModal({ row, onClose, onSaved }: Props) {
           <input type="date" value={moveInDate} onChange={(e) => setMoveInDate(e.target.value)} className={inputClass} />
         </label>
 
-        <label className="flex flex-col gap-1">
-          <span className={labelClass}>Advance amount (₹)</span>
-          <input
-            type="number"
-            min="0"
-            step="0.01"
-            value={advanceAmount}
-            onChange={(e) => setAdvanceAmount(e.target.value)}
-            className={inputClass}
-          />
-        </label>
-
         <div className="grid grid-cols-2 gap-3">
           <label className="flex flex-col gap-1">
             <span className={labelClass}>Default monthly rent (₹)</span>
@@ -174,7 +160,7 @@ export default function PlotDetailsModal({ row, onClose, onSaved }: Props) {
         </p>
 
         <p className="-mt-2 text-xs text-foreground/45">
-          Phone numbers are managed on the &quot;All details&quot; tab.
+          Phone numbers and advance details are managed on the &quot;All details&quot; tab.
         </p>
 
         <div className="flex gap-3 border-t border-primary/10 pt-4">

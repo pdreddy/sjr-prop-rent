@@ -313,7 +313,6 @@ export default function AdminDashboard({ username }: { username: string }) {
         {!loading && data && tab === "all-details" && (
           <AllDetailsView
             rows={data.rows}
-            month={month}
             onSaved={(msg) => {
               setMessage(msg);
               load();
@@ -457,7 +456,6 @@ function ReadRow({
       <td className="px-3 py-3 text-foreground/70">
         <p>Joined {formatDate(row.unit.moveInDate)}</p>
         <p>Total rent ₹{rentSum.toFixed(0)}</p>
-        <p>Advance ₹{row.unit.advanceAmount.toFixed(0)}</p>
       </td>
       <td className={`sticky right-0 z-10 px-3 py-3 ${rowBg}`}>
         <div className="flex justify-end gap-1.5">
@@ -471,8 +469,8 @@ function ReadRow({
           </button>
           <button
             onClick={onDetails}
-            aria-label={`Advance amount and deactivate for plot ${row.unit.plotNumber}`}
-            title="Advance amount / deactivate"
+            aria-label={`Plot details and deactivate for plot ${row.unit.plotNumber}`}
+            title="Plot details / deactivate"
             className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-primary/25 text-primary-dark hover:bg-primary-light"
           >
             <IconInfo className="h-4 w-4" />

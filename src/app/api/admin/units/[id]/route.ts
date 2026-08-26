@@ -49,12 +49,22 @@ export async function PATCH(
     }
   }
 
+  let advancePaidDate: Date | null | undefined;
+  if (parsed.data.advancePaidDate !== undefined) {
+    advancePaidDate = parsed.data.advancePaidDate ? new Date(parsed.data.advancePaidDate) : null;
+    if (parsed.data.advancePaidDate && Number.isNaN(advancePaidDate?.getTime())) {
+      return NextResponse.json({ error: "Invalid advance paid date." }, { status: 400 });
+    }
+  }
+
   const unit = await updateUnit(id, {
       ...(parsed.data.plotNumber !== undefined && { plotNumber: parsed.data.plotNumber }),
       ...(parsed.data.tenantName !== undefined && { tenantName: parsed.data.tenantName || null }),
       ...(moveInDate !== undefined && { moveInDate }),
       ...(parsed.data.phoneNumbers !== undefined && { phoneNumbers: parsed.data.phoneNumbers }),
       ...(parsed.data.advanceAmount !== undefined && { advanceAmount: parsed.data.advanceAmount }),
+      ...(parsed.data.advancePaid !== undefined && { advancePaid: parsed.data.advancePaid }),
+      ...(advancePaidDate !== undefined && { advancePaidDate }),
       ...(parsed.data.monthlyRent !== undefined && { monthlyRent: parsed.data.monthlyRent }),
       ...(parsed.data.maintenanceAmount !== undefined && {
         maintenanceAmount: parsed.data.maintenanceAmount,

@@ -57,12 +57,19 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid move-in date." }, { status: 400 });
   }
 
+  const advancePaidDate = parsed.data.advancePaidDate ? new Date(parsed.data.advancePaidDate) : null;
+  if (parsed.data.advancePaidDate && Number.isNaN(advancePaidDate?.getTime())) {
+    return NextResponse.json({ error: "Invalid advance paid date." }, { status: 400 });
+  }
+
   const unit = await createUnit({
       plotNumber: parsed.data.plotNumber,
       tenantName: parsed.data.tenantName || null,
       moveInDate,
       phoneNumbers: parsed.data.phoneNumbers ?? [],
       advanceAmount: parsed.data.advanceAmount ?? 0,
+      advancePaid: parsed.data.advancePaid ?? 0,
+      advancePaidDate,
       monthlyRent: parsed.data.monthlyRent,
       maintenanceAmount: parsed.data.maintenanceAmount ?? 0,
       active: true,
