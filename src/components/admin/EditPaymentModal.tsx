@@ -23,7 +23,6 @@ export default function EditPaymentModal({ row, month, onClose, onSaved }: Props
   const [plotNumber, setPlotNumber] = useState(row.unit.plotNumber);
   const [tenantName, setTenantName] = useState(row.unit.tenantName ?? "");
   const [moveInDate, setMoveInDate] = useState(row.unit.moveInDate?.slice(0, 10) ?? "");
-  const [phone, setPhone] = useState(row.unit.phone ?? "");
   const [advanceAmount, setAdvanceAmount] = useState(String(row.unit.advanceAmount));
   const [rent, setRent] = useState(String(row.payment?.rentAmount ?? row.unit.monthlyRent));
   const [maintenance, setMaintenance] = useState(
@@ -72,7 +71,6 @@ export default function EditPaymentModal({ row, month, onClose, onSaved }: Props
           plotNumber,
           tenantName: tenantName || null,
           moveInDate: moveInDate || null,
-          phone: phone || null,
           advanceAmount: Number(advanceAmount || 0),
           monthlyRent: rentNumber,
           maintenanceAmount: maintenanceNumber,
@@ -141,16 +139,10 @@ export default function EditPaymentModal({ row, month, onClose, onSaved }: Props
             <input value={tenantName} onChange={(e) => setTenantName(e.target.value)} className={inputClass} />
           </label>
         </div>
-        <div className="grid grid-cols-2 gap-3">
-          <label className="flex flex-col gap-1">
-            <span className={labelClass}>Joining date</span>
-            <input type="date" value={moveInDate} onChange={(e) => setMoveInDate(e.target.value)} className={inputClass} />
-          </label>
-          <label className="flex flex-col gap-1">
-            <span className={labelClass}>Phone</span>
-            <input value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" className={inputClass} />
-          </label>
-        </div>
+        <label className="flex flex-col gap-1">
+          <span className={labelClass}>Joining date</span>
+          <input type="date" value={moveInDate} onChange={(e) => setMoveInDate(e.target.value)} className={inputClass} />
+        </label>
 
         <div className="border-t border-primary/10 pt-4">
           <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-foreground/45">Rent</p>

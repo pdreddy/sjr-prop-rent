@@ -8,6 +8,7 @@ import StatusBadge from "@/components/StatusBadge";
 import ChangePasswordModal from "./ChangePasswordModal";
 import PlotDetailsModal from "./PlotDetailsModal";
 import EditPaymentModal from "./EditPaymentModal";
+import AllDetailsView from "./AllDetailsView";
 import {
   getCurrentMonth,
   getMonthOptions,
@@ -31,9 +32,13 @@ import {
 const monthOptions = getMonthOptions();
 const STATUS_FILTERS = ["ALL", "PAID", "UNPAID", "PARTIAL", "VACANT"] as const;
 type StatusFilter = (typeof STATUS_FILTERS)[number];
+const TABS = ["overview", "all-details"] as const;
+type Tab = (typeof TABS)[number];
+const TAB_LABELS: Record<Tab, string> = { overview: "Overview", "all-details": "All details" };
 
 export default function AdminDashboard({ username }: { username: string }) {
   const router = useRouter();
+  const [tab, setTab] = useState<Tab>("overview");
   const [month, setMonth] = useState(getCurrentMonth());
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
@@ -175,7 +180,21 @@ export default function AdminDashboard({ username }: { username: string }) {
           </div>
         )}
 
-        {totals && <StatsPanel totals={totals} month={month} />}
+        <div className="mb-4 flex gap-1.5 rounded-full border border-primary/10 bg-white p-1 shadow-sm w-fit">
+          {TABS.map((t) => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              className={`min-h-9 rounded-full px-4 text-sm font-semibold transition-colors ${
+                tab === t ? "bg-primary text-white" : "text-foreground/60 hover:bg-primary-light"
+              }`}
+            >
+              {TAB_LABELS[t]}
+            </button>
+          ))}
+        </div>
+
+        {tab === "overview" && totals && <StatsPanel totals={totals} month={month} />}
 
         <div className="mb-4 flex flex-wrap items-end gap-3 rounded-2xl border border-primary/10 bg-white p-3 shadow-sm sm:p-4">
           <MonthYearSelector month={month} options={monthOptions} onChange={setMonth} />
@@ -240,13 +259,13 @@ export default function AdminDashboard({ username }: { username: string }) {
           </div>
         )}
 
-        {!loading && data && data.rows.length === 0 && (
+        {!loading && data && tab === "overview" && data.rows.length === 0 && (
           <div className="rounded-2xl border border-primary/15 bg-white p-8 text-center text-foreground/60">
             No plots match your search or filter.
           </div>
         )}
 
-        {!loading && data && data.rows.length > 0 && (
+        {!loading && data && tab === "overview" && data.rows.length > 0 && (
           <>
             <ul className="flex flex-col gap-2.5 sm:hidden">
               {data.rows.map((row) => (
@@ -271,7 +290,6 @@ export default function AdminDashboard({ username }: { username: string }) {
                       <th className="min-w-[150px] px-3 py-3 font-semibold">Electricity</th>
                       <th className="min-w-[170px] px-3 py-3 font-semibold">Notes</th>
                       <th className="min-w-[170px] px-3 py-3 font-semibold">Plot info</th>
-                      <th className="min-w-[140px] px-3 py-3 font-semibold">Contact</th>
                       <th className="sticky right-0 z-20 min-w-[100px] bg-primary-dark px-3 py-3 text-right font-semibold">Actions</th>
                     </tr>
                   </thead>
@@ -290,6 +308,18 @@ export default function AdminDashboard({ username }: { username: string }) {
               </div>
             </div>
           </>
+        )}
+
+        {!loading && data && tab === "all-details" && (
+          <AllDetailsView
+            rows={data.rows}
+            month={month}
+            onSaved={(msg) => {
+              setMessage(msg);
+              load();
+            }}
+            onError={setError}
+          />
         )}
       </main>
 
@@ -429,7 +459,6 @@ function ReadRow({
         <p>Total rent ₹{rentSum.toFixed(0)}</p>
         <p>Advance ₹{row.unit.advanceAmount.toFixed(0)}</p>
       </td>
-      <td className="px-3 py-3 text-foreground/80">{row.unit.phone || "—"}</td>
       <td className={`sticky right-0 z-10 px-3 py-3 ${rowBg}`}>
         <div className="flex justify-end gap-1.5">
           <button

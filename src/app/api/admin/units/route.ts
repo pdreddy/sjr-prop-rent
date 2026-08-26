@@ -18,7 +18,9 @@ export async function GET(request: NextRequest) {
   let units = await allUnits();
   if (search) {
     const needle = search.toLowerCase();
-    units = units.filter((unit) => [unit.plotNumber, unit.tenantName, unit.phone].some((value) => value?.toLowerCase().includes(needle)));
+    units = units.filter((unit) =>
+      [unit.plotNumber, unit.tenantName, ...(unit.phoneNumbers ?? [])].some((value) => value?.toLowerCase().includes(needle))
+    );
   }
 
   return NextResponse.json({ units: units.map(unitDTO) });
@@ -59,7 +61,7 @@ export async function POST(request: NextRequest) {
       plotNumber: parsed.data.plotNumber,
       tenantName: parsed.data.tenantName || null,
       moveInDate,
-      phone: parsed.data.phone || null,
+      phoneNumbers: parsed.data.phoneNumbers ?? [],
       advanceAmount: parsed.data.advanceAmount ?? 0,
       monthlyRent: parsed.data.monthlyRent,
       maintenanceAmount: parsed.data.maintenanceAmount ?? 0,

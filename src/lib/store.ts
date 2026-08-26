@@ -7,7 +7,18 @@ type StoredPayment = Omit<PaymentDTO, "id" | "createdAt" | "updatedAt" | "paidDa
 export interface AuditRecord { id: string; adminId: string; adminUsername: string; action: string; recordType: string; recordId: string | null; previousValue: FirebaseValue; newValue: FirebaseValue; createdAt: Date }
 
 const iso = (date: Date | null) => date?.toISOString() ?? null;
-export const unitDTO = (unit: StoredUnit & { id: string }): UnitDTO => ({ ...unit, advanceAmount: unit.advanceAmount ?? 0, moveInDate: iso(unit.moveInDate), createdAt: unit.createdAt.toISOString(), updatedAt: unit.updatedAt.toISOString() });
+// Legacy records stored a single `phone: string | null` before phoneNumbers existed.
+export const unitDTO = (unit: StoredUnit & { id: string } & { phone?: string | null }): UnitDTO => {
+  const { phone, ...rest } = unit;
+  return {
+    ...rest,
+    phoneNumbers: unit.phoneNumbers ?? (phone ? [phone] : []),
+    advanceAmount: unit.advanceAmount ?? 0,
+    moveInDate: iso(unit.moveInDate),
+    createdAt: unit.createdAt.toISOString(),
+    updatedAt: unit.updatedAt.toISOString(),
+  };
+};
 export const paymentDTO = (payment: StoredPayment & { id: string }): PaymentDTO => {
   const prevReading = payment.prevReading ?? 0;
   const currReading = payment.currReading ?? 0;

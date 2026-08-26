@@ -17,17 +17,20 @@ export const monthSchema = z
   .string()
   .regex(/^\d{4}-(0[1-9]|1[0-2])$/, "Month must be in YYYY-MM format");
 
+const phoneNumberSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .max(30)
+  .regex(/^[0-9+\-() ]*$/, "Phone number contains invalid characters");
+
+const phoneNumbersSchema = z.array(phoneNumberSchema).max(8).optional();
+
 export const createUnitSchema = z.object({
   plotNumber: z.string().trim().min(1).max(50),
   tenantName: z.string().trim().max(200).optional().nullable(),
   moveInDate: z.string().trim().max(30).optional().nullable(),
-  phone: z
-    .string()
-    .trim()
-    .max(30)
-    .regex(/^[0-9+\-() ]*$/, "Phone number contains invalid characters")
-    .optional()
-    .nullable(),
+  phoneNumbers: phoneNumbersSchema,
   advanceAmount: z.coerce.number().min(0).max(10_000_000).optional(),
   monthlyRent: z.coerce.number().min(0).max(10_000_000),
   maintenanceAmount: z.coerce.number().min(0).max(10_000_000).optional(),
@@ -37,13 +40,7 @@ export const updateUnitSchema = z.object({
   plotNumber: z.string().trim().min(1).max(50).optional(),
   tenantName: z.string().trim().max(200).optional().nullable(),
   moveInDate: z.string().trim().max(30).optional().nullable(),
-  phone: z
-    .string()
-    .trim()
-    .max(30)
-    .regex(/^[0-9+\-() ]*$/, "Phone number contains invalid characters")
-    .optional()
-    .nullable(),
+  phoneNumbers: phoneNumbersSchema,
   advanceAmount: z.coerce.number().min(0).max(10_000_000).optional(),
   monthlyRent: z.coerce.number().min(0).max(10_000_000).optional(),
   maintenanceAmount: z.coerce.number().min(0).max(10_000_000).optional(),

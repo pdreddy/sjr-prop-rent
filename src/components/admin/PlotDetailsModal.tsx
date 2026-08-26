@@ -22,7 +22,6 @@ export default function PlotDetailsModal({ row, onClose, onSaved }: Props) {
   const [moveInDate, setMoveInDate] = useState(
     row?.unit.moveInDate ? row.unit.moveInDate.slice(0, 10) : ""
   );
-  const [phone, setPhone] = useState(row?.unit.phone ?? "");
   const [advanceAmount, setAdvanceAmount] = useState(row ? String(row.unit.advanceAmount) : "0");
   const [monthlyRent, setMonthlyRent] = useState(row ? String(row.unit.monthlyRent) : "0");
   const [maintenanceAmount, setMaintenanceAmount] = useState(
@@ -42,7 +41,6 @@ export default function PlotDetailsModal({ row, onClose, onSaved }: Props) {
         plotNumber,
         tenantName: tenantName || null,
         moveInDate: moveInDate || null,
-        phone: phone || null,
         advanceAmount: Number(advanceAmount),
         monthlyRent: Number(monthlyRent),
         maintenanceAmount: Number(maintenanceAmount),
@@ -175,10 +173,9 @@ export default function PlotDetailsModal({ row, onClose, onSaved }: Props) {
           Used as the rent for a month until it&apos;s marked paid for that month in the table.
         </p>
 
-        <label className="flex flex-col gap-1">
-          <span className={labelClass}>Phone number</span>
-          <input value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" className={inputClass} />
-        </label>
+        <p className="-mt-2 text-xs text-foreground/45">
+          Phone numbers are managed on the &quot;All details&quot; tab.
+        </p>
 
         <div className="flex gap-3 border-t border-primary/10 pt-4">
           {!isNew && (
