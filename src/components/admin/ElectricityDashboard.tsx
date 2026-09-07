@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import MonthYearSelector from "@/components/MonthYearSelector";
@@ -58,6 +58,16 @@ export default function ElectricityDashboard({ username, role }: { username: str
     const t = setTimeout(() => setMessage(null), 4000);
     return () => clearTimeout(t);
   }, [message]);
+
+  // Plots whose current reading has already been entered this month sink to the
+  // bottom, so the still-pending plots stay together at the top — no scrolling
+  // hunt for the next one to fill in after each save.
+  const sortedRows = useMemo(() => {
+    if (!data) return [];
+    const pending = data.rows.filter((row) => row.currReading <= row.prevReading);
+    const recorded = data.rows.filter((row) => row.currReading > row.prevReading);
+    return [...pending, ...recorded];
+  }, [data]);
 
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -152,7 +162,7 @@ export default function ElectricityDashboard({ username, role }: { username: str
 
         {!loading && data && data.rows.length > 0 && (
           <ul className="flex flex-col gap-2.5">
-            {data.rows.map((row) => (
+            {sortedRows.map((row) => (
               <ElectricityRowCard
                 key={row.unitId}
                 row={row}
@@ -196,6 +206,7 @@ function ElectricityRowCard({
   const electricityUnits = computeElectricityUnits(prevReadingNumber, currReadingNumber);
   const dirty =
     prevReadingNumber !== row.prevReading || currReadingNumber !== row.currReading || electricityPaid !== row.electricityPaid;
+  const recorded = row.currReading > row.prevReading;
 
   const inputClass =
     "min-h-10 w-full rounded-lg border border-primary/25 bg-white px-2.5 py-1.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20";
@@ -243,10 +254,13 @@ function ElectricityRowCard({
   }
 
   return (
-    <li className="rounded-2xl border border-primary/10 bg-white p-4 shadow-sm">
+    <li className={`rounded-2xl border p-4 shadow-sm ${recorded ? "border-paid/20 bg-paid-bg/20" : "border-primary/10 bg-white"}`}>
       <div className="mb-3 flex items-center justify-between gap-2">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-foreground/40">Plot {row.plotNumber}</p>
+          <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-foreground/40">
+            Plot {row.plotNumber}
+            {recorded && <span className="rounded-full bg-paid-bg px-1.5 py-0.5 text-[10px] font-bold text-paid">Recorded</span>}
+          </p>
           <p className="font-bold text-foreground">{row.tenantName || "Vacant"}</p>
         </div>
         <div className="flex overflow-hidden rounded-lg border border-primary/25">
