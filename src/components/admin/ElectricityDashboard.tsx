@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import MonthYearSelector from "@/components/MonthYearSelector";
 import ChangePasswordModal from "./ChangePasswordModal";
-import { getCurrentMonth, getMonthOptions } from "@/lib/month";
+import { formatMonthLabel, getCurrentMonth, getMonthOptions } from "@/lib/month";
 import { computeElectricityAmount, computeElectricityUnits } from "@/lib/electricity";
 import type { AdminRole, ElectricityListResponse, ElectricityRow } from "@/lib/types";
 import { IconBuilding, IconLock, IconLogout, IconSearch } from "@/components/icons";
@@ -58,6 +58,18 @@ export default function ElectricityDashboard({ username, role }: { username: str
     const t = setTimeout(() => setMessage(null), 4000);
     return () => clearTimeout(t);
   }, [message]);
+
+  const totals = useMemo(() => {
+    if (!data) return null;
+    return data.rows.reduce(
+      (acc, row) => {
+        acc.amount += row.electricityAmount;
+        acc.paid += row.electricityPaid ? row.electricityAmount : 0;
+        return acc;
+      },
+      { amount: 0, paid: 0 }
+    );
+  }, [data]);
 
   // Plots whose current reading has already been entered this month sink to the
   // bottom, so the still-pending plots stay together at the top — no scrolling
@@ -119,6 +131,20 @@ export default function ElectricityDashboard({ username, role }: { username: str
       </header>
 
       <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-3 py-5 sm:px-6">
+        {totals && (
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-primary/10 bg-white p-3.5 shadow-sm sm:p-4">
+            <div>
+              <p className="text-sm font-medium text-foreground/60">
+                Total electricity for {formatMonthLabel(month)}
+              </p>
+              <p className="mt-1 text-2xl font-bold text-primary-dark">₹{totals.amount.toFixed(0)}</p>
+            </div>
+            <div className="flex items-center gap-2 rounded-full bg-paid-bg px-3.5 py-1.5 text-sm font-bold text-paid">
+              ₹{totals.paid.toFixed(0)} paid
+            </div>
+          </div>
+        )}
+
         {message && (
           <div className="mb-4 rounded-xl border border-paid/30 bg-paid-bg px-3.5 py-2.5 text-sm font-medium text-paid">
             {message}
