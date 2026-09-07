@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import MonthYearSelector from "@/components/MonthYearSelector";
@@ -21,9 +21,13 @@ export default function ElectricityDashboard({ username, role }: { username: str
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [showChangePassword, setShowChangePassword] = useState(false);
+  // Only the very first load shows the full skeleton — a reload after saving a row
+  // (or changing month/search) keeps the existing list mounted so open inputs don't
+  // lose focus/cursor position and the page doesn't jump while it re-fetches.
+  const hasLoadedRef = useRef(false);
 
   const load = useCallback(async () => {
-    setLoading(true);
+    if (!hasLoadedRef.current) setLoading(true);
     setError(null);
     try {
       const params = new URLSearchParams({ month });
@@ -36,6 +40,7 @@ export default function ElectricityDashboard({ username, role }: { username: str
       if (!res.ok) throw new Error("Failed to load");
       const json: ElectricityListResponse = await res.json();
       setData(json);
+      hasLoadedRef.current = true;
     } catch {
       setError("Could not load meter readings. Please try again.");
     } finally {
