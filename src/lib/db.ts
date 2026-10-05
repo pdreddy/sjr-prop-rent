@@ -58,6 +58,9 @@ function normalizePayment(id: string, raw: Omit<PaymentRecord, "id">): PaymentRe
     maintenanceAmount: raw.maintenanceAmount,
     amountPaid: raw.amountPaid,
     balanceDue: raw.balanceDue,
+    electricityUnits: raw.electricityUnits ?? 0,
+    electricityAmount: raw.electricityAmount ?? 0,
+    electricityPaid: raw.electricityPaid ?? 0,
     paidDate: raw.paidDate ?? null,
     notes: raw.notes ?? null,
     updatedBy: raw.updatedBy ?? null,
@@ -112,6 +115,9 @@ export interface PaymentRecord {
   maintenanceAmount: number;
   amountPaid: number;
   balanceDue: number;
+  electricityUnits: number; // units consumed
+  electricityAmount: number; // electricity bill for the month
+  electricityPaid: number;
   paidDate: number | null; // epoch ms
   notes: string | null;
   updatedBy: string | null;
@@ -232,6 +238,16 @@ export async function getPayment(unitId: string, month: string): Promise<Payment
   const snap = await getRtdb().ref(`${PAYMENTS_PATH}/${unitId}/${month}`).get();
   if (!snap.exists()) return null;
   return normalizePayment(`${unitId}_${month}`, snap.val());
+}
+
+/** Fetches every month's payment for one unit, sorted by month ascending. */
+export async function getAllPaymentsForUnit(unitId: string): Promise<PaymentRecord[]> {
+  const snap = await getRtdb().ref(`${PAYMENTS_PATH}/${unitId}`).get();
+  if (!snap.exists()) return [];
+  const val = snap.val() as Record<string, Omit<PaymentRecord, "id">>;
+  return Object.entries(val)
+    .map(([month, data]) => normalizePayment(`${unitId}_${month}`, data))
+    .sort((a, b) => a.month.localeCompare(b.month));
 }
 
 /** Fetches one month's payment for many units in parallel. */

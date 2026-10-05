@@ -4,10 +4,46 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import MonthYearSelector from "@/components/MonthYearSelector";
 import StatusBadge from "@/components/StatusBadge";
-import { getCurrentMonth, getMonthOptions, formatDate } from "@/lib/month";
-import type { PublicStatusResponse } from "@/lib/types";
+import { getCurrentMonth, getMonthOptions, formatDate, formatMonthLabel } from "@/lib/month";
+import type { PublicStatusResponse, PublicPlot } from "@/lib/types";
 
 const monthOptions = getMonthOptions();
+
+const inr = (n: number) => `₹${n.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
+
+function ElectricityBreakdown({ plot }: { plot: PublicPlot }) {
+  const { months, totalPending, totalUnits } = plot.electricity;
+  if (months.length === 0) {
+    return <p className="text-sm text-foreground/50">No electricity pending.</p>;
+  }
+  return (
+    <table className="w-full text-left text-sm">
+      <thead className="text-foreground/60">
+        <tr>
+          <th className="py-1 font-medium">Month</th>
+          <th className="py-1 text-right font-medium">Units</th>
+          <th className="py-1 text-right font-medium">Pending</th>
+        </tr>
+      </thead>
+      <tbody>
+        {months.map((m) => (
+          <tr key={m.month} className="border-t border-primary/5">
+            <td className="py-1">{formatMonthLabel(m.month)}</td>
+            <td className="py-1 text-right">{m.units}</td>
+            <td className="py-1 text-right">{inr(m.pending)}</td>
+          </tr>
+        ))}
+      </tbody>
+      <tfoot>
+        <tr className="border-t border-primary/20 font-semibold">
+          <td className="py-1">Total</td>
+          <td className="py-1 text-right">{totalUnits}</td>
+          <td className="py-1 text-right text-unpaid">{inr(totalPending)}</td>
+        </tr>
+      </tfoot>
+    </table>
+  );
+}
 
 export default function Home() {
   const [month, setMonth] = useState(getCurrentMonth());
@@ -91,6 +127,15 @@ export default function Home() {
               </div>
             </div>
 
+            <div className="mb-5 rounded-xl border border-primary/15 bg-white p-4 shadow-sm">
+              <p className="text-sm font-medium text-foreground/70">
+                Electricity Pending (all months)
+              </p>
+              <p className="mt-1 text-2xl font-bold text-unpaid">
+                {inr(data.totalElectricityPending)}
+              </p>
+            </div>
+
             {data.plots.length === 0 ? (
               <div className="rounded-xl border border-primary/15 bg-white p-6 text-center text-foreground/60">
                 No plots have been added yet.
@@ -116,6 +161,14 @@ export default function Home() {
                       <p className="text-sm text-foreground/50">
                         Joined {formatDate(plot.moveInDate)}
                       </p>
+                      <details className="mt-2">
+                        <summary className="cursor-pointer text-sm font-medium text-primary-dark">
+                          Electricity pending: {inr(plot.electricity.totalPending)}
+                        </summary>
+                        <div className="mt-2">
+                          <ElectricityBreakdown plot={plot} />
+                        </div>
+                      </details>
                     </li>
                   ))}
                 </ul>
@@ -129,6 +182,7 @@ export default function Home() {
                         <th className="px-4 py-3 font-semibold">Name</th>
                         <th className="px-4 py-3 font-semibold">Date joined</th>
                         <th className="px-4 py-3 font-semibold">Status</th>
+                        <th className="px-4 py-3 font-semibold">Electricity pending</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -145,6 +199,16 @@ export default function Home() {
                           </td>
                           <td className="px-4 py-3">
                             <StatusBadge status={plot.status} />
+                          </td>
+                          <td className="px-4 py-3 align-top">
+                            <details>
+                              <summary className="cursor-pointer font-medium text-foreground/80">
+                                {inr(plot.electricity.totalPending)}
+                              </summary>
+                              <div className="mt-2 min-w-56">
+                                <ElectricityBreakdown plot={plot} />
+                              </div>
+                            </details>
                           </td>
                         </tr>
                       ))}

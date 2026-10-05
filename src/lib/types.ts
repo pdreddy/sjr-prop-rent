@@ -5,6 +5,19 @@ export interface PublicPlot {
   tenantName: string | null;
   moveInDate: string | null;
   status: "PAID" | "UNPAID";
+  electricity: {
+    months: ElectricityMonth[];
+    totalPending: number;
+    totalUnits: number;
+  };
+}
+
+export interface ElectricityMonth {
+  month: string;
+  units: number;
+  amount: number;
+  paid: number;
+  pending: number;
 }
 
 export interface PublicStatusResponse {
@@ -12,6 +25,7 @@ export interface PublicStatusResponse {
   month: string;
   totalPlots: number;
   paidCount: number;
+  totalElectricityPending: number;
   plots: PublicPlot[];
 }
 
@@ -37,6 +51,9 @@ export interface PaymentDTO {
   maintenanceAmount: number;
   amountPaid: number;
   balanceDue: number;
+  electricityUnits: number;
+  electricityAmount: number;
+  electricityPaid: number;
   paidDate: string | null;
   notes: string | null;
   updatedBy: string | null;

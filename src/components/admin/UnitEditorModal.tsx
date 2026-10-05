@@ -35,6 +35,15 @@ export default function UnitEditorModal({ row, month, onClose, onSaved }: Props)
   const [rentAmount, setRentAmount] = useState(String(defaultRent));
   const [maintenanceAmount, setMaintenanceAmount] = useState(String(defaultPaymentMaintenance));
   const [amountPaid, setAmountPaid] = useState(String(row?.payment?.amountPaid ?? 0));
+  const [electricityUnits, setElectricityUnits] = useState(
+    String(row?.payment?.electricityUnits ?? 0)
+  );
+  const [electricityAmount, setElectricityAmount] = useState(
+    String(row?.payment?.electricityAmount ?? 0)
+  );
+  const [electricityPaid, setElectricityPaid] = useState(
+    String(row?.payment?.electricityPaid ?? 0)
+  );
   const [paidDate, setPaidDate] = useState(
     row?.payment?.paidDate ? row.payment.paidDate.slice(0, 10) : ""
   );
@@ -106,6 +115,9 @@ export default function UnitEditorModal({ row, month, onClose, onSaved }: Props)
           maintenanceAmount: Number(maintenanceAmount),
           amountPaid: Number(amountPaid),
           balanceDue,
+          electricityUnits: Number(electricityUnits || 0),
+          electricityAmount: Number(electricityAmount || 0),
+          electricityPaid: Number(electricityPaid || 0),
           paidDate: paidDate || null,
           notes: notes || null,
         }),
@@ -300,6 +312,49 @@ export default function UnitEditorModal({ row, month, onClose, onSaved }: Props)
 
             <p className="text-sm text-foreground/60">
               Balance due: <span className="font-semibold text-foreground">₹{balanceDue.toFixed(2)}</span>
+            </p>
+
+            <label className="flex flex-col gap-1">
+              <span className="text-sm font-medium text-foreground/80">Electricity units consumed</span>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={electricityUnits}
+                onChange={(e) => setElectricityUnits(e.target.value)}
+                className="min-h-11 rounded-lg border border-primary/20 px-3 py-2 text-base focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+              />
+            </label>
+
+            <label className="flex flex-col gap-1">
+              <span className="text-sm font-medium text-foreground/80">Electricity amount (₹)</span>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={electricityAmount}
+                onChange={(e) => setElectricityAmount(e.target.value)}
+                className="min-h-11 rounded-lg border border-primary/20 px-3 py-2 text-base focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+              />
+            </label>
+
+            <label className="flex flex-col gap-1">
+              <span className="text-sm font-medium text-foreground/80">Electricity paid (₹)</span>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={electricityPaid}
+                onChange={(e) => setElectricityPaid(e.target.value)}
+                className="min-h-11 rounded-lg border border-primary/20 px-3 py-2 text-base focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+              />
+            </label>
+
+            <p className="text-sm text-foreground/60">
+              Electricity pending:{" "}
+              <span className="font-semibold text-foreground">
+                ₹{(Number(electricityAmount || 0) - Number(electricityPaid || 0)).toFixed(2)}
+              </span>
             </p>
 
             <label className="flex flex-col gap-1">

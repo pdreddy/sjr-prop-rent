@@ -58,6 +58,9 @@ export const upsertPaymentSchema = z.object({
   maintenanceAmount: z.coerce.number().min(0).max(10_000_000).default(0),
   amountPaid: z.coerce.number().min(0).max(10_000_000),
   balanceDue: z.coerce.number().min(-10_000_000).max(10_000_000),
+  electricityUnits: z.coerce.number().min(0).max(10_000_000).default(0),
+  electricityAmount: z.coerce.number().min(0).max(10_000_000).default(0),
+  electricityPaid: z.coerce.number().min(0).max(10_000_000).default(0),
   paidDate: z.string().trim().max(30).optional().nullable(),
   notes: z.string().trim().max(2000).optional().nullable(),
 });
