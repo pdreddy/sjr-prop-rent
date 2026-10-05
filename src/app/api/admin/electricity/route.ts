@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthedAdmin } from "@/lib/auth";
-import { isValidMonth, getCurrentMonth, isBeforeMoveInMonth } from "@/lib/month";
+import { isValidMonth, getCurrentMonth, getPreviousMonth, isBeforeMoveInMonth } from "@/lib/month";
 import { allPayments, allUnits, getElectricityRate, paymentDTO, paymentFor, savePayment, unitById } from "@/lib/store";
 import { computeElectricityAmount } from "@/lib/electricity";
 import { electricityUpsertSchema } from "@/lib/validation";
@@ -17,14 +17,19 @@ export async function GET(request: NextRequest) {
   const monthParam = params.get("month");
   const month = monthParam && isValidMonth(monthParam) ? monthParam : getCurrentMonth();
   const search = params.get("search")?.trim().toLowerCase();
+  const previousMonth = getPreviousMonth(month);
 
   const [units, payments, rate] = await Promise.all([allUnits(), allPayments(), getElectricityRate()]);
   const rows = units
     .filter((unit) => unit.active && (!search || [unit.plotNumber, unit.tenantName].some((v) => v?.toLowerCase().includes(search))))
     .map((unit) => {
       const payment = payments.find((p) => p.unitId === unit.id && p.month === month);
-      const prevReading = payment?.prevReading ?? 0;
-      const currReading = payment?.currReading ?? 0;
+      // Nothing recorded yet for this month → start from last month's current reading, so
+      // only the new current reading has to be entered.
+      const unrecorded = !payment || (!payment.prevReading && !payment.currReading);
+      const lastMonthPayment = payments.find((p) => p.unitId === unit.id && p.month === previousMonth);
+      const prevReading = unrecorded ? lastMonthPayment?.currReading ?? 0 : payment.prevReading ?? 0;
+      const currReading = unrecorded ? prevReading : payment.currReading ?? 0;
       return {
         unitId: unit.id,
         plotNumber: unit.plotNumber,
