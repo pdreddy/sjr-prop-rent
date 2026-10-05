@@ -35,6 +35,17 @@ export interface PublicStatusResponse {
   totalPlots: number;
   paidCount: number;
   plots: PublicPlot[];
+  pendingSummary: {
+    totalRent: number;
+    totalElectricity: number;
+    months: Array<{
+      month: string;
+      rent: number;
+      electricity: number;
+      pendingRentCount: number;
+      pendingElectricityCount: number;
+    }>;
+  };
 }
 
 export interface UnitDTO {
