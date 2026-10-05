@@ -9,10 +9,10 @@ import type { PublicStatusResponse, PublicPlot } from "@/lib/types";
 
 const monthOptions = getMonthOptions();
 
-const inr = (n: number) => `₹${n.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
+const inr = (n: number | undefined) => `₹${(n ?? 0).toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
 
 function ElectricityBreakdown({ plot }: { plot: PublicPlot }) {
-  const { months, totalPending, totalUnits } = plot.electricity;
+  const { months = [], totalPending = 0, totalUnits = 0 } = plot.electricity ?? {};
   if (months.length === 0) {
     return <p className="text-sm text-foreground/50">No electricity pending.</p>;
   }
@@ -163,7 +163,7 @@ export default function Home() {
                       </p>
                       <details className="mt-2">
                         <summary className="cursor-pointer text-sm font-medium text-primary-dark">
-                          Electricity pending: {inr(plot.electricity.totalPending)}
+                          Electricity pending: {inr(plot.electricity?.totalPending)}
                         </summary>
                         <div className="mt-2">
                           <ElectricityBreakdown plot={plot} />
@@ -203,7 +203,7 @@ export default function Home() {
                           <td className="px-4 py-3 align-top">
                             <details>
                               <summary className="cursor-pointer font-medium text-foreground/80">
-                                {inr(plot.electricity.totalPending)}
+                                {inr(plot.electricity?.totalPending)}
                               </summary>
                               <div className="mt-2 min-w-56">
                                 <ElectricityBreakdown plot={plot} />
