@@ -6,6 +6,13 @@ import { withErrorHandling } from "@/lib/apiHandler";
 
 export const dynamic = "force-dynamic";
 
+// Tolerate bad stored dates (e.g. hand-edited in the Firebase console) instead of 500ing.
+function safeIso(value: number | string | null): string | null {
+  if (value === null || value === undefined) return null;
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString();
+}
+
 export const GET = withErrorHandling(async (request: NextRequest) => {
   const monthParam = request.nextUrl.searchParams.get("month");
   const month = monthParam && isValidMonth(monthParam) ? monthParam : getCurrentMonth();
@@ -35,7 +42,7 @@ export const GET = withErrorHandling(async (request: NextRequest) => {
     return {
       plotNumber: unit.plotNumber,
       tenantName: unit.tenantName,
-      moveInDate: unit.moveInDate === null ? null : new Date(unit.moveInDate).toISOString(),
+      moveInDate: safeIso(unit.moveInDate),
       // Public view collapses PARTIAL into "unpaid so far" — only PAID counts as paid.
       status: payments.get(unit.id)?.paymentStatus === "PAID" ? "PAID" : "UNPAID",
       electricity: {
