@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { paymentDTO, paymentFor, savePayment, unitById } from "@/lib/store";
+import { getElectricityRate, paymentDTO, paymentFor, savePayment, unitById } from "@/lib/store";
 import { getAuthedAdmin } from "@/lib/auth";
 import { upsertPaymentSchema } from "@/lib/validation";
 import { recordAuditLog } from "@/lib/audit";
@@ -23,6 +23,7 @@ export async function PUT(request: NextRequest) {
     );
   }
 
+  const rate = await getElectricityRate();
   const unit = await unitById(parsed.data.unitId);
   if (!unit) {
     return NextResponse.json({ error: "Plot not found." }, { status: 404 });
@@ -45,7 +46,7 @@ export async function PUT(request: NextRequest) {
     notes: parsed.data.notes || null,
     prevReading: parsed.data.prevReading,
     currReading: parsed.data.currReading,
-    electricityAmount: computeElectricityAmount(parsed.data.prevReading, parsed.data.currReading),
+    electricityAmount: computeElectricityAmount(parsed.data.prevReading, parsed.data.currReading, rate),
     electricityPaid: parsed.data.electricityPaid,
     updatedBy: admin.username,
   };
@@ -58,9 +59,9 @@ export async function PUT(request: NextRequest) {
     action: existing ? "UPDATE" : "CREATE",
     recordType: "Payment",
     recordId: payment.id,
-    previousValue: existing ? paymentDTO(existing) : null,
-    newValue: paymentDTO(payment),
+    previousValue: existing ? paymentDTO(existing, rate) : null,
+    newValue: paymentDTO(payment, rate),
   });
 
-  return NextResponse.json({ payment: paymentDTO(payment) });
+  return NextResponse.json({ payment: paymentDTO(payment, rate) });
 }

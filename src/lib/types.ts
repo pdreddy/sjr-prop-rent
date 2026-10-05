@@ -14,6 +14,7 @@ export interface ElectricityRow {
 
 export interface ElectricityListResponse {
   month: string;
+  ratePerUnit: number;
   rows: ElectricityRow[];
 }
 
@@ -34,6 +35,7 @@ export interface PublicPlot {
 
 export interface PublicStatusResponse {
   buildingName: string;
+  ratePerUnit: number;
   month: string;
   totalPlots: number;
   paidCount: number;
@@ -97,6 +99,7 @@ export interface DashboardTotals {
 
 export interface DashboardResponse {
   month: string;
+  electricityRatePerUnit: number;
   rows: DashboardRow[];
   totals: DashboardTotals;
 }

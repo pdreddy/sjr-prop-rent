@@ -6,6 +6,7 @@ import Link from "next/link";
 import MonthYearSelector from "@/components/MonthYearSelector";
 import ChangePasswordModal from "./ChangePasswordModal";
 import { formatMonthLabel, getCurrentMonth, getMonthOptions } from "@/lib/month";
+import { ELECTRICITY_RATE_PER_UNIT } from "@/lib/constants";
 import { computeElectricityAmount, computeElectricityUnits } from "@/lib/electricity";
 import type { AdminRole, ElectricityListResponse, ElectricityRow } from "@/lib/types";
 import { IconBuilding, IconLock, IconLogout, IconSearch } from "@/components/icons";
@@ -131,6 +132,18 @@ export default function ElectricityDashboard({ username, role }: { username: str
       </header>
 
       <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-3 py-5 sm:px-6">
+        {role === "ADMIN" && data && (
+          <RateEditor
+            key={data.ratePerUnit}
+            ratePerUnit={data.ratePerUnit}
+            onSaved={(msg) => {
+              setMessage(msg);
+              load();
+            }}
+            onError={setError}
+          />
+        )}
+
         {totals && (
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-primary/10 bg-white p-3.5 shadow-sm sm:p-4">
             <div>
@@ -193,6 +206,7 @@ export default function ElectricityDashboard({ username, role }: { username: str
                 key={row.unitId}
                 row={row}
                 month={month}
+                ratePerUnit={data.ratePerUnit ?? ELECTRICITY_RATE_PER_UNIT}
                 onSaved={(msg) => {
                   setMessage(msg);
                   load();
@@ -212,11 +226,13 @@ export default function ElectricityDashboard({ username, role }: { username: str
 function ElectricityRowCard({
   row,
   month,
+  ratePerUnit,
   onSaved,
   onError,
 }: {
   row: ElectricityRow;
   month: string;
+  ratePerUnit: number;
   onSaved: (message: string) => void;
   onError: (message: string | null) => void;
 }) {
@@ -228,7 +244,7 @@ function ElectricityRowCard({
   const prevReadingNumber = Number(prevReading || 0);
   const currReadingNumber = Number(currReading || 0);
   const readingError = currReadingNumber < prevReadingNumber;
-  const electricityAmount = computeElectricityAmount(prevReadingNumber, currReadingNumber);
+  const electricityAmount = computeElectricityAmount(prevReadingNumber, currReadingNumber, ratePerUnit);
   const electricityUnits = computeElectricityUnits(prevReadingNumber, currReadingNumber);
   const dirty =
     prevReadingNumber !== row.prevReading || currReadingNumber !== row.currReading || electricityPaid !== row.electricityPaid;
@@ -352,5 +368,67 @@ function ElectricityRowCard({
         <p className="mt-1.5 text-xs font-medium text-unpaid">Current reading must be ≥ previous reading.</p>
       )}
     </li>
+  );
+}
+
+function RateEditor({
+  ratePerUnit,
+  onSaved,
+  onError,
+}: {
+  ratePerUnit: number;
+  onSaved: (message: string) => void;
+  onError: (message: string | null) => void;
+}) {
+  const [value, setValue] = useState(String(ratePerUnit));
+  const [saving, setSaving] = useState(false);
+  const rate = Number(value);
+  const invalid = value.trim() === "" || !Number.isFinite(rate) || rate < 0;
+
+  async function save() {
+    setSaving(true);
+    onError(null);
+    try {
+      const res = await fetch("/api/admin/settings/electricity-rate", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ratePerUnit: rate }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Failed to save rate.");
+      onSaved(`Electricity rate set to ₹${json.ratePerUnit} per unit.`);
+    } catch (err) {
+      onError(err instanceof Error ? err.message : "Failed to save rate.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="mb-4 flex flex-wrap items-end gap-3 rounded-2xl border border-primary/10 bg-white p-3.5 shadow-sm sm:p-4">
+      <label className="flex flex-col gap-1">
+        <span className="text-sm font-medium text-primary-dark">Rate per unit (₹)</span>
+        <input
+          type="number"
+          inputMode="decimal"
+          min={0}
+          step="0.01"
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          className="min-h-11 w-32 rounded-xl border border-primary/20 bg-white px-3 py-2 text-base focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+        />
+      </label>
+      <button
+        type="button"
+        onClick={save}
+        disabled={saving || invalid || rate === ratePerUnit}
+        className="min-h-11 rounded-xl bg-primary px-4 text-sm font-semibold text-white disabled:opacity-50"
+      >
+        {saving ? "Saving…" : "Save rate"}
+      </button>
+      <p className="basis-full text-xs text-foreground/50">
+        Applies to all months, including past ones.
+      </p>
+    </div>
   );
 }

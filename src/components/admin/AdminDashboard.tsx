@@ -17,7 +17,7 @@ import {
   formatDate,
 } from "@/lib/month";
 import type { DashboardResponse, DashboardRow, DashboardTotals } from "@/lib/types";
-import { BUILDING_READY_MONTH } from "@/lib/constants";
+import { BUILDING_READY_MONTH, ELECTRICITY_RATE_PER_UNIT } from "@/lib/constants";
 import {
   IconBuilding,
   IconCopy,
@@ -339,6 +339,7 @@ export default function AdminDashboard({ username }: { username: string }) {
         <EditPaymentModal
           row={editingRow}
           month={month}
+          ratePerUnit={data?.electricityRatePerUnit ?? ELECTRICITY_RATE_PER_UNIT}
           onClose={() => setEditingRow(null)}
           onSaved={(msg) => {
             setEditingRow(null);

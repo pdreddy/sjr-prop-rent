@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthedAdmin } from "@/lib/auth";
 import { isValidMonth, getCurrentMonth, isBeforeMoveInMonth } from "@/lib/month";
-import { allPayments, allUnits, paymentDTO, unitDTO } from "@/lib/store";
+import { allPayments, allUnits, getElectricityRate, paymentDTO, unitDTO } from "@/lib/store";
 
 export async function GET(request: NextRequest) {
   const admin = await getAuthedAdmin();
@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
   const month = monthParam && isValidMonth(monthParam) ? monthParam : getCurrentMonth();
   const search = params.get("search")?.trim().toLowerCase();
   const statusFilter = params.get("status");
-  const [unitRecords, paymentRecords] = await Promise.all([allUnits(), allPayments()]);
+  const [unitRecords, paymentRecords, rate] = await Promise.all([allUnits(), allPayments(), getElectricityRate()]);
   let rows = unitRecords
     .filter(
       (unit) =>
@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
     const payment = paymentRecords.find((p) => p.unitId === unit.id && p.month === month) ?? null;
     const isVacant = !unit.tenantName?.trim();
     const isBeforeMoveIn = isBeforeMoveInMonth(unit.moveInDate, month);
-    return { unit: unitDTO(unit), payment: payment ? paymentDTO(payment) : null, isVacant, isBeforeMoveIn, effectiveStatus: payment?.paymentStatus ?? "UNPAID" };
+    return { unit: unitDTO(unit), payment: payment ? paymentDTO(payment, rate) : null, isVacant, isBeforeMoveIn, effectiveStatus: payment?.paymentStatus ?? "UNPAID" };
   });
   if (statusFilter && statusFilter !== "ALL") {
     rows = rows.filter((row) => {
@@ -38,5 +38,5 @@ export async function GET(request: NextRequest) {
     if (row.effectiveStatus === "PAID") acc.numPaid++; else if (row.effectiveStatus === "PARTIAL") acc.numPartial++; else acc.numUnpaid++;
     return acc;
   }, { totalExpected: 0, totalCollected: 0, numPaid: 0, numPartial: 0, numUnpaid: 0 });
-  return NextResponse.json({ month, rows, totals: { ...totals, outstandingBalance: totals.totalExpected - totals.totalCollected, totalUnits: rows.length } });
+  return NextResponse.json({ month, electricityRatePerUnit: rate, rows, totals: { ...totals, outstandingBalance: totals.totalExpected - totals.totalCollected, totalUnits: rows.length } });
 }

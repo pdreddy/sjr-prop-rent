@@ -96,7 +96,9 @@ export default function Home() {
               <h1 className="truncate text-base font-bold leading-tight text-primary-dark sm:text-lg">
                 {data?.buildingName ?? "SJR Building"}
               </h1>
-              <p className="text-xs text-foreground/45">Rent status</p>
+              <p className="text-xs text-foreground/45">
+                Rent status{data ? ` · Electricity ₹${data.ratePerUnit}/unit` : ""}
+              </p>
             </div>
           </div>
           <Link

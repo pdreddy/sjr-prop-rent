@@ -11,6 +11,7 @@ import type { DashboardRow, PaymentStatus } from "@/lib/types";
 interface Props {
   row: DashboardRow;
   month: string;
+  ratePerUnit: number;
   onClose: () => void;
   onSaved: (message: string) => void;
 }
@@ -19,7 +20,7 @@ const inputClass =
   "min-h-11 w-full rounded-xl border border-primary/20 px-3 py-2 text-base focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30";
 const labelClass = "text-sm font-medium text-foreground/80";
 
-export default function EditPaymentModal({ row, month, onClose, onSaved }: Props) {
+export default function EditPaymentModal({ row, month, ratePerUnit, onClose, onSaved }: Props) {
   const [plotNumber, setPlotNumber] = useState(row.unit.plotNumber);
   const [tenantName, setTenantName] = useState(row.unit.tenantName ?? "");
   const [moveInDate, setMoveInDate] = useState(row.unit.moveInDate?.slice(0, 10) ?? "");
@@ -49,7 +50,7 @@ export default function EditPaymentModal({ row, month, onClose, onSaved }: Props
   const currReadingNumber = Number(currReading || 0);
   const readingError = currReadingNumber < prevReadingNumber;
   const electricityUnits = computeElectricityUnits(prevReadingNumber, currReadingNumber);
-  const electricityAmount = computeElectricityAmount(prevReadingNumber, currReadingNumber);
+  const electricityAmount = computeElectricityAmount(prevReadingNumber, currReadingNumber, ratePerUnit);
 
   async function save() {
     if (paidNumber > 0 && !paidDate) {

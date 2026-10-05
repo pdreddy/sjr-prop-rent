@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthedAdmin } from "@/lib/auth";
 import { copyMonthSchema } from "@/lib/validation";
-import { allPayments, allUnits, savePayment } from "@/lib/store";
+import { allPayments, allUnits, getElectricityRate, savePayment } from "@/lib/store";
 import { recordAuditLog } from "@/lib/audit";
 import { computeElectricityAmount } from "@/lib/electricity";
 
@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
   if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Invalid input." }, { status: 400 });
   const { sourceMonth, targetMonth } = parsed.data;
   if (sourceMonth === targetMonth) return NextResponse.json({ error: "Source and target month must be different." }, { status: 400 });
-  const [units, payments] = await Promise.all([allUnits(), allPayments()]);
+  const [units, payments, rate] = await Promise.all([allUnits(), allPayments(), getElectricityRate()]);
   const active = units.filter((unit) => unit.active);
   let createdCount = 0;
   for (const unit of active) {
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
       notes: null,
       prevReading,
       currReading,
-      electricityAmount: computeElectricityAmount(prevReading, currReading),
+      electricityAmount: computeElectricityAmount(prevReading, currReading, rate),
       electricityPaid: false,
       updatedBy: admin.username,
     });

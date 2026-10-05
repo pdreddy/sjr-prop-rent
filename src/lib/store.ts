@@ -1,5 +1,6 @@
 import { getDocument, listDocuments, newDocumentId, setDocument, type FirebaseValue } from "./firebase";
 import { computeElectricityAmount } from "./electricity";
+import { ELECTRICITY_RATE_PER_UNIT } from "./constants";
 import type { PaymentDTO, PaymentStatus, UnitDTO } from "./types";
 
 type StoredUnit = Omit<UnitDTO, "id" | "createdAt" | "updatedAt" | "moveInDate" | "advancePaidDate"> & {
@@ -27,14 +28,14 @@ export const unitDTO = (unit: StoredUnit & { id: string } & { phone?: string | n
     updatedAt: unit.updatedAt.toISOString(),
   };
 };
-export const paymentDTO = (payment: StoredPayment & { id: string }): PaymentDTO => {
+export const paymentDTO = (payment: StoredPayment & { id: string }, rate: number = ELECTRICITY_RATE_PER_UNIT): PaymentDTO => {
   const prevReading = payment.prevReading ?? 0;
   const currReading = payment.currReading ?? 0;
   return {
     ...payment,
     prevReading,
     currReading,
-    electricityAmount: computeElectricityAmount(prevReading, currReading),
+    electricityAmount: computeElectricityAmount(prevReading, currReading, rate),
     electricityPaid: payment.electricityPaid ?? false,
     paidDate: iso(payment.paidDate),
     createdAt: payment.createdAt.toISOString(),
@@ -53,6 +54,15 @@ export async function createUnit(data: Omit<StoredUnit, "createdAt" | "updatedAt
 export async function updateUnit(id: string, data: Partial<Omit<StoredUnit, "createdAt">>) {
   await setDocument(`units/${id}`, { ...data, updatedAt: new Date() } as Record<string, FirebaseValue>, true);
   return (await unitById(id))!;
+}
+
+export async function getElectricityRate(): Promise<number> {
+  const doc = await getDocument<{ ratePerUnit?: number }>("settings/electricity");
+  const rate = doc?.ratePerUnit;
+  return typeof rate === "number" && Number.isFinite(rate) && rate >= 0 ? rate : ELECTRICITY_RATE_PER_UNIT;
+}
+export async function setElectricityRate(ratePerUnit: number, updatedBy: string) {
+  await setDocument("settings/electricity", { ratePerUnit, updatedBy, updatedAt: new Date() });
 }
 
 export async function allPayments() { return listDocuments<StoredPayment>("payments"); }

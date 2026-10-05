@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthedAdmin } from "@/lib/auth";
 import { isValidMonth, getCurrentMonth, isBeforeMoveInMonth } from "@/lib/month";
-import { allPayments, allUnits, paymentDTO, paymentFor, savePayment, unitById } from "@/lib/store";
+import { allPayments, allUnits, getElectricityRate, paymentDTO, paymentFor, savePayment, unitById } from "@/lib/store";
 import { computeElectricityAmount } from "@/lib/electricity";
 import { electricityUpsertSchema } from "@/lib/validation";
 import { recordAuditLog } from "@/lib/audit";
@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
   const month = monthParam && isValidMonth(monthParam) ? monthParam : getCurrentMonth();
   const search = params.get("search")?.trim().toLowerCase();
 
-  const [units, payments] = await Promise.all([allUnits(), allPayments()]);
+  const [units, payments, rate] = await Promise.all([allUnits(), allPayments(), getElectricityRate()]);
   const rows = units
     .filter((unit) => unit.active && (!search || [unit.plotNumber, unit.tenantName].some((v) => v?.toLowerCase().includes(search))))
     .map((unit) => {
@@ -32,12 +32,12 @@ export async function GET(request: NextRequest) {
         isBeforeMoveIn: isBeforeMoveInMonth(unit.moveInDate, month),
         prevReading,
         currReading,
-        electricityAmount: computeElectricityAmount(prevReading, currReading),
+        electricityAmount: computeElectricityAmount(prevReading, currReading, rate),
         electricityPaid: payment?.electricityPaid ?? false,
       };
     });
 
-  const response: ElectricityListResponse = { month, rows };
+  const response: ElectricityListResponse = { month, ratePerUnit: rate, rows };
   return NextResponse.json(response);
 }
 
@@ -51,6 +51,7 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Invalid input." }, { status: 400 });
   }
 
+  const rate = await getElectricityRate();
   const unit = await unitById(parsed.data.unitId);
   if (!unit) return NextResponse.json({ error: "Plot not found." }, { status: 404 });
 
@@ -73,7 +74,7 @@ export async function PUT(request: NextRequest) {
     notes: existing?.notes ?? null,
     prevReading: parsed.data.prevReading,
     currReading: parsed.data.currReading,
-    electricityAmount: computeElectricityAmount(parsed.data.prevReading, parsed.data.currReading),
+    electricityAmount: computeElectricityAmount(parsed.data.prevReading, parsed.data.currReading, rate),
     electricityPaid: parsed.data.electricityPaid,
     updatedBy: admin.username,
   };
@@ -86,9 +87,9 @@ export async function PUT(request: NextRequest) {
     action: existing ? "UPDATE" : "CREATE",
     recordType: "Electricity",
     recordId: payment.id,
-    previousValue: existing ? paymentDTO(existing) : null,
-    newValue: paymentDTO(payment),
+    previousValue: existing ? paymentDTO(existing, rate) : null,
+    newValue: paymentDTO(payment, rate),
   });
 
-  return NextResponse.json({ payment: paymentDTO(payment) });
+  return NextResponse.json({ payment: paymentDTO(payment, rate) });
 }

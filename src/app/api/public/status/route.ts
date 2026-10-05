@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { allPayments, allUnits } from "@/lib/store";
+import { allPayments, allUnits, getElectricityRate } from "@/lib/store";
 import { BUILDING_NAME } from "@/lib/constants";
 import { isValidMonth, getCurrentMonth, isBeforeMoveInMonth } from "@/lib/month";
 import { computeElectricityAmount } from "@/lib/electricity";
@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
   const monthParam = request.nextUrl.searchParams.get("month");
   const month = monthParam && isValidMonth(monthParam) ? monthParam : getCurrentMonth();
 
-  const [allUnitRecords, payments] = await Promise.all([allUnits(), allPayments()]);
+  const [allUnitRecords, payments, rate] = await Promise.all([allUnits(), allPayments(), getElectricityRate()]);
   const units = allUnitRecords.filter((unit) => unit.active);
 
   const plots = units.map((unit) => {
@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
       .filter((item) => item.unitId === unit.id && !item.electricityPaid && !isBeforeMoveInMonth(moveInDate, item.month))
       .map((item) => ({
         month: item.month,
-        amount: computeElectricityAmount(item.prevReading ?? 0, item.currReading ?? 0),
+        amount: computeElectricityAmount(item.prevReading ?? 0, item.currReading ?? 0, rate),
       }))
       .filter((item) => item.amount > 0)
       .sort((a, b) => a.month.localeCompare(b.month));
@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
       status: isBeforeMoveIn ? ("NA" as const) : payment?.paymentStatus ?? ("UNPAID" as const),
       paidDate: payment?.paidDate?.toISOString() ?? null,
       electricityStatus: isBeforeMoveIn ? ("NA" as const) : payment?.electricityPaid ? ("PAID" as const) : ("UNPAID" as const),
-      electricityAmount: computeElectricityAmount(prevReading, currReading),
+      electricityAmount: computeElectricityAmount(prevReading, currReading, rate),
       prevReading,
       currReading,
     };
@@ -47,6 +47,7 @@ export async function GET(request: NextRequest) {
 
   return NextResponse.json({
     buildingName: BUILDING_NAME,
+    ratePerUnit: rate,
     month,
     totalPlots: plots.length,
     paidCount,
