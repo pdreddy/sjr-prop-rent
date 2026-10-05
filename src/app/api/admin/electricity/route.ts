@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
       const unrecorded = !payment || (!payment.prevReading && !payment.currReading);
       const lastMonthPayment = payments.find((p) => p.unitId === unit.id && p.month === previousMonth);
       const prevReading = unrecorded ? lastMonthPayment?.currReading ?? 0 : payment.prevReading ?? 0;
-      const currReading = unrecorded ? prevReading : payment.currReading ?? 0;
+      const currReading = unrecorded ? 0 : payment.currReading ?? 0;
       return {
         unitId: unit.id,
         plotNumber: unit.plotNumber,

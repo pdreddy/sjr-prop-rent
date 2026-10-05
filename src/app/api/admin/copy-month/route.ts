@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     // Carry forward last month's current meter reading as this month's starting point —
     // admins only need to fill in the new current reading once it's next read.
     const prevReading = source?.currReading ?? 0; // ?? also covers legacy records saved before this field existed
-    const currReading = prevReading;
+    const currReading = 0; // entered when the meter is next read
     await savePayment(unit.id, targetMonth, {
       paymentStatus: "UNPAID",
       rentAmount,

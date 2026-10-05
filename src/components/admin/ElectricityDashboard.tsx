@@ -257,7 +257,8 @@ function ElectricityRowCard({
 
   const prevReadingNumber = Number(prevReading || 0);
   const currReadingNumber = Number(currReading || 0);
-  const readingError = currReadingNumber < prevReadingNumber;
+  // A current reading of 0 means "not entered yet", so it is not flagged as an error.
+  const readingError = currReadingNumber !== 0 && currReadingNumber < prevReadingNumber;
   const electricityAmount = computeElectricityAmount(prevReadingNumber, currReadingNumber, ratePerUnit);
   const electricityUnits = computeElectricityUnits(prevReadingNumber, currReadingNumber);
   const dirty =
