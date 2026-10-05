@@ -7,6 +7,7 @@ import MonthYearSelector from "@/components/MonthYearSelector";
 import ChangePasswordModal from "./ChangePasswordModal";
 import { formatMonthLabel, getCurrentMonth, getMonthOptions } from "@/lib/month";
 import { ELECTRICITY_RATE_PER_UNIT } from "@/lib/constants";
+import { parseReadings } from "@/lib/readings";
 import { computeElectricityAmount, computeElectricityUnits } from "@/lib/electricity";
 import type { AdminRole, ElectricityListResponse, ElectricityRow } from "@/lib/types";
 import { IconBuilding, IconLock, IconLogout, IconSearch } from "@/components/icons";
@@ -137,6 +138,19 @@ export default function ElectricityDashboard({ username, role }: { username: str
             key={data.ratePerUnit}
             ratePerUnit={data.ratePerUnit}
             onSaved={(msg) => {
+              setMessage(msg);
+              load();
+            }}
+            onError={setError}
+          />
+        )}
+
+        {data && (
+          <BulkEntry
+            month={month}
+            rows={data.rows}
+            ratePerUnit={data.ratePerUnit ?? ELECTRICITY_RATE_PER_UNIT}
+            onDone={(msg) => {
               setMessage(msg);
               load();
             }}
@@ -429,6 +443,133 @@ function RateEditor({
       <p className="basis-full text-xs text-foreground/50">
         Applies to all months, including past ones.
       </p>
+    </div>
+  );
+}
+
+function BulkEntry({
+  month,
+  rows,
+  ratePerUnit,
+  onDone,
+  onError,
+}: {
+  month: string;
+  rows: ElectricityRow[];
+  ratePerUnit: number;
+  onDone: (message: string) => void;
+  onError: (message: string | null) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [text, setText] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const preview = useMemo(() => {
+    const { readings, issues } = parseReadings(text);
+    const byPlot = new Map(rows.map((r) => [r.plotNumber.toLowerCase(), r]));
+    const matched: { row: ElectricityRow; prev: number; curr: number }[] = [];
+    const problems = issues.map((i) => `Line ${i.line} (${i.text}): ${i.reason}`);
+    for (const reading of readings) {
+      const row = byPlot.get(reading.plotNumber.toLowerCase());
+      if (!row) {
+        problems.push(`Line ${reading.line}: plot "${reading.plotNumber}" not found.`);
+        continue;
+      }
+      const prev = reading.prevReading ?? row.prevReading;
+      if (reading.currReading < prev) {
+        problems.push(`Line ${reading.line}: current reading is lower than previous (${prev}).`);
+        continue;
+      }
+      matched.push({ row, prev, curr: reading.currReading });
+    }
+    return { matched, problems };
+  }, [text, rows]);
+
+  async function saveAll() {
+    setSaving(true);
+    onError(null);
+    let saved = 0;
+    try {
+      for (const { row, prev, curr } of preview.matched) {
+        const res = await fetch("/api/admin/electricity", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            unitId: row.unitId,
+            month,
+            prevReading: prev,
+            currReading: curr,
+            electricityPaid: row.electricityPaid,
+          }),
+        });
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(`Plot ${row.plotNumber}: ${json.error ?? "failed to save"}. ${saved} saved before this.`);
+        saved++;
+      }
+      setText("");
+      setOpen(false);
+      onDone(`${saved} reading${saved === 1 ? "" : "s"} saved.`);
+    } catch (err) {
+      onError(err instanceof Error ? err.message : "Failed to save readings.");
+      if (saved > 0) onDone(`${saved} reading${saved === 1 ? "" : "s"} saved before the error.`);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="mb-4 rounded-2xl border border-primary/10 bg-white p-3.5 shadow-sm sm:p-4">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center justify-between text-left text-sm font-semibold text-primary-dark"
+      >
+        Paste readings as text
+        <span className="text-foreground/40">{open ? "−" : "+"}</span>
+      </button>
+      {open && (
+        <div className="mt-3 flex flex-col gap-3">
+          <p className="text-xs text-foreground/55">
+            One plot per line: <code>101: 1234</code> (current reading) or <code>101 1200 1234</code> (previous, current).
+            Or enter readings one by one below.
+          </p>
+          <textarea
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            rows={6}
+            placeholder={"101: 1234\n102: 880\nPlot 103 - 1500"}
+            className="w-full rounded-xl border border-primary/20 bg-white px-3 py-2 font-mono text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+          />
+          {preview.problems.length > 0 && (
+            <ul className="rounded-xl bg-unpaid-bg px-3 py-2 text-xs text-unpaid">
+              {preview.problems.map((p) => (
+                <li key={p}>{p}</li>
+              ))}
+            </ul>
+          )}
+          {preview.matched.length > 0 && (
+            <ul className="divide-y divide-primary/10 rounded-xl bg-background text-sm">
+              {preview.matched.map(({ row, prev, curr }) => (
+                <li key={row.unitId} className="flex items-center justify-between gap-2 px-3 py-1.5">
+                  <span className="font-medium">Plot {row.plotNumber}</span>
+                  <span className="text-foreground/60">
+                    {prev} → {curr} · {Math.max(0, curr - prev)} units · ₹
+                    {computeElectricityAmount(prev, curr, ratePerUnit).toFixed(0)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+          <button
+            type="button"
+            onClick={saveAll}
+            disabled={saving || preview.matched.length === 0}
+            className="min-h-11 self-start rounded-xl bg-primary px-4 text-sm font-semibold text-white disabled:opacity-50"
+          >
+            {saving ? "Saving…" : `Save ${preview.matched.length} reading${preview.matched.length === 1 ? "" : "s"}`}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
