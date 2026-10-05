@@ -27,6 +27,9 @@ export interface PublicPlot {
   electricityAmount: number;
   prevReading: number;
   currReading: number;
+  /** Sum of electricity bills across all months that are still unpaid. */
+  unpaidElectricityTotal: number;
+  unpaidElectricityMonths: { month: string; amount: number }[];
 }
 
 export interface PublicStatusResponse {

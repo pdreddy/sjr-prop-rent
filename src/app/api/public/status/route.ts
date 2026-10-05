@@ -19,7 +19,18 @@ export async function GET(request: NextRequest) {
     const isBeforeMoveIn = isBeforeMoveInMonth(moveInDate, month);
     const prevReading = payment?.prevReading ?? 0;
     const currReading = payment?.currReading ?? 0;
+    const unpaidElectricityMonths = payments
+      .filter((item) => item.unitId === unit.id && !item.electricityPaid && !isBeforeMoveInMonth(moveInDate, item.month))
+      .map((item) => ({
+        month: item.month,
+        amount: computeElectricityAmount(item.prevReading ?? 0, item.currReading ?? 0),
+      }))
+      .filter((item) => item.amount > 0)
+      .sort((a, b) => a.month.localeCompare(b.month));
+    const unpaidElectricityTotal = unpaidElectricityMonths.reduce((sum, item) => sum + item.amount, 0);
     return {
+      unpaidElectricityTotal,
+      unpaidElectricityMonths,
       plotNumber: unit.plotNumber,
       tenantName: unit.tenantName,
       moveInDate,

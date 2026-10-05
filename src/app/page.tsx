@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, useMemo, type ReactNode } from "react
 import Link from "next/link";
 import MonthYearSelector from "@/components/MonthYearSelector";
 import StatusBadge from "@/components/StatusBadge";
-import { getCurrentMonth, getMonthOptions, formatDate } from "@/lib/month";
+import { getCurrentMonth, getMonthOptions, formatDate, formatMonthLabel } from "@/lib/month";
 import type { PublicStatusResponse } from "@/lib/types";
 import { IconBuilding, IconCalendar, IconSearch } from "@/components/icons";
 
@@ -257,6 +257,18 @@ export default function Home() {
                       </div>
                       <StatusBadge status={plot.electricityStatus} />
                     </div>
+                    {plot.unpaidElectricityTotal > 0 && (
+                      <div className="mt-2 rounded-xl bg-unpaid-bg px-3 py-2 text-xs text-unpaid">
+                        <p className="text-sm font-bold">
+                          Total unpaid electricity: ₹{plot.unpaidElectricityTotal.toFixed(0)}
+                        </p>
+                        <p className="mt-0.5 opacity-90">
+                          {plot.unpaidElectricityMonths
+                            .map((m) => `${formatMonthLabel(m.month)} ₹${m.amount.toFixed(0)}`)
+                            .join(" · ")}
+                        </p>
+                      </div>
+                    )}
                   </li>
                 ))}
               </ul>
