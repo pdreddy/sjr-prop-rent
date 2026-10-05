@@ -67,6 +67,7 @@ Like the reference KOC app, every public Firebase setting has a built-in fallbac
    - `FIREBASE_PRIVATE_KEY` (use literal `\\n` between private-key lines)
    - `SESSION_SECRET`
    - `BUILDING_NAME` (optional)
+   - `NEXT_PUBLIC_ELECTRICITY_RATE_PER_UNIT` (optional, defaults to `7`; rebuild after changing)
 4. Deploy the site.
 5. From a trusted local computer, run the one-time seed against the same Firebase project:
 

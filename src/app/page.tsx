@@ -4,9 +4,9 @@ import { useEffect, useState, useCallback, useMemo, type ReactNode } from "react
 import Link from "next/link";
 import MonthYearSelector from "@/components/MonthYearSelector";
 import StatusBadge from "@/components/StatusBadge";
-import { getCurrentMonth, getMonthOptions, formatDate } from "@/lib/month";
+import { getCurrentMonth, getMonthOptions, formatDate, formatMonthLabel } from "@/lib/month";
 import type { PublicStatusResponse } from "@/lib/types";
-import { IconBuilding, IconCalendar, IconSearch } from "@/components/icons";
+import { IconBuilding, IconCalendar, IconRupee, IconSearch } from "@/components/icons";
 
 const monthOptions = getMonthOptions();
 const RENT_FILTERS = ["ALL", "PAID", "UNPAID", "PARTIAL", "NA"] as const;
@@ -24,6 +24,13 @@ const ELECTRICITY_FILTER_LABELS: Record<(typeof ELECTRICITY_FILTERS)[number], st
   UNPAID: "Unpaid",
   NA: "N/A",
 };
+
+const formatCurrency = (amount: number) =>
+  new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(amount);
 
 export default function Home() {
   const [month, setMonth] = useState(getCurrentMonth());
@@ -87,7 +94,7 @@ export default function Home() {
   return (
     <div className="flex flex-1 flex-col bg-background">
       <header className="sticky top-0 z-10 border-b border-primary/10 bg-white/85 px-4 py-3.5 backdrop-blur sm:px-6">
-        <div className="mx-auto flex max-w-3xl items-center justify-between gap-3">
+        <div className="mx-auto flex max-w-4xl items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-2.5">
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-white">
               <IconBuilding className="h-5 w-5" />
@@ -96,7 +103,7 @@ export default function Home() {
               <h1 className="truncate text-base font-bold leading-tight text-primary-dark sm:text-lg">
                 {data?.buildingName ?? "SJR Building"}
               </h1>
-              <p className="text-xs text-foreground/45">Rent status</p>
+              <p className="text-xs text-foreground/45">Community payment board</p>
             </div>
           </div>
           <Link
@@ -108,8 +115,18 @@ export default function Home() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-6 sm:px-6">
-        <div className="mb-5 flex flex-wrap items-end gap-3">
+      <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-6 sm:px-6 sm:py-8">
+        <div className="mb-6">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary/60">Payment overview</p>
+          <h2 className="mt-1 text-2xl font-bold tracking-tight text-primary-dark sm:text-3xl">
+            Clear dues, month by month.
+          </h2>
+          <p className="mt-1 max-w-xl text-sm leading-6 text-foreground/55">
+            Review the building&apos;s outstanding rent and electricity, then check payment status for any plot.
+          </p>
+        </div>
+
+        <div className="mb-5 flex flex-wrap items-end gap-3 rounded-2xl border border-primary/10 bg-white p-3.5 shadow-sm sm:p-4">
           <MonthYearSelector month={month} options={monthOptions} onChange={setMonth} />
           <label className="flex flex-1 min-w-[180px] flex-col gap-1">
             <span className="text-sm font-medium text-primary-dark">Search</span>
@@ -183,6 +200,80 @@ export default function Home() {
 
         {!loading && !error && data && (
           <>
+            <section className="mb-7" aria-labelledby="pending-heading">
+              <div className="overflow-hidden rounded-3xl bg-primary-dark text-white shadow-lg shadow-primary/10">
+                <div className="grid gap-4 p-5 sm:grid-cols-[1.15fr_1fr] sm:p-6">
+                  <div>
+                    <div className="flex items-center gap-2 text-primary-light/80">
+                      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10">
+                        <IconRupee className="h-4 w-4" />
+                      </span>
+                      <p id="pending-heading" className="text-xs font-bold uppercase tracking-[0.16em]">
+                        Outstanding balance · all months
+                      </p>
+                    </div>
+                    <p className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">
+                      {formatCurrency(data.pendingSummary.totalBalance)}
+                    </p>
+                    <p className="mt-1 text-sm text-white/60">
+                      Rent and electricity still due across the building
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 self-end">
+                    <PendingTotal label="Rent" value={data.pendingSummary.totalRent} />
+                    <PendingTotal label="Electricity" value={data.pendingSummary.totalElectricity} />
+                  </div>
+                </div>
+
+                <div className="border-t border-white/10 bg-white/[0.06] px-5 py-4 sm:px-6">
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <p className="text-sm font-semibold">Pending by month</p>
+                    <p className="text-right text-xs text-white/45">
+                      Rent + electricity<br />₹{data.pendingSummary.electricityRatePerUnit}/unit
+                    </p>
+                  </div>
+                  {data.pendingSummary.months.length === 0 ? (
+                    <div className="rounded-xl bg-white/10 px-4 py-3 text-sm text-white/75">
+                      Everything is paid up. No pending dues.
+                    </div>
+                  ) : (
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {data.pendingSummary.months.map((item) => (
+                        <div key={item.month} className="rounded-xl border border-white/10 bg-white/[0.07] p-3">
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <p className="font-semibold">{formatMonthLabel(item.month)}</p>
+                              <p className="mt-0.5 text-xs text-white/50">
+                                {item.pendingRentCount} rent · {item.pendingElectricityCount} electricity
+                              </p>
+                            </div>
+                            <p className="font-bold text-primary-light">
+                              {formatCurrency(item.balance)}
+                            </p>
+                          </div>
+                          <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                            <span className="rounded-lg bg-black/10 px-2.5 py-2 text-white/65">
+                              Rent <strong className="ml-1 text-white">{formatCurrency(item.rent)}</strong>
+                            </span>
+                            <span className="rounded-lg bg-black/10 px-2.5 py-2 text-white/65">
+                              Power <strong className="ml-1 text-white">{formatCurrency(item.electricity)}</strong>
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </section>
+
+            <div className="mb-3 flex items-end justify-between gap-3">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary/55">Selected month</p>
+                <h3 className="text-xl font-bold text-primary-dark">{formatMonthLabel(data.month)} status</h3>
+              </div>
+              <p className="text-xs text-foreground/45">{plots.length} plots shown</p>
+            </div>
             <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
               <SummaryCard
                 title="Rent collection"
@@ -266,7 +357,7 @@ export default function Home() {
       </main>
 
       <footer className="px-4 py-6 text-center text-xs text-foreground/40">
-        Only payment status is shown here. Phone numbers, rent amounts and notes remain private.
+        Building totals are shared for transparency. Phone numbers, individual rent charges and notes remain private.
       </footer>
     </div>
   );
@@ -312,5 +403,14 @@ function MiniChip({ label, value, colorClass }: { label: string; value: number; 
     <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${colorClass}`}>
       {value} {label}
     </span>
+  );
+}
+
+function PendingTotal({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/10 p-3">
+      <p className="text-xs font-medium text-white/55">{label} pending</p>
+      <p className="mt-1 text-lg font-bold tracking-tight text-white sm:text-xl">{formatCurrency(value)}</p>
+    </div>
   );
 }
