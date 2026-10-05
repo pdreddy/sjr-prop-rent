@@ -3,6 +3,7 @@ import { getAuthedAdmin } from "@/lib/auth";
 import { isValidMonth, getCurrentMonth, getPreviousMonth, isBeforeMoveInMonth } from "@/lib/month";
 import { allPayments, allUnits, getElectricityRate, paymentDTO, paymentFor, savePayment, unitById } from "@/lib/store";
 import { computeElectricityAmount } from "@/lib/electricity";
+import { buildElectricityLedger } from "@/lib/electricityLedger";
 import { electricityUpsertSchema } from "@/lib/validation";
 import { recordAuditLog } from "@/lib/audit";
 import type { ElectricityListResponse } from "@/lib/types";
@@ -27,6 +28,11 @@ export async function GET(request: NextRequest) {
       // Nothing recorded yet for this month → start from last month's current reading, so
       // only the new current reading has to be entered.
       const unrecorded = !payment || (!payment.prevReading && !payment.currReading);
+      const ledger = buildElectricityLedger(
+        payments.filter((p) => p.unitId === unit.id && !isBeforeMoveInMonth(unit.moveInDate, p.month)),
+        rate
+      );
+      const entry = ledger.find((e) => e.month === month);
       const lastMonthPayment = payments.find((p) => p.unitId === unit.id && p.month === previousMonth);
       const prevReading = unrecorded ? lastMonthPayment?.currReading ?? 0 : payment.prevReading ?? 0;
       const currReading = unrecorded ? 0 : payment.currReading ?? 0;
@@ -39,6 +45,9 @@ export async function GET(request: NextRequest) {
         currReading,
         electricityAmount: computeElectricityAmount(prevReading, currReading, rate),
         electricityPaid: payment?.electricityPaid ?? false,
+        electricityCovered: entry?.paid ?? 0,
+        electricityBalance: entry?.balance ?? 0,
+        outstandingTotal: ledger.reduce((sum, e) => sum + e.balance, 0),
       };
     });
 

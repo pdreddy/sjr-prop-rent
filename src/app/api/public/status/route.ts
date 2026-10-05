@@ -3,6 +3,7 @@ import { allPayments, allUnits, getElectricityRate } from "@/lib/store";
 import { BUILDING_NAME } from "@/lib/constants";
 import { isValidMonth, getCurrentMonth, isBeforeMoveInMonth } from "@/lib/month";
 import { computeElectricityAmount } from "@/lib/electricity";
+import { buildElectricityLedger } from "@/lib/electricityLedger";
 
 export const dynamic = "force-dynamic";
 
@@ -19,14 +20,14 @@ export async function GET(request: NextRequest) {
     const isBeforeMoveIn = isBeforeMoveInMonth(moveInDate, month);
     const prevReading = payment?.prevReading ?? 0;
     const currReading = payment?.currReading ?? 0;
-    const unpaidElectricityMonths = payments
-      .filter((item) => item.unitId === unit.id && !item.electricityPaid && !isBeforeMoveInMonth(moveInDate, item.month))
-      .map((item) => ({
-        month: item.month,
-        amount: computeElectricityAmount(item.prevReading ?? 0, item.currReading ?? 0, rate),
-      }))
-      .filter((item) => item.amount > 0)
-      .sort((a, b) => a.month.localeCompare(b.month));
+    const ledger = buildElectricityLedger(
+      payments.filter((item) => item.unitId === unit.id && !isBeforeMoveInMonth(moveInDate, item.month)),
+      rate
+    );
+    const thisMonth = ledger.find((entry) => entry.month === month);
+    const unpaidElectricityMonths = ledger
+      .filter((entry) => entry.balance > 0)
+      .map((entry) => ({ month: entry.month, bill: entry.bill, paid: entry.paid, amount: entry.balance }));
     const unpaidElectricityTotal = unpaidElectricityMonths.reduce((sum, item) => sum + item.amount, 0);
     return {
       unpaidElectricityTotal,
@@ -36,8 +37,14 @@ export async function GET(request: NextRequest) {
       moveInDate,
       status: isBeforeMoveIn ? ("NA" as const) : payment?.paymentStatus ?? ("UNPAID" as const),
       paidDate: payment?.paidDate?.toISOString() ?? null,
-      electricityStatus: isBeforeMoveIn ? ("NA" as const) : payment?.electricityPaid ? ("PAID" as const) : ("UNPAID" as const),
+      electricityStatus: isBeforeMoveIn
+        ? ("NA" as const)
+        : payment?.electricityPaid || (thisMonth && thisMonth.bill > 0 && thisMonth.balance <= 0)
+          ? ("PAID" as const)
+          : ("UNPAID" as const),
       electricityAmount: computeElectricityAmount(prevReading, currReading, rate),
+      electricityCovered: thisMonth?.paid ?? 0,
+      electricityBalance: thisMonth?.balance ?? 0,
       prevReading,
       currReading,
     };

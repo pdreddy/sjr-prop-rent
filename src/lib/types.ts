@@ -10,6 +10,12 @@ export interface ElectricityRow {
   currReading: number;
   electricityAmount: number;
   electricityPaid: boolean;
+  /** Part of this month's bill covered by rent overpayments (or all of it if marked paid). */
+  electricityCovered: number;
+  /** Still owed for this month after overpayments. */
+  electricityBalance: number;
+  /** Total still owed for electricity across all months for this tenant. */
+  outstandingTotal: number;
 }
 
 export interface ElectricityListResponse {
@@ -26,11 +32,13 @@ export interface PublicPlot {
   paidDate: string | null;
   electricityStatus: "PAID" | "UNPAID" | "NA";
   electricityAmount: number;
+  electricityCovered: number;
+  electricityBalance: number;
   prevReading: number;
   currReading: number;
   /** Sum of electricity bills across all months that are still unpaid. */
   unpaidElectricityTotal: number;
-  unpaidElectricityMonths: { month: string; amount: number }[];
+  unpaidElectricityMonths: { month: string; bill: number; paid: number; amount: number }[];
 }
 
 export interface PublicStatusResponse {

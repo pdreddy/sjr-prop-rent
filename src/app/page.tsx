@@ -251,6 +251,12 @@ export default function Home() {
                         <p className="text-sm font-bold text-foreground">
                           {plot.electricityStatus === "NA" ? "N/A" : `₹${plot.electricityAmount.toFixed(0)}`}
                         </p>
+                        {plot.electricityStatus !== "NA" && plot.electricityCovered > 0 && (
+                          <p className="text-xs text-paid">
+                            ₹{plot.electricityCovered.toFixed(0)} paid from rent overpayment
+                            {plot.electricityBalance > 0 ? ` · ₹${plot.electricityBalance.toFixed(0)} balance` : ""}
+                          </p>
+                        )}
                         {plot.electricityStatus !== "NA" && (
                           <p className="text-xs text-foreground/50">
                             {plot.prevReading} → {plot.currReading} ({plot.currReading - plot.prevReading} units)
@@ -266,7 +272,11 @@ export default function Home() {
                         </p>
                         <p className="mt-0.5 opacity-90">
                           {plot.unpaidElectricityMonths
-                            .map((m) => `${formatMonthLabel(m.month)} ₹${m.amount.toFixed(0)}`)
+                            .map((m) =>
+                              m.paid > 0
+                                ? `${formatMonthLabel(m.month)} ₹${m.amount.toFixed(0)} due (₹${m.paid.toFixed(0)} of ₹${m.bill.toFixed(0)} paid)`
+                                : `${formatMonthLabel(m.month)} ₹${m.amount.toFixed(0)}`
+                            )
                             .join(" · ")}
                         </p>
                       </div>

@@ -66,7 +66,7 @@ export default function ElectricityDashboard({ username, role }: { username: str
     return data.rows.reduce(
       (acc, row) => {
         acc.amount += row.electricityAmount;
-        acc.paid += row.electricityPaid ? row.electricityAmount : 0;
+        acc.paid += row.electricityCovered;
         return acc;
       },
       { amount: 0, paid: 0 }
@@ -381,6 +381,21 @@ function ElectricityRowCard({
       </div>
       {readingError && (
         <p className="mt-1.5 text-xs font-medium text-unpaid">Current reading must be ≥ previous reading.</p>
+      )}
+      {(row.electricityCovered > 0 || row.outstandingTotal > 0) && (
+        <p className="mt-2 flex flex-wrap gap-x-3 text-xs">
+          {row.electricityCovered > 0 && (
+            <span className="font-medium text-paid">
+              This month: ₹{row.electricityCovered.toFixed(0)} paid
+              {row.electricityBalance > 0 ? `, ₹${row.electricityBalance.toFixed(0)} balance` : ""}
+            </span>
+          )}
+          {row.outstandingTotal > 0 && (
+            <span className="font-semibold text-unpaid">
+              Total electricity due (all months): ₹{row.outstandingTotal.toFixed(0)}
+            </span>
+          )}
+        </p>
       )}
     </li>
   );
