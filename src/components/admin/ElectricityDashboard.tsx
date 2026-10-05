@@ -7,6 +7,7 @@ import MonthYearSelector from "@/components/MonthYearSelector";
 import ChangePasswordModal from "./ChangePasswordModal";
 import { formatMonthLabel, getCurrentMonth, getMonthOptions } from "@/lib/month";
 import { computeElectricityAmount, computeElectricityUnits } from "@/lib/electricity";
+import { ELECTRICITY_RATE_PER_UNIT } from "@/lib/constants";
 import type { AdminRole, ElectricityListResponse, ElectricityRow } from "@/lib/types";
 import { IconBuilding, IconLock, IconLogout, IconSearch } from "@/components/icons";
 
@@ -137,6 +138,7 @@ export default function ElectricityDashboard({ username, role }: { username: str
               <p className="text-sm font-medium text-foreground/60">
                 Total electricity for {formatMonthLabel(month)}
               </p>
+              <p className="text-xs text-foreground/45">Calculated at ₹{ELECTRICITY_RATE_PER_UNIT}/unit</p>
               <p className="mt-1 text-2xl font-bold text-primary-dark">₹{totals.amount.toFixed(0)}</p>
             </div>
             <div className="flex items-center gap-2 rounded-full bg-paid-bg px-3.5 py-1.5 text-sm font-bold text-paid">

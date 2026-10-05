@@ -15,4 +15,12 @@ export const LOCKOUT_DURATION_MINUTES = 15;
 export const PAYMENT_STATUSES = ["PAID", "UNPAID", "PARTIAL"] as const;
 export type PaymentStatusValue = (typeof PAYMENT_STATUSES)[number];
 
-export const ELECTRICITY_RATE_PER_UNIT = 7;
+const configuredElectricityRate = Number(process.env.NEXT_PUBLIC_ELECTRICITY_RATE_PER_UNIT ?? "7");
+
+// This value is public by design: residents should be able to see the rate used
+// to calculate every meter bill. Invalid or negative configuration falls back
+// to the established ₹7/unit rate instead of producing NaN bills.
+export const ELECTRICITY_RATE_PER_UNIT =
+  Number.isFinite(configuredElectricityRate) && configuredElectricityRate >= 0
+    ? configuredElectricityRate
+    : 7;
