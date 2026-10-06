@@ -94,6 +94,10 @@ export interface DashboardRow {
   isVacant: boolean;
   isBeforeMoveIn: boolean;
   effectiveStatus: PaymentStatus;
+  /** Rent / maintenance owed for the month when no payment record exists (prorated in the move-in month). */
+  expectedRent: number;
+  expectedMaintenance: number;
+  proratedDays: number | null;
 }
 
 export interface DashboardTotals {
@@ -154,6 +158,8 @@ export interface RentalHistoryMonth {
   amountPaid: number;
   balanceDue: number;
   paidDate: string | null;
+  /** Days charged when this is the move-in month (rent × days / 30), otherwise null. */
+  proratedDays: number | null;
 }
 
 export interface RentalStay {

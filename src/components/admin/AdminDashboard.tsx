@@ -414,8 +414,8 @@ function ReadRow({
   onEdit: () => void;
   onDetails: () => void;
 }) {
-  const rentAmount = row.payment?.rentAmount ?? row.unit.monthlyRent;
-  const maintenanceAmount = row.payment?.maintenanceAmount ?? row.unit.maintenanceAmount;
+  const rentAmount = row.payment?.rentAmount ?? row.expectedRent;
+  const maintenanceAmount = row.payment?.maintenanceAmount ?? row.expectedMaintenance;
   const rentSum = rentAmount + maintenanceAmount;
   const balanceDue = row.payment?.balanceDue ?? 0;
   const status = row.isBeforeMoveIn ? "NA" : row.isVacant ? "VACANT" : row.effectiveStatus;
@@ -499,8 +499,8 @@ function MobileRowCard({
   onEdit: () => void;
   onDetails: () => void;
 }) {
-  const rentAmount = row.payment?.rentAmount ?? row.unit.monthlyRent;
-  const maintenanceAmount = row.payment?.maintenanceAmount ?? row.unit.maintenanceAmount;
+  const rentAmount = row.payment?.rentAmount ?? row.expectedRent;
+  const maintenanceAmount = row.payment?.maintenanceAmount ?? row.expectedMaintenance;
   const rentSum = rentAmount + maintenanceAmount;
   const balanceDue = row.payment?.balanceDue ?? 0;
   const status = row.isBeforeMoveIn ? "NA" : row.isVacant ? "VACANT" : row.effectiveStatus;

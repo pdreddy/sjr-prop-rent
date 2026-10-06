@@ -3,6 +3,7 @@ import { getAuthedAdmin } from "@/lib/auth";
 import { copyMonthSchema } from "@/lib/validation";
 import { allPayments, allUnits, getElectricityRate, savePayment } from "@/lib/store";
 import { recordAuditLog } from "@/lib/audit";
+import { expectedForMonth } from "@/lib/proration";
 import { computeElectricityAmount } from "@/lib/electricity";
 
 export async function POST(request: NextRequest) {
@@ -19,8 +20,10 @@ export async function POST(request: NextRequest) {
   for (const unit of active) {
     if (payments.some((p) => p.unitId === unit.id && p.month === targetMonth)) continue;
     const source = payments.find((p) => p.unitId === unit.id && p.month === sourceMonth);
-    const rentAmount = source?.rentAmount ?? unit.monthlyRent;
-    const maintenanceAmount = source?.maintenanceAmount ?? unit.maintenanceAmount;
+    const expected = expectedForMonth(unit, targetMonth);
+    // The move-in month is prorated; otherwise carry last month's amounts forward.
+    const rentAmount = expected.proration.prorated ? expected.rent : source?.rentAmount ?? expected.rent;
+    const maintenanceAmount = expected.proration.prorated ? expected.maintenance : source?.maintenanceAmount ?? expected.maintenance;
     // Carry forward last month's current meter reading as this month's starting point —
     // admins only need to fill in the new current reading once it's next read.
     const prevReading = source?.currReading ?? 0; // ?? also covers legacy records saved before this field existed

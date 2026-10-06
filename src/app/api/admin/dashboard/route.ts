@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthedAdmin } from "@/lib/auth";
 import { isValidMonth, getCurrentMonth, isBeforeMoveInMonth } from "@/lib/month";
+import { expectedForMonth } from "@/lib/proration";
 import { allPayments, allUnits, getElectricityRate, paymentDTO, unitDTO } from "@/lib/store";
 
 export async function GET(request: NextRequest) {
@@ -23,7 +24,11 @@ export async function GET(request: NextRequest) {
     const payment = paymentRecords.find((p) => p.unitId === unit.id && p.month === month) ?? null;
     const isVacant = !unit.tenantName?.trim();
     const isBeforeMoveIn = isBeforeMoveInMonth(unit.moveInDate, month);
-    return { unit: unitDTO(unit), payment: payment ? paymentDTO(payment, rate) : null, isVacant, isBeforeMoveIn, effectiveStatus: payment?.paymentStatus ?? "UNPAID" };
+    const expected = expectedForMonth({ monthlyRent: unit.monthlyRent, maintenanceAmount: unit.maintenanceAmount, moveInDate: unit.moveInDate }, month);
+    return {
+      unit: unitDTO(unit), payment: payment ? paymentDTO(payment, rate) : null, isVacant, isBeforeMoveIn, effectiveStatus: payment?.paymentStatus ?? "UNPAID",
+      expectedRent: expected.rent, expectedMaintenance: expected.maintenance, proratedDays: expected.proration.prorated ? expected.proration.days : null,
+    };
   });
   if (statusFilter && statusFilter !== "ALL") {
     rows = rows.filter((row) => {
@@ -33,7 +38,7 @@ export async function GET(request: NextRequest) {
   }
   const totals = rows.reduce((acc, row) => {
     if (row.isBeforeMoveIn) return acc;
-    const expected = row.payment ? row.payment.rentAmount + row.payment.maintenanceAmount : row.unit.monthlyRent + row.unit.maintenanceAmount;
+    const expected = row.payment ? row.payment.rentAmount + row.payment.maintenanceAmount : row.expectedRent + row.expectedMaintenance;
     acc.totalExpected += expected; acc.totalCollected += row.payment?.amountPaid ?? 0;
     if (row.effectiveStatus === "PAID") acc.numPaid++; else if (row.effectiveStatus === "PARTIAL") acc.numPartial++; else acc.numUnpaid++;
     return acc;

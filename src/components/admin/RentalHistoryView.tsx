@@ -28,6 +28,10 @@ export default function RentalHistoryView({ onUnauthorized }: { onUnauthorized: 
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState<string | null>(null);
 
+  const [fixing, setFixing] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -46,7 +50,41 @@ export default function RentalHistoryView({ onUnauthorized }: { onUnauthorized: 
     return () => {
       cancelled = true;
     };
-  }, [onUnauthorized]);
+  }, [onUnauthorized, reloadKey]);
+
+  async function fillMissingMonths() {
+    setFixing(true);
+    setNotice(null);
+    try {
+      const call = async (dryRun: boolean) => {
+        const res = await fetch("/api/admin/backfill-months", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ dryRun }),
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error ?? "Request failed.");
+        return json as { created: number; adjusted: number; needsReview: number };
+      };
+      const preview = await call(true);
+      const review = preview.needsReview ? ` ${preview.needsReview} move-in month(s) already have payments at full rent and need a manual look.` : "";
+      if (preview.created === 0 && preview.adjusted === 0) {
+        setNotice(`Nothing to fill — every month already has a record.${review}`);
+        return;
+      }
+      const ok = window.confirm(
+        `Create ${preview.created} missing month record(s) and re-price ${preview.adjusted} unpaid move-in month(s) to the days stayed?${review}`
+      );
+      if (!ok) return;
+      const done = await call(false);
+      setNotice(`Created ${done.created} month record(s), re-priced ${done.adjusted} move-in month(s).${review}`);
+      setReloadKey((k) => k + 1);
+    } catch (err) {
+      setNotice(err instanceof Error ? err.message : "Could not fill missing months.");
+    } finally {
+      setFixing(false);
+    }
+  }
 
   const plots = useMemo(() => {
     const needle = search.trim().toLowerCase();
@@ -86,6 +124,17 @@ export default function RentalHistoryView({ onUnauthorized }: { onUnauthorized: 
             />
           </div>
         </label>
+        <div className="mt-3 flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={fillMissingMonths}
+            disabled={fixing}
+            className="min-h-10 rounded-xl border border-primary/30 bg-white px-4 text-sm font-semibold text-primary-dark hover:bg-primary-light disabled:opacity-60"
+          >
+            {fixing ? "Checking…" : "Fill missing months"}
+          </button>
+          {notice && <span className="text-xs font-medium text-foreground/70">{notice}</span>}
+        </div>
         <p className="mt-2.5 text-xs text-foreground/55">
           Past tenants are rebuilt from recorded plot edits, so a tenant who was set up before edits were logged may show
           only as the current tenant. Move-out is the date the next tenant moved in (or the plot was marked vacant).
@@ -154,7 +203,7 @@ function PlotHistory({ plot, expanded, onToggle }: { plot: RentalHistoryPlot; ex
               {shown.map(({ m }) => (
                 <span key={m.month} className="rounded-full border border-unpaid/30 bg-white px-2 py-0.5 text-unpaid">
                   {formatMonthLabel(m.month)}
-                  {m.recorded && m.balanceDue > 0 ? ` ${rupees(m.balanceDue)}` : ""}
+                  {m.balanceDue > 0 ? ` ${rupees(m.balanceDue)}` : ""}
                 </span>
               ))}
               {overdue.length > shown.length && <span className="text-unpaid">+{overdue.length - shown.length} more</span>}
@@ -217,11 +266,16 @@ function Stay({ stay }: { stay: RentalStay }) {
                     <span className="text-xs font-semibold text-unpaid">No record</span>
                   )}
                 </td>
-                <td className="px-3 py-2 text-right">{m.recorded ? rupees(m.due) : "—"}</td>
+                <td className="px-3 py-2 text-right">
+                  {rupees(m.due)}
+                  {m.proratedDays !== null && (
+                    <span className="block text-[11px] text-foreground/45">{m.proratedDays}/30 days</span>
+                  )}
+                </td>
                 <td className="px-3 py-2 text-right">{m.recorded ? rupees(m.amountPaid) : "—"}</td>
                 <td className="px-3 py-2">{m.paidDate ? formatDate(m.paidDate) : "—"}</td>
                 <td className={`px-3 py-2 text-right ${tone === "paid" ? "text-paid" : m.balanceDue > 0 ? "font-semibold text-unpaid" : ""}`}>
-                  {m.recorded ? rupees(m.balanceDue) : "—"}
+                  {rupees(m.balanceDue)}
                 </td>
               </tr>
               );

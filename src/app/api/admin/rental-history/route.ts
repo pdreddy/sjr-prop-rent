@@ -3,6 +3,7 @@ import { getAuthedAdmin } from "@/lib/auth";
 import { allPayments, allUnits, unitSnapshots } from "@/lib/store";
 import { getCurrentMonth } from "@/lib/month";
 import { BUILDING_READY_MONTH } from "@/lib/constants";
+import { expectedForMonth } from "@/lib/proration";
 import { buildStays, monthsOfStay } from "@/lib/rentalHistory";
 import type { RentalHistoryResponse } from "@/lib/types";
 
@@ -35,14 +36,18 @@ export async function GET() {
             .map((stay) => {
               const months = monthsOfStay(stay, currentMonth).map((month) => {
                 const p = unitPayments.find((item) => item.month === month);
+                // No record: show what was owed (prorated in the move-in month) so empty months aren't blank.
+                const expected = expectedForMonth({ ...unit, moveInDate: stay.moveInDate }, month);
+                const owed = expected.rent + expected.maintenance;
                 return {
                   month,
                   recorded: !!p,
                   status: p?.paymentStatus ?? null,
-                  due: p ? p.rentAmount + p.maintenanceAmount : 0,
+                  due: p ? p.rentAmount + p.maintenanceAmount : owed,
                   amountPaid: p?.amountPaid ?? 0,
-                  balanceDue: p?.balanceDue ?? 0,
+                  balanceDue: p ? p.balanceDue : owed,
                   paidDate: p?.paidDate?.toISOString() ?? null,
+                  proratedDays: expected.proration.prorated ? expected.proration.days : null,
                 };
               });
               return {

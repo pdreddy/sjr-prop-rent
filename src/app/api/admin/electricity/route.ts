@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuthedAdmin } from "@/lib/auth";
 import { isValidMonth, getCurrentMonth, getPreviousMonth, isBeforeMoveInMonth } from "@/lib/month";
 import { allPayments, allUnits, getElectricityRate, paymentDTO, paymentFor, savePayment, unitById } from "@/lib/store";
+import { expectedForMonth } from "@/lib/proration";
 import { computeElectricityAmount } from "@/lib/electricity";
 import { buildElectricityLedger } from "@/lib/electricityLedger";
 import { electricityUpsertSchema } from "@/lib/validation";
@@ -73,8 +74,9 @@ export async function PUT(request: NextRequest) {
   // month's payment (rent, amount paid, notes, ...) is carried over unchanged so a
   // security-only login can never see or alter financial data.
   const existing = await paymentFor(parsed.data.unitId, parsed.data.month);
-  const rentAmount = existing?.rentAmount ?? unit.monthlyRent;
-  const maintenanceAmount = existing?.maintenanceAmount ?? unit.maintenanceAmount;
+  const expected = expectedForMonth(unit, parsed.data.month);
+  const rentAmount = existing?.rentAmount ?? expected.rent;
+  const maintenanceAmount = existing?.maintenanceAmount ?? expected.maintenance;
   const amountPaid = existing?.amountPaid ?? 0;
   const balanceDue = existing?.balanceDue ?? rentAmount + maintenanceAmount;
 

@@ -5,6 +5,7 @@ import ModalShell from "./ModalShell";
 import StatusBadge from "@/components/StatusBadge";
 import { isBeforeMoveInMonth } from "@/lib/month";
 import { stripElectricityNote, withElectricityNote } from "@/lib/notes";
+import { moveInProration, prorate } from "@/lib/proration";
 import { computeElectricityAmount, computeElectricityUnits } from "@/lib/electricity";
 import type { DashboardRow, PaymentStatus } from "@/lib/types";
 
@@ -24,9 +25,12 @@ export default function EditPaymentModal({ row, month, ratePerUnit, onClose, onS
   const [plotNumber, setPlotNumber] = useState(row.unit.plotNumber);
   const [tenantName, setTenantName] = useState(row.unit.tenantName ?? "");
   const [moveInDate, setMoveInDate] = useState(row.unit.moveInDate?.slice(0, 10) ?? "");
-  const [rent, setRent] = useState(String(row.payment?.rentAmount ?? row.unit.monthlyRent));
+  // In the move-in month the stored payment holds the prorated amounts, but these fields are the
+  // plot's full monthly rent (they are saved back to the plot), so start from the plot's values.
+  const startsProrated = moveInProration(row.unit.moveInDate, month).prorated;
+  const [rent, setRent] = useState(String(startsProrated ? row.unit.monthlyRent : row.payment?.rentAmount ?? row.unit.monthlyRent));
   const [maintenance, setMaintenance] = useState(
-    String(row.payment?.maintenanceAmount ?? row.unit.maintenanceAmount)
+    String(startsProrated ? row.unit.maintenanceAmount : row.payment?.maintenanceAmount ?? row.unit.maintenanceAmount)
   );
   const [amountPaid, setAmountPaid] = useState(String(row.payment?.amountPaid ?? 0));
   const [paidDate, setPaidDate] = useState(row.payment?.paidDate?.slice(0, 10) ?? "");
@@ -39,7 +43,11 @@ export default function EditPaymentModal({ row, month, ratePerUnit, onClose, onS
 
   const rentNumber = Number(rent || 0);
   const maintenanceNumber = Number(maintenance || 0);
-  const rentSum = rentNumber + maintenanceNumber;
+  // Only the days stayed in the move-in month are charged: amount × days / 30.
+  const proration = moveInProration(moveInDate || null, month);
+  const chargedRent = prorate(rentNumber, proration);
+  const chargedMaintenance = prorate(maintenanceNumber, proration);
+  const rentSum = chargedRent + chargedMaintenance;
   const paidNumber = Number(amountPaid || 0);
   const balanceDue = Math.max(0, rentSum - paidNumber);
   const excessAmount = Math.max(0, paidNumber - rentSum);
@@ -87,8 +95,8 @@ export default function EditPaymentModal({ row, month, ratePerUnit, onClose, onS
           unitId: row.unit.id,
           month,
           paymentStatus: status,
-          rentAmount: rentNumber,
-          maintenanceAmount: maintenanceNumber,
+          rentAmount: chargedRent,
+          maintenanceAmount: chargedMaintenance,
           amountPaid: paidNumber,
           balanceDue,
           paidDate: paidDate || null,
@@ -155,8 +163,14 @@ export default function EditPaymentModal({ row, month, ratePerUnit, onClose, onS
               <input type="number" min="0" value={maintenance} onChange={(e) => setMaintenance(e.target.value)} className={inputClass} />
             </label>
           </div>
+          {proration.prorated && (
+            <p className="mt-2 rounded-lg bg-partial-bg px-3 py-2 text-xs font-medium text-partial">
+              Move-in month: {proration.days} of 30 days stayed → ₹{(rentNumber + maintenanceNumber).toFixed(0)} × {proration.days}/30 =
+              ₹{rentSum.toFixed(0)} due.
+            </p>
+          )}
           <div className="mt-3 flex flex-col gap-1">
-            <span className={labelClass}>Rent sum</span>
+            <span className={labelClass}>{proration.prorated ? "Rent sum (prorated)" : "Rent sum"}</span>
             <div className="flex min-h-11 items-center rounded-xl bg-primary-light px-3 text-base font-semibold text-primary-dark">
               ₹{rentSum.toFixed(0)}
             </div>
