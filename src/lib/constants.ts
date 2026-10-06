@@ -6,6 +6,11 @@ export const BUILDING_NAME = process.env.BUILDING_NAME || "SJR Building";
 // (month.ts is imported by both server routes and "use client" pages).
 export const BUILDING_READY_MONTH = process.env.NEXT_PUBLIC_BUILDING_READY_MONTH || "2026-05";
 
+// The public page shows plot numbers only. Set PUBLIC_SHOW_TENANT_NAME=true (server-side env var,
+// no rebuild of client code needed) to show tenant names again. Names are stripped in the API
+// response itself, not just hidden in the UI.
+export const PUBLIC_SHOW_TENANT_NAME = process.env.PUBLIC_SHOW_TENANT_NAME === "true";
+
 export const SESSION_COOKIE_NAME = "sjr_session";
 export const SESSION_DURATION_SECONDS = 12 * 60 * 60; // 12 hours
 

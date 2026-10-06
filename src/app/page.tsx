@@ -120,7 +120,7 @@ export default function Home() {
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Plot or tenant name"
+                placeholder={data?.plots.some((p) => p.tenantName) ? "Plot or tenant name" : "Plot number"}
                 className="min-h-11 w-full rounded-xl border border-primary/15 bg-white py-2 pl-9 pr-3 text-base shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
               />
             </div>
@@ -223,12 +223,13 @@ export default function Home() {
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-foreground/40">
-                          Plot {plot.plotNumber}
+                        <p className="text-2xl font-extrabold leading-tight text-primary-dark">
+                          <span className="mr-1.5 text-xs font-semibold uppercase tracking-wide text-foreground/40">Plot</span>
+                          {plot.plotNumber}
                         </p>
-                        <p className="truncate text-base font-bold text-foreground">
-                          {plot.tenantName || "No tenant"}
-                        </p>
+                        {plot.tenantName && (
+                          <p className="truncate text-sm font-medium text-foreground/70">{plot.tenantName}</p>
+                        )}
                       </div>
                       <StatusBadge status={plot.status} />
                     </div>

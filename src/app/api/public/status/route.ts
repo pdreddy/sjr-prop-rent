@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { allPayments, allUnits, getElectricityRate } from "@/lib/store";
-import { BUILDING_NAME } from "@/lib/constants";
+import { BUILDING_NAME, PUBLIC_SHOW_TENANT_NAME } from "@/lib/constants";
 import { isValidMonth, getCurrentMonth, isBeforeMoveInMonth } from "@/lib/month";
 import { computeElectricityAmount } from "@/lib/electricity";
 import { buildElectricityLedger } from "@/lib/electricityLedger";
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
       unpaidElectricityTotal,
       unpaidElectricityMonths,
       plotNumber: unit.plotNumber,
-      tenantName: unit.tenantName,
+      tenantName: PUBLIC_SHOW_TENANT_NAME ? unit.tenantName : null,
       moveInDate,
       status: isBeforeMoveIn ? ("NA" as const) : payment?.paymentStatus ?? ("UNPAID" as const),
       paidDate: payment?.paidDate?.toISOString() ?? null,
