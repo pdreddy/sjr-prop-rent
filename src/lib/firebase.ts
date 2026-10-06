@@ -79,7 +79,11 @@ function decode(value: unknown): FirebaseValue {
   return value as Primitive;
 }
 
-async function request(path: string, init?: RequestInit) {
+// Optional namespace (e.g. "test") so a non-production environment reads and writes its own copy
+// of every collection under /<prefix>/... instead of the live data at the database root.
+export function dbPrefix() { return (process.env.FIREBASE_DB_PREFIX ?? "").trim().replace(/^\/+|\/+$/g, ""); }
+
+export async function rawRequest(path: string, init?: RequestInit) {
   const token = encodeURIComponent(await accessToken());
   const response = await fetch(`${requireConfig().databaseUrl}/${path}.json?access_token=${token}`, {
     ...init, headers: { "content-type": "application/json", ...init?.headers },
@@ -87,6 +91,11 @@ async function request(path: string, init?: RequestInit) {
   const result = response.status === 204 ? null : await response.json();
   if (!response.ok) throw new Error(result?.error || `Realtime Database request failed (${response.status})`);
   return result;
+}
+
+function request(path: string, init?: RequestInit) {
+  const prefix = dbPrefix();
+  return rawRequest(prefix ? `${prefix}/${path}` : path, init);
 }
 
 export async function getDocument<T>(path: string): Promise<(T & { id: string }) | null> {

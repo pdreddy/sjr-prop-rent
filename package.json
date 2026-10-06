@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
+    "db:clone-test": "tsx --env-file=.env scripts/clone-to-test.ts",
     "db:seed": "tsx --env-file=.env scripts/seed.ts",
     "setup:data": "npm run db:seed && npm run import:tenants",
     "import:tenants": "tsx --env-file=.env scripts/import-tenants.ts",
