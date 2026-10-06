@@ -39,12 +39,12 @@ export function formatDate(value: string | null): string {
   });
 }
 
-// True when `moveInDate` falls in `month` (YYYY-MM) or later — i.e. the tenant hadn't
-// completed a full month yet, so rent for their move-in month itself isn't collected.
+// True only for months *before* the tenant's move-in month. Rent is paid at the end of the
+// month, so the move-in month itself is a billable month (paid at its end).
 export function isBeforeMoveInMonth(moveInDate: string | Date | null, month: string): boolean {
   if (!moveInDate) return false;
   const iso = moveInDate instanceof Date ? moveInDate.toISOString() : moveInDate;
-  return iso.slice(0, 7) >= month;
+  return iso.slice(0, 7) > month;
 }
 
 // Never offers a month before BUILDING_READY_MONTH — the building didn't exist yet,
