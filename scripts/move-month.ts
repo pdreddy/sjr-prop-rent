@@ -15,7 +15,14 @@ async function main() {
   const prefix = dbPrefix();
   if (!prefix) throw new Error("Set FIREBASE_DB_PREFIX (e.g. test) first - this script only runs against a test copy.");
 
-  const payments = (await listDocuments<Record<string, FirebaseValue>>("payments")).filter((p) => p.month === from);
+  const all = await listDocuments<Record<string, FirebaseValue>>("payments");
+  // Records are keyed `<unitId>_<YYYY-MM>`; fall back to the id when the month field is missing.
+  const monthOf = (p: { id: string; month?: FirebaseValue }) => (typeof p.month === "string" ? p.month : p.id.split("_").pop());
+  const counts: Record<string, number> = {};
+  for (const p of all) { const m = monthOf(p) ?? "?"; counts[m] = (counts[m] ?? 0) + 1; }
+  console.log(`Database path: /${prefix}/payments - ${all.length} record(s) by month:`, counts);
+  const payments = all.filter((p) => monthOf(p) === from);
+  if (!payments.length) console.warn(`No payment records found for ${from}. Check the month list above and FIREBASE_DB_PREFIX (${prefix}).`);
   let moved = 0, skipped = 0;
   for (const { id, ...data } of payments) {
     const unitId = data.unitId as string;
