@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { allPayments, allUnits, getElectricityRate } from "@/lib/store";
 import { BUILDING_NAME, PUBLIC_SHOW_TENANT_NAME } from "@/lib/constants";
-import { isValidMonth, getCurrentMonth, isBeforeMoveInMonth } from "@/lib/month";
+import { isValidMonth, getCurrentMonth, isBeforeMoveInMonth, isRentOverdue } from "@/lib/month";
 import { computeElectricityAmount } from "@/lib/electricity";
 import { buildElectricityLedger } from "@/lib/electricityLedger";
 
@@ -35,7 +35,11 @@ export async function GET(request: NextRequest) {
       plotNumber: unit.plotNumber,
       tenantName: PUBLIC_SHOW_TENANT_NAME ? unit.tenantName : null,
       moveInDate,
-      status: isBeforeMoveIn ? ("NA" as const) : payment?.paymentStatus ?? ("UNPAID" as const),
+      status: isBeforeMoveIn
+        ? ("NA" as const)
+        : (payment?.paymentStatus ?? "UNPAID") === "UNPAID" && !isRentOverdue(month)
+          ? ("DUE" as const)
+          : payment?.paymentStatus ?? ("UNPAID" as const),
       paidDate: payment?.paidDate?.toISOString() ?? null,
       electricityStatus: isBeforeMoveIn
         ? ("NA" as const)

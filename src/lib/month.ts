@@ -47,6 +47,16 @@ export function isBeforeMoveInMonth(moveInDate: string | Date | null, month: str
   return iso.slice(0, 7) > month;
 }
 
+// Rent for a month is paid in the first week of the *following* month, so a month only
+// counts as overdue once that grace period (default: through the 7th) has passed.
+const RENT_GRACE_DAY = 7;
+export function isRentOverdue(month: string, now: Date = new Date()): boolean {
+  const [year, monthNum] = month.split("-").map(Number);
+  // monthNum is 1-based, so using it as the 0-based index lands on the following month.
+  const cutoff = new Date(Date.UTC(year, monthNum, RENT_GRACE_DAY + 1));
+  return now.getTime() >= cutoff.getTime();
+}
+
 // Never offers a month before BUILDING_READY_MONTH — the building didn't exist yet,
 // so there's no rent or electricity data to show for it.
 export function getMonthOptions(count = 24): string[] {

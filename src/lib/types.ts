@@ -28,7 +28,8 @@ export interface PublicPlot {
   plotNumber: string;
   tenantName: string | null;
   moveInDate: string | null;
-  status: PaymentStatus | "NA";
+  /** DUE: unpaid, but the first-week-of-next-month payment window hasn't passed yet. */
+  status: PaymentStatus | "DUE" | "NA";
   paidDate: string | null;
   electricityStatus: "PAID" | "UNPAID" | "NA";
   electricityAmount: number;

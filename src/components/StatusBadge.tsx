@@ -1,9 +1,10 @@
-type Status = "PAID" | "UNPAID" | "PARTIAL" | "VACANT" | "NA";
+type Status = "PAID" | "UNPAID" | "PARTIAL" | "DUE" | "VACANT" | "NA";
 
 const STYLES: Record<Status, string> = {
   PAID: "bg-paid-bg text-paid",
   UNPAID: "bg-unpaid-bg text-unpaid",
   PARTIAL: "bg-partial-bg text-partial",
+  DUE: "bg-partial-bg text-partial",
   VACANT: "bg-vacant-bg text-vacant",
   NA: "bg-vacant-bg text-vacant",
 };
@@ -12,6 +13,7 @@ const DOT: Record<Status, string> = {
   PAID: "bg-paid",
   UNPAID: "bg-unpaid",
   PARTIAL: "bg-partial",
+  DUE: "bg-partial",
   VACANT: "bg-vacant",
   NA: "bg-vacant",
 };
@@ -20,6 +22,7 @@ const LABELS: Record<Status, string> = {
   PAID: "Paid",
   UNPAID: "Unpaid",
   PARTIAL: "Partial",
+  DUE: "Due",
   VACANT: "Vacant",
   NA: "N/A",
 };

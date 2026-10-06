@@ -9,11 +9,12 @@ import type { PublicStatusResponse } from "@/lib/types";
 import { IconBuilding, IconCalendar, IconSearch } from "@/components/icons";
 
 const monthOptions = getMonthOptions();
-const RENT_FILTERS = ["ALL", "PAID", "UNPAID", "PARTIAL", "NA"] as const;
+const RENT_FILTERS = ["ALL", "PAID", "DUE", "UNPAID", "PARTIAL", "NA"] as const;
 const ELECTRICITY_FILTERS = ["ALL", "PAID", "UNPAID", "NA"] as const;
 const RENT_FILTER_LABELS: Record<(typeof RENT_FILTERS)[number], string> = {
   ALL: "All",
   PAID: "Paid",
+  DUE: "Due",
   UNPAID: "Unpaid",
   PARTIAL: "Partial",
   NA: "N/A",
@@ -71,7 +72,7 @@ export default function Home() {
   }, [data, search, rentFilter, electricityFilter]);
 
   const counts = useMemo(() => {
-    const rent = { PAID: 0, UNPAID: 0, PARTIAL: 0, NA: 0 };
+    const rent = { PAID: 0, DUE: 0, UNPAID: 0, PARTIAL: 0, NA: 0 };
     const electricity = { PAID: 0, UNPAID: 0, NA: 0 };
     for (const plot of data?.plots ?? []) {
       rent[plot.status] += 1;
@@ -193,6 +194,7 @@ export default function Home() {
                 pct={paidPct}
               >
                 <MiniChip label="Paid" value={counts.rent.PAID} colorClass="bg-paid-bg text-paid" />
+                <MiniChip label="Due" value={counts.rent.DUE} colorClass="bg-partial-bg text-partial" />
                 <MiniChip label="Unpaid" value={counts.rent.UNPAID} colorClass="bg-unpaid-bg text-unpaid" />
                 <MiniChip label="Partial" value={counts.rent.PARTIAL} colorClass="bg-partial-bg text-partial" />
                 <MiniChip label="N/A" value={counts.rent.NA} colorClass="bg-vacant-bg text-vacant" />
