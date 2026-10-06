@@ -2,11 +2,24 @@
 
 import { useEffect, useMemo, useState } from "react";
 import StatusBadge from "@/components/StatusBadge";
-import { formatDate, formatMonthLabel } from "@/lib/month";
-import type { RentalHistoryResponse, RentalHistoryPlot, RentalStay } from "@/lib/types";
+import { formatDate, formatMonthLabel, isRentOverdue } from "@/lib/month";
+import type { RentalHistoryMonth, RentalHistoryResponse, RentalHistoryPlot, RentalStay } from "@/lib/types";
 import { IconSearch } from "@/components/icons";
 
 const rupees = (n: number) => `₹${n.toFixed(0)}`;
+
+// Green = paid in full. Red = still pending (unpaid, partly paid, or nothing recorded) and past the
+// first-week-of-next-month payment window. Amber = pending but not yet overdue.
+type RowTone = "paid" | "overdue" | "due";
+function rowTone(m: RentalHistoryMonth): RowTone {
+  if (m.recorded && m.status === "PAID") return "paid";
+  return isRentOverdue(m.month) ? "overdue" : "due";
+}
+const ROW_STYLE: Record<RowTone, string> = {
+  paid: "bg-paid-bg/50 border-l-4 border-l-paid",
+  overdue: "bg-unpaid-bg/70 border-l-4 border-l-unpaid",
+  due: "bg-partial-bg/60 border-l-4 border-l-partial",
+};
 
 export default function RentalHistoryView({ onUnauthorized }: { onUnauthorized: () => void }) {
   const [data, setData] = useState<RentalHistoryResponse | null>(null);
@@ -144,24 +157,29 @@ function Stay({ stay }: { stay: RentalStay }) {
             </tr>
           </thead>
           <tbody className="divide-y divide-primary/10">
-            {stay.months.map((m) => (
-              <tr key={m.month}>
+            {stay.months.map((m) => {
+              const tone = rowTone(m);
+              return (
+              <tr key={m.month} className={ROW_STYLE[tone]}>
                 <td className="px-3 py-2 font-medium">{formatMonthLabel(m.month)}</td>
                 <td className="px-3 py-2">
-                  {m.recorded && m.status ? (
+                  {m.recorded && m.status && !(m.status === "UNPAID" && tone === "due") ? (
                     <StatusBadge status={m.status} />
+                  ) : tone === "due" ? (
+                    <StatusBadge status="DUE" />
                   ) : (
-                    <span className="text-xs text-foreground/45">No record</span>
+                    <span className="text-xs font-semibold text-unpaid">No record</span>
                   )}
                 </td>
                 <td className="px-3 py-2 text-right">{m.recorded ? rupees(m.due) : "—"}</td>
                 <td className="px-3 py-2 text-right">{m.recorded ? rupees(m.amountPaid) : "—"}</td>
                 <td className="px-3 py-2">{m.paidDate ? formatDate(m.paidDate) : "—"}</td>
-                <td className={`px-3 py-2 text-right ${m.balanceDue > 0 ? "font-semibold text-unpaid" : ""}`}>
+                <td className={`px-3 py-2 text-right ${tone === "paid" ? "text-paid" : m.balanceDue > 0 ? "font-semibold text-unpaid" : ""}`}>
                   {m.recorded ? rupees(m.balanceDue) : "—"}
                 </td>
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
       </div>
