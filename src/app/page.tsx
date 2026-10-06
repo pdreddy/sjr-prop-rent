@@ -121,6 +121,7 @@ export default function Home() {
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
+                suppressHydrationWarning
                 placeholder={data?.plots.some((p) => p.tenantName) ? "Plot or tenant name" : "Plot number"}
                 className="min-h-11 w-full rounded-xl border border-primary/15 bg-white py-2 pl-9 pr-3 text-base shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
               />

@@ -19,6 +19,7 @@ export default function MonthYearSelector({ month, options, onChange }: Props) {
           value={month}
           onChange={(e) => onChange(e.target.value)}
           aria-label="Select month and year"
+          suppressHydrationWarning
           className="min-h-11 w-full appearance-none rounded-xl border border-primary/15 bg-white py-2 pl-9 pr-8 text-base text-foreground shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
         >
           {options.map((opt) => (
