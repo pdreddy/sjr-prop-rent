@@ -144,3 +144,36 @@ export interface ElectricityStatementResponse {
   currentMonth: string;
   tenants: ElectricityStatementTenant[];
 }
+
+export interface RentalHistoryMonth {
+  month: string;
+  recorded: boolean;
+  status: PaymentStatus | null;
+  due: number;
+  amountPaid: number;
+  balanceDue: number;
+  paidDate: string | null;
+}
+
+export interface RentalStay {
+  tenantName: string;
+  moveInDate: string | null;
+  movedOutDate: string | null;
+  startMonth: string;
+  endMonth: string | null;
+  monthsPaid: number;
+  totalPaid: number;
+  months: RentalHistoryMonth[];
+}
+
+export interface RentalHistoryPlot {
+  unitId: string;
+  plotNumber: string;
+  currentTenant: string | null;
+  stays: RentalStay[];
+}
+
+export interface RentalHistoryResponse {
+  currentMonth: string;
+  plots: RentalHistoryPlot[];
+}

@@ -80,4 +80,21 @@ export async function addAuditLog(data: Omit<AuditRecord, "id" | "createdAt">) {
 }
 export async function auditLogs(limit: number) { return (await listDocuments<Omit<AuditRecord, "id">>("auditLogs")).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()).slice(0, limit); }
 
+// Tenant name / move-in snapshots for a plot, from the audit log of unit edits (oldest first).
+export async function unitSnapshots(unitId: string, unit: { tenantName: string | null; moveInDate: Date | null; createdAt: Date }) {
+  const logs = (await listDocuments<Omit<AuditRecord, "id">>("auditLogs"))
+    .filter((log) => log.recordType === "Unit" && log.recordId === unitId)
+    .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+  const pick = (value: unknown) => {
+    const v = (value ?? {}) as { tenantName?: string | null; moveInDate?: string | null };
+    return { tenantName: v.tenantName ?? null, moveInDate: v.moveInDate ?? null };
+  };
+  const snapshots = logs.map((log) => ({ at: log.createdAt, ...pick(log.newValue) }));
+  // State before the first recorded edit (plots created before audit logging existed).
+  if (logs[0]?.previousValue) snapshots.unshift({ at: unit.createdAt, ...pick(logs[0].previousValue) });
+  // Always end on the plot's current state.
+  snapshots.push({ at: new Date(), tenantName: unit.tenantName, moveInDate: unit.moveInDate?.toISOString() ?? null });
+  return snapshots;
+}
+
 export function paymentStatus(amountPaid: number, expected: number): PaymentStatus { return amountPaid <= 0 ? "UNPAID" : amountPaid >= expected ? "PAID" : "PARTIAL"; }

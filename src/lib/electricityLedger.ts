@@ -65,7 +65,7 @@ export interface StatementPayment extends LedgerPayment {
   month: string;
 }
 
-function monthsBetween(start: string, end: string): string[] {
+export function monthsBetween(start: string, end: string): string[] {
   const months: string[] = [];
   let [y, m] = start.split("-").map(Number);
   const [endY, endM] = end.split("-").map(Number);

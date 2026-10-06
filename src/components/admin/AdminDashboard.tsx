@@ -9,6 +9,7 @@ import ChangePasswordModal from "./ChangePasswordModal";
 import PlotDetailsModal from "./PlotDetailsModal";
 import EditPaymentModal from "./EditPaymentModal";
 import ElectricityStatementView from "./ElectricityStatementView";
+import RentalHistoryView from "./RentalHistoryView";
 import AllDetailsView from "./AllDetailsView";
 import {
   getCurrentMonth,
@@ -33,9 +34,9 @@ import {
 const monthOptions = getMonthOptions();
 const STATUS_FILTERS = ["ALL", "PAID", "UNPAID", "PARTIAL", "VACANT"] as const;
 type StatusFilter = (typeof STATUS_FILTERS)[number];
-const TABS = ["overview", "all-details", "electricity"] as const;
+const TABS = ["overview", "all-details", "electricity", "history"] as const;
 type Tab = (typeof TABS)[number];
-const TAB_LABELS: Record<Tab, string> = { overview: "Overview", "all-details": "All details", electricity: "Electricity bills" };
+const TAB_LABELS: Record<Tab, string> = { overview: "Overview", "all-details": "All details", electricity: "Electricity bills", history: "Rental history" };
 
 export default function AdminDashboard({ username }: { username: string }) {
   const router = useRouter();
@@ -200,8 +201,9 @@ export default function AdminDashboard({ username }: { username: string }) {
         {tab === "overview" && totals && <StatsPanel totals={totals} month={month} />}
 
         {tab === "electricity" && <ElectricityStatementView onUnauthorized={handleUnauthorized} />}
+        {tab === "history" && <RentalHistoryView onUnauthorized={handleUnauthorized} />}
 
-        <div className={`mb-4 flex flex-wrap items-end gap-3 rounded-2xl border border-primary/10 bg-white p-3 shadow-sm sm:p-4 ${tab === "electricity" ? "hidden" : ""}`}>
+        <div className={`mb-4 flex flex-wrap items-end gap-3 rounded-2xl border border-primary/10 bg-white p-3 shadow-sm sm:p-4 ${tab === "electricity" || tab === "history" ? "hidden" : ""}`}>
           <MonthYearSelector month={month} options={monthOptions} onChange={setMonth} />
 
           <label className="flex flex-1 min-w-[160px] flex-col gap-1">
@@ -256,7 +258,7 @@ export default function AdminDashboard({ username }: { username: string }) {
           </div>
         </div>
 
-        {loading && tab !== "electricity" && (
+        {loading && tab !== "electricity" && tab !== "history" && (
           <div className="flex flex-col gap-2" aria-busy="true">
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="h-14 animate-pulse rounded-xl bg-primary-light" />
