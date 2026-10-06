@@ -111,3 +111,36 @@ export interface DashboardResponse {
   rows: DashboardRow[];
   totals: DashboardTotals;
 }
+
+export type ElectricityMonthStatus = "PAID" | "PARTIAL" | "UNPAID" | "NONE";
+
+export interface ElectricityStatementMonth {
+  month: string;
+  recorded: boolean;
+  rentAmount: number;
+  maintenanceAmount: number;
+  baseline: number;
+  totalPaid: number;
+  excess: number;
+  credited: number;
+  carriedForward: number;
+  electricityBill: number;
+  balance: number;
+  markedPaid: boolean;
+  status: ElectricityMonthStatus;
+}
+
+export interface ElectricityStatementTenant {
+  unitId: string;
+  plotNumber: string;
+  tenantName: string | null;
+  moveInDate: string | null;
+  months: ElectricityStatementMonth[];
+  totals: { bill: number; credited: number; balance: number; unusedCredit: number };
+}
+
+export interface ElectricityStatementResponse {
+  ratePerUnit: number;
+  currentMonth: string;
+  tenants: ElectricityStatementTenant[];
+}

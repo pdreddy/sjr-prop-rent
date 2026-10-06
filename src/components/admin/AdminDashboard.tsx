@@ -8,6 +8,7 @@ import StatusBadge from "@/components/StatusBadge";
 import ChangePasswordModal from "./ChangePasswordModal";
 import PlotDetailsModal from "./PlotDetailsModal";
 import EditPaymentModal from "./EditPaymentModal";
+import ElectricityStatementView from "./ElectricityStatementView";
 import AllDetailsView from "./AllDetailsView";
 import {
   getCurrentMonth,
@@ -32,9 +33,9 @@ import {
 const monthOptions = getMonthOptions();
 const STATUS_FILTERS = ["ALL", "PAID", "UNPAID", "PARTIAL", "VACANT"] as const;
 type StatusFilter = (typeof STATUS_FILTERS)[number];
-const TABS = ["overview", "all-details"] as const;
+const TABS = ["overview", "all-details", "electricity"] as const;
 type Tab = (typeof TABS)[number];
-const TAB_LABELS: Record<Tab, string> = { overview: "Overview", "all-details": "All details" };
+const TAB_LABELS: Record<Tab, string> = { overview: "Overview", "all-details": "All details", electricity: "Electricity bills" };
 
 export default function AdminDashboard({ username }: { username: string }) {
   const router = useRouter();
@@ -50,6 +51,8 @@ export default function AdminDashboard({ username }: { username: string }) {
   const [editingRow, setEditingRow] = useState<DashboardRow | null>(null);
   const [copying, setCopying] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+
+  const handleUnauthorized = useCallback(() => router.push("/admin/login"), [router]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -196,7 +199,9 @@ export default function AdminDashboard({ username }: { username: string }) {
 
         {tab === "overview" && totals && <StatsPanel totals={totals} month={month} />}
 
-        <div className="mb-4 flex flex-wrap items-end gap-3 rounded-2xl border border-primary/10 bg-white p-3 shadow-sm sm:p-4">
+        {tab === "electricity" && <ElectricityStatementView onUnauthorized={handleUnauthorized} />}
+
+        <div className={`mb-4 flex flex-wrap items-end gap-3 rounded-2xl border border-primary/10 bg-white p-3 shadow-sm sm:p-4 ${tab === "electricity" ? "hidden" : ""}`}>
           <MonthYearSelector month={month} options={monthOptions} onChange={setMonth} />
 
           <label className="flex flex-1 min-w-[160px] flex-col gap-1">
@@ -251,7 +256,7 @@ export default function AdminDashboard({ username }: { username: string }) {
           </div>
         </div>
 
-        {loading && (
+        {loading && tab !== "electricity" && (
           <div className="flex flex-col gap-2" aria-busy="true">
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="h-14 animate-pulse rounded-xl bg-primary-light" />
