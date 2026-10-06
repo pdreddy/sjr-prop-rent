@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
+    "check:firebase": "tsx scripts/check-firebase.ts",
     "db:seed": "tsx --env-file=.env scripts/seed.ts",
     "setup:data": "npm run db:seed && npm run import:tenants",
     "import:tenants": "tsx --env-file=.env scripts/import-tenants.ts",
