@@ -227,6 +227,8 @@ export interface PaymentHistoryMonth {
   month: string;
   /** Payment recorded before the tenant's rent starts - usually belongs to the first rent month. */
   beforeRentStart: boolean;
+  /** Filed before the move-in month, so it may belong to an earlier tenant: shown, but left out of the totals. */
+  unapplied: boolean;
   recorded: boolean;
   rentDue: number;
   rentPaid: number;

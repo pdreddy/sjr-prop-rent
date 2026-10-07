@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { formatMonthLabel } from "@/lib/month";
+import { moveInProration, prorate } from "@/lib/proration";
 import type { DashboardRow } from "@/lib/types";
 import { IconEdit, IconPlus, IconTrash } from "@/components/icons";
 
@@ -19,8 +20,10 @@ function buildEditableRow(row: DashboardRow): EditableRow {
   return {
     phoneNumbers: row.unit.phoneNumbers.length ? [...row.unit.phoneNumbers] : [""],
     advanceAmount: String(row.unit.advanceAmount),
-    rent: String(row.payment?.rentAmount ?? row.unit.monthlyRent),
-    maintenance: String(row.payment?.maintenanceAmount ?? row.unit.maintenanceAmount),
+    // The plot's agreed monthly rent - never the month's payment amount, which is prorated in a tenant's
+    // first (part-month) rent record and would overwrite the agreed rent when saved.
+    rent: String(row.unit.monthlyRent),
+    maintenance: String(row.unit.maintenanceAmount),
     advancePaid: String(row.unit.advancePaid),
     advancePaidDate: row.unit.advancePaidDate?.slice(0, 10) ?? "",
     notes: row.unit.advanceNotes ?? "",
@@ -59,9 +62,13 @@ export default function AllDetailsView({
     setSaving(true);
     onError(null);
     try {
+      let savedCount = 0;
       for (const row of rows) {
         const e = edited[row.unit.id];
         if (!e) continue;
+        // Leave untouched plots alone: saving must not rewrite (or create) records nobody edited.
+        if (JSON.stringify(e) === JSON.stringify(buildEditableRow(row))) continue;
+        savedCount++;
 
         const advancePaidNumber = Number(e.advancePaid || 0);
         if (advancePaidNumber > 0 && !e.advancePaidDate) {
@@ -90,11 +97,16 @@ export default function AllDetailsView({
           throw new Error(json.error ?? `Failed to save plot ${row.unit.plotNumber}.`);
         }
 
-        // Rent payment status/amount-paid/balance/notes for the month are untouched
-        // here — this tab only tracks the advance — so carry them forward unchanged
-        // and just sync rent/maintenance onto the existing monthly payment record.
-        const existingAmountPaid = row.payment?.amountPaid ?? 0;
-        const rentSum = rentNumber + maintenanceNumber;
+        // Only sync rent/maintenance onto a month's payment record that already exists (never create one
+        // here), charging the prorated amount in a tenant's first rent month. Everything else on the
+        // record - amount paid, date, notes, readings - is carried over unchanged.
+        const rentChanged = rentNumber !== row.unit.monthlyRent || maintenanceNumber !== row.unit.maintenanceAmount;
+        if (!row.payment || !rentChanged) continue;
+        const proration = moveInProration(row.unit.moveInDate, month);
+        const chargedRent = prorate(rentNumber, proration);
+        const chargedMaintenance = prorate(maintenanceNumber, proration);
+        const existingAmountPaid = row.payment.amountPaid;
+        const due = chargedRent + chargedMaintenance;
 
         const paymentRes = await fetch("/api/admin/payments", {
           method: "PUT",
@@ -102,11 +114,11 @@ export default function AllDetailsView({
           body: JSON.stringify({
             unitId: row.unit.id,
             month,
-            paymentStatus: row.payment?.paymentStatus ?? "UNPAID",
-            rentAmount: rentNumber,
-            maintenanceAmount: maintenanceNumber,
+            paymentStatus: existingAmountPaid <= 0 ? "UNPAID" : existingAmountPaid >= due ? "PAID" : "PARTIAL",
+            rentAmount: chargedRent,
+            maintenanceAmount: chargedMaintenance,
             amountPaid: existingAmountPaid,
-            balanceDue: row.payment?.balanceDue ?? Math.max(0, rentSum - existingAmountPaid),
+            balanceDue: Math.max(0, due - existingAmountPaid),
             paidDate: row.payment?.paidDate ?? null,
             notes: row.payment?.notes ?? null,
             prevReading: row.payment?.prevReading ?? 0,
@@ -119,7 +131,7 @@ export default function AllDetailsView({
           throw new Error(json.error ?? `Failed to save details for plot ${row.unit.plotNumber}.`);
         }
       }
-      onSaved(`Saved ${rows.length} plot${rows.length === 1 ? "" : "s"}.`);
+      onSaved(savedCount === 0 ? "No changes to save." : `Saved ${savedCount} plot${savedCount === 1 ? "" : "s"}.`);
       setEditMode(false);
     } catch (err) {
       onError(err instanceof Error ? err.message : "Could not save all details.");

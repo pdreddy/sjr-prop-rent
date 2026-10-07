@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { formatDate, formatMonthLabel } from "@/lib/month";
+import { formatDate, formatMonthLabel, isBeforeBuildingOpened } from "@/lib/month";
 import type { PaymentHistoryResponse, PaymentHistoryTenant } from "@/lib/types";
 import PaymentMonthDetail from "./PaymentMonthDetail";
 import { IconSearch } from "@/components/icons";
@@ -120,6 +120,7 @@ export default function PaymentHistoryView({ onUnauthorized }: { onUnauthorized:
                   <p className="text-xl font-extrabold leading-tight text-primary-dark">Plot {t.plotNumber}</p>
                   <p className="truncate text-sm text-foreground/60">
                     {t.tenantName} · Moved in {t.moveInDate ? formatDate(t.moveInDate) : "date not set"}
+                    {isBeforeBuildingOpened(t.moveInDate) && <b className="text-unpaid"> (before building opened - check year)</b>}
                     {t.firstRentMonth ? ` · Rent starts ${formatMonthLabel(t.firstRentMonth)}` : ""}
                   </p>
                 </div>
@@ -167,7 +168,7 @@ export default function PaymentHistoryView({ onUnauthorized }: { onUnauthorized:
                       >
                         <td className="px-3 py-2 font-medium">
                           {formatMonthLabel(m.month)}
-                          {m.beforeRentStart && <span className="block text-[11px] text-partial">before rent start</span>}
+                          {m.unapplied ? <span className="block text-[11px] text-partial">earlier tenant? not counted</span> : m.beforeRentStart && <span className="block text-[11px] text-partial">before rent start</span>}
                           {!m.recorded && !m.beforeRentStart && <span className="block text-[11px] text-foreground/45">no record</span>}
                         </td>
                         <td className="px-3 py-2 text-right">{rupees(m.rentDue)}</td>

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAuthedAdmin } from "@/lib/auth";
 import { allPayments, allUnits, getElectricityRate } from "@/lib/store";
-import { firstRentMonth, getCurrentMonth } from "@/lib/month";
+import { firstRentMonth, getCurrentMonth, isBeforeBuildingOpened } from "@/lib/month";
 import { BUILDING_READY_MONTH } from "@/lib/constants";
 import { buildElectricityStatement } from "@/lib/electricityLedger";
 import { expectedForMonth } from "@/lib/proration";
@@ -24,7 +24,8 @@ export async function GET() {
   const tenants = units
     .filter((unit) => unit.active && unit.tenantName?.trim())
     .map((unit) => {
-      const first = firstRentMonth(unit.moveInDate);
+      // A date before the building opened is a wrong year: bill nothing from it rather than from May.
+      const first = isBeforeBuildingOpened(unit.moveInDate) ? null : firstRentMonth(unit.moveInDate);
       const unitPayments = payments.filter((p) => p.unitId === unit.id);
       // Same month range and electricity ledger as the Electricity bills tab, so both tabs agree:
       // from the joining month (or the earliest record) through now. Rent, though, only starts the
@@ -43,32 +44,37 @@ export async function GET() {
           if (first === null && !record) return null; // no move-in date: nothing is known to be owed
           const expected = expectedForMonth(unit, m.month);
           // No record yet: what was owed (prorated in the first rent month), nothing paid.
-          const rentDue = before ? 0 : record ? record.rentAmount + record.maintenanceAmount : expected.rent + expected.maintenance;
+          // Before rent starts, or with no usable move-in date, nothing is billed: payments are only shown.
+          const noRent = before || first === null;
+          const rentDue = noRent ? 0 : record ? record.rentAmount + record.maintenanceAmount : expected.rent + expected.maintenance;
           const received = record?.amountPaid ?? 0;
           // Only a small excess over the month's rent (under ₹1,500) is an electricity payment. A larger
           // excess is rent paid ahead: it stays rent and covers any shortfall in the following months.
-          const overRent = before ? 0 : m.excess;
+          const overRent = noRent ? 0 : m.excess;
           const rentPaid = received - overRent;
           let rentBalance = 0;
-          if (!before) {
+          // Money filed under the move-in month itself counts as rent paid ahead for the first rent month. Earlier
+          // months may belong to a previous tenant of the plot, so they are shown but not applied.
+          if (before && m.month === joinMonth) advance += received;
+          if (!noRent) {
             const net = rentPaid + advance - rentDue;
             rentBalance = Math.max(0, -net);
             advance = Math.max(0, net);
           }
           return {
-            month: m.month, beforeRentStart: before, recorded: !!record, rentDue, rentPaid, rentBalance, rentAdvance: cents(advance),
+            month: m.month, beforeRentStart: before, unapplied: before && m.month !== joinMonth, recorded: !!record, rentDue, rentPaid, rentBalance, rentAdvance: cents(advance),
             paidDate: record?.paidDate?.toISOString() ?? null, prevReading: record?.prevReading ?? 0, currReading: record?.currReading ?? 0,
             electricityBill: cents(m.electricityBill), electricityPaid: cents(overRent + (m.markedPaid ? m.electricityBill : 0)), electricityCovered: cents(m.credited),
             electricityBalance: cents(m.balance), electricityStatus: m.status, amountReceived: received,
             rentAmount: record?.rentAmount ?? expected.rent, maintenanceAmount: record?.maintenanceAmount ?? expected.maintenance,
-            proratedDays: !before && expected.proration.prorated ? expected.proration.days : null, paymentStatus: record?.paymentStatus ?? null,
+            proratedDays: !noRent && expected.proration.prorated ? expected.proration.days : null, paymentStatus: record?.paymentStatus ?? null,
             notes: record?.notes ?? null, updatedBy: record?.updatedBy ?? null, updatedAt: record?.updatedAt?.toISOString() ?? null,
             electricityUnits: Math.max(0, (record?.currReading ?? 0) - (record?.prevReading ?? 0)), electricityDefault: !!record && !hasMeterReading(record.currReading), electricityMarkedPaid: m.markedPaid,
             overpayment: overRent, creditCarriedForward: cents(m.carriedForward),
           };
         })
         .filter((m): m is PaymentHistoryMonth => m !== null);
-      const sum = (pick: (m: PaymentHistoryMonth) => number) => cents(months.reduce((s, m) => s + pick(m), 0));
+      const sum = (pick: (m: PaymentHistoryMonth) => number) => cents(months.filter((m) => !m.unapplied).reduce((s, m) => s + pick(m), 0));
       return {
         unitId: unit.id,
         plotNumber: unit.plotNumber,

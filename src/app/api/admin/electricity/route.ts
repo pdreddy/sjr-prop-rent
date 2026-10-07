@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthedAdmin } from "@/lib/auth";
-import { isValidMonth, getCurrentMonth, getPreviousMonth, isBeforeMoveInMonth } from "@/lib/month";
+import { isValidMonth, getCurrentMonth, getPreviousMonth, isBeforeMoveInMonth, isBeforeFirstRentMonth } from "@/lib/month";
 import { allPayments, allUnits, getElectricityRate, paymentDTO, paymentFor, savePayment, unitById } from "@/lib/store";
 import { expectedForMonth } from "@/lib/proration";
 import { computeElectricityAmount } from "@/lib/electricity";
@@ -26,13 +26,16 @@ export async function GET(request: NextRequest) {
     .filter((unit) => unit.active && (!search || [unit.plotNumber, unit.tenantName].some((v) => v?.toLowerCase().includes(search))))
     .map((unit) => {
       const payment = payments.find((p) => p.unitId === unit.id && p.month === month);
+      // The no-reading default bill only applies to an occupied plot (not vacant, not before move-in).
+      const occupied = !!unit.tenantName?.trim();
+      const billPlot = occupied && !isBeforeMoveInMonth(unit.moveInDate, month) ? unit.plotNumber : undefined;
       // Nothing recorded yet for this month → start from last month's current reading, so
       // only the new current reading has to be entered.
       const unrecorded = !payment || (!payment.prevReading && !payment.currReading);
       const ledger = buildElectricityLedger(
         payments.filter((p) => p.unitId === unit.id && !isBeforeMoveInMonth(unit.moveInDate, p.month)),
         rate,
-        unit.plotNumber
+        occupied ? unit.plotNumber : undefined
       );
       const entry = ledger.find((e) => e.month === month);
       const lastMonthPayment = payments.find((p) => p.unitId === unit.id && p.month === previousMonth);
@@ -45,7 +48,7 @@ export async function GET(request: NextRequest) {
         isBeforeMoveIn: isBeforeMoveInMonth(unit.moveInDate, month),
         prevReading,
         currReading,
-        electricityAmount: computeElectricityAmount(prevReading, currReading, rate, unit.plotNumber),
+        electricityAmount: computeElectricityAmount(prevReading, currReading, rate, billPlot),
         electricityPaid: payment?.electricityPaid ?? false,
         electricityCovered: entry?.paid ?? 0,
         electricityBalance: entry?.balance ?? 0,
@@ -76,8 +79,10 @@ export async function PUT(request: NextRequest) {
   // security-only login can never see or alter financial data.
   const existing = await paymentFor(parsed.data.unitId, parsed.data.month);
   const expected = expectedForMonth(unit, parsed.data.month);
-  const rentAmount = existing?.rentAmount ?? expected.rent;
-  const maintenanceAmount = existing?.maintenanceAmount ?? expected.maintenance;
+  // A reading taken in the move-in month (before rent starts) must not create rent that was never due.
+  const noRentYet = isBeforeFirstRentMonth(unit.moveInDate, parsed.data.month);
+  const rentAmount = existing?.rentAmount ?? (noRentYet ? 0 : expected.rent);
+  const maintenanceAmount = existing?.maintenanceAmount ?? (noRentYet ? 0 : expected.maintenance);
   const amountPaid = existing?.amountPaid ?? 0;
   const balanceDue = existing?.balanceDue ?? rentAmount + maintenanceAmount;
 

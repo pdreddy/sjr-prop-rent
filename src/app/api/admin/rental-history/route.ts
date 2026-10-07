@@ -25,7 +25,9 @@ export async function GET() {
         const stays = buildStays(await unitSnapshots(unit.id, unit), currentMonth);
         // Payments dated before the first known stay belong to it too.
         const earliest = unitPayments.map((p) => p.month).sort()[0];
-        if (stays[0] && earliest && earliest < stays[0].startMonth) stays[0].startMonth = earliest;
+        // Only a stay with no known move-in date is stretched back to its earliest record; with a move-in
+        // date, rent starts the month after it and an earlier record is not billed.
+        if (stays[0] && !stays[0].moveInDate && earliest && earliest < stays[0].startMonth) stays[0].startMonth = earliest;
         if (stays[0] && stays[0].startMonth < BUILDING_READY_MONTH) stays[0].startMonth = BUILDING_READY_MONTH;
 
         return {

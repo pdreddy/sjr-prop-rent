@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { formatDate, formatMonthLabel } from "@/lib/month";
+import { formatDate, formatMonthLabel, isBeforeBuildingOpened } from "@/lib/month";
 import type { RentPaidResponse } from "@/lib/types";
 import { IconSearch } from "@/components/icons";
 
@@ -103,7 +103,10 @@ export default function RentPaidView({ onUnauthorized }: { onUnauthorized: () =>
                   <tr key={t.unitId} className={`border-t border-primary/5 ${i % 2 ? "bg-primary-light/25" : "bg-white"}`}>
                     <td className="px-3 py-3 font-bold text-primary-dark">{t.plotNumber}</td>
                     <td className="px-3 py-3 font-semibold text-foreground">{t.tenantName}</td>
-                    <td className="px-3 py-3">{t.moveInDate ? formatDate(t.moveInDate) : <span className="text-unpaid">Not set</span>}</td>
+                    <td className="px-3 py-3">
+                      {t.moveInDate ? formatDate(t.moveInDate) : <span className="text-unpaid">Not set</span>}
+                      {isBeforeBuildingOpened(t.moveInDate) && <span className="block text-[11px] font-semibold text-unpaid">before building opened - check year</span>}
+                    </td>
                     <td className="px-3 py-3">{t.firstRentMonth ? formatMonthLabel(t.firstRentMonth) : "—"}</td>
                     <td className="px-3 py-3 text-right">{t.monthsPaid} of {t.monthsBilled}</td>
                     <td className="px-3 py-3 text-right">{rupees(t.totalDue)}</td>

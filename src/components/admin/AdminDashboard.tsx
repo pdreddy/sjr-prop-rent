@@ -20,6 +20,7 @@ import {
   getPreviousMonth,
   formatMonthLabel,
   formatDate,
+  isBeforeBuildingOpened,
 } from "@/lib/month";
 import type { DashboardResponse, DashboardRow, DashboardTotals } from "@/lib/types";
 import { BUILDING_READY_MONTH, ELECTRICITY_RATE_PER_UNIT } from "@/lib/constants";
@@ -471,7 +472,10 @@ function ReadRow({
       </td>
       <td className="max-w-[200px] whitespace-pre-line px-3 py-3 text-foreground/70 line-clamp-2">{row.payment?.notes || "—"}</td>
       <td className="px-3 py-3 text-foreground/70">
-        <p>Joined {formatDate(row.unit.moveInDate)}</p>
+        <p>
+          Joined {formatDate(row.unit.moveInDate)}
+          {isBeforeBuildingOpened(row.unit.moveInDate) && <span className="block text-xs font-semibold text-unpaid">before building opened - check year</span>}
+        </p>
         <p>Total rent ₹{rentSum.toFixed(0)}</p>
       </td>
       <td className={`sticky right-0 z-10 px-3 py-3 ${rowBg}`}>

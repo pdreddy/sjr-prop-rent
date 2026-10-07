@@ -19,12 +19,14 @@ export async function GET(request: NextRequest) {
     const moveInDate = unit.moveInDate?.toISOString() ?? null;
     const isBeforeMoveIn = isBeforeMoveInMonth(moveInDate, month);
     const isBeforeFirstRent = isBeforeFirstRentMonth(moveInDate, month);
+    // The no-reading default bill only applies to an occupied plot (not vacant, not before move-in).
+    const billPlot = unit.tenantName?.trim() && !isBeforeMoveIn ? unit.plotNumber : undefined;
     const prevReading = payment?.prevReading ?? 0;
     const currReading = payment?.currReading ?? 0;
     const ledger = buildElectricityLedger(
       payments.filter((item) => item.unitId === unit.id && !isBeforeMoveInMonth(moveInDate, item.month)),
       rate,
-      unit.plotNumber
+      billPlot
     );
     const thisMonth = ledger.find((entry) => entry.month === month);
     const unpaidElectricityMonths = ledger
@@ -48,7 +50,7 @@ export async function GET(request: NextRequest) {
         : payment?.electricityPaid || (thisMonth && thisMonth.bill > 0 && thisMonth.balance <= 0)
           ? ("PAID" as const)
           : ("UNPAID" as const),
-      electricityAmount: computeElectricityAmount(prevReading, currReading, rate, unit.plotNumber),
+      electricityAmount: computeElectricityAmount(prevReading, currReading, rate, billPlot),
       electricityCovered: thisMonth?.paid ?? 0,
       electricityBalance: thisMonth?.balance ?? 0,
       prevReading,

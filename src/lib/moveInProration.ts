@@ -46,7 +46,8 @@ export function calcMoveIn(input: MoveInInput): MoveInCalc | null {
   const daysCharged = moveInDaysCharged(Number(match[3]));
   const totalMonthlyRent = input.monthlyRent + input.maintenanceAmount;
   const dailyRate = totalMonthlyRent / BILLING_DAYS;
-  const proratedRent = Math.round(totalMonthlyRent * daysCharged / BILLING_DAYS);
+  // Rent and maintenance are rounded separately, exactly like expectedForMonth, so this matches the other tabs.
+  const proratedRent = Math.round(input.monthlyRent * daysCharged / BILLING_DAYS) + Math.round(input.maintenanceAmount * daysCharged / BILLING_DAYS);
   const paid = Math.max(0, input.paidByTenth ?? 0);
   return {
     moveInMonth: `${match[1]}-${match[2]}`,

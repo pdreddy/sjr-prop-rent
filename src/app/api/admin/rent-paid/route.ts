@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAuthedAdmin } from "@/lib/auth";
 import { allPayments, allUnits } from "@/lib/store";
-import { firstRentMonth, getCurrentMonth } from "@/lib/month";
+import { firstRentMonth, getCurrentMonth, isBeforeBuildingOpened } from "@/lib/month";
 import { BUILDING_READY_MONTH } from "@/lib/constants";
 import { monthsBetween } from "@/lib/electricityLedger";
 import { expectedForMonth } from "@/lib/proration";
@@ -23,10 +23,19 @@ export async function GET() {
     tenants: units
       .filter((unit) => unit.active && unit.tenantName?.trim())
       .map((unit) => {
-        const first = firstRentMonth(unit.moveInDate);
+        // A date before the building opened is a wrong year: bill nothing from it rather than from May.
+        const first = isBeforeBuildingOpened(unit.moveInDate) ? null : firstRentMonth(unit.moveInDate);
         const start = first && first < BUILDING_READY_MONTH ? BUILDING_READY_MONTH : first;
         const months = start && start <= currentMonth ? monthsBetween(start, currentMonth) : [];
-        let totalDue = 0, totalPaid = 0, overRent = 0, balance = 0, advance = 0, monthsPaid = 0, lastPaid: Date | null = null;
+        // Money filed under the move-in month (e.g. rent entered a month early) is rent paid ahead. Earlier
+        // months may belong to a previous tenant of the plot, so they are not applied.
+        const moveInMonth = unit.moveInDate?.toISOString().slice(0, 7);
+        const early = first ? payments.filter((p) => p.unitId === unit.id && p.month === moveInMonth) : [];
+        const earlyPaid = early.reduce((sum, p) => sum + (p.amountPaid ?? 0), 0);
+        // No usable move-in date: nothing is billed, but any payment on record is shown as paid.
+        const unknownStartPaid = first === null ? payments.filter((p) => p.unitId === unit.id).reduce((sum, p) => sum + (p.amountPaid ?? 0), 0) : 0;
+        let totalDue = 0, totalPaid = earlyPaid + unknownStartPaid, overRent = 0, balance = 0, advance = earlyPaid, monthsPaid = 0, lastPaid: Date | null = null;
+        for (const p of early) if (p.amountPaid > 0 && p.paidDate && (!lastPaid || p.paidDate > lastPaid)) lastPaid = p.paidDate;
         for (const month of months) {
           const record = payments.find((p) => p.unitId === unit.id && p.month === month);
           const expected = expectedForMonth(unit, month);

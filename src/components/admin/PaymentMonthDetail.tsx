@@ -31,7 +31,11 @@ export default function PaymentMonthDetail({ tenant, month, ratePerUnit, monthLa
       ) : (
         <div className="grid gap-3 md:grid-cols-3">
           <Card title="Rent">
-            {month.beforeRentStart && <Note tone="warn">Filed under a month before this tenant&apos;s rent starts. It probably belongs to {tenant.firstRentMonth ? formatMonthLabel(tenant.firstRentMonth) : "the first rent month"}.</Note>}
+            {month.unapplied ? (
+              <Note tone="warn">Filed under a month before this tenant moved in, so it may belong to an earlier tenant. It is shown here but not counted in this tenant&apos;s totals.</Note>
+            ) : month.beforeRentStart ? (
+              <Note tone="warn">Filed under the move-in month, before rent starts. It is counted as rent paid ahead for {tenant.firstRentMonth ? formatMonthLabel(tenant.firstRentMonth) : "the first rent month"}.</Note>
+            ) : null}
             <Line label="Rent" value={rupees(month.rentAmount)} />
             <Line label="Maintenance" value={rupees(month.maintenanceAmount)} />
             {month.proratedDays !== null && <Line label="Move-in month" value={`${month.proratedDays}/30 days charged`} />}
