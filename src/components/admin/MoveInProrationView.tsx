@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { formatDate, formatMonthLabel } from "@/lib/month";
-import { calcMoveIn, sumMoveIn, BILLING_DAYS } from "@/lib/moveInProration";
+import { calcMoveIn, isPartialFirstMonth, sumMoveIn, BILLING_DAYS } from "@/lib/moveInProration";
 import type { MoveInProrationResponse, MoveInProrationTenant } from "@/lib/types";
 import { IconSearch } from "@/components/icons";
 
@@ -61,11 +61,14 @@ export default function MoveInProrationView({ onUnauthorized }: { onUnauthorized
     }
   }
 
-  const rows = useMemo(() => {
+  // Only tenants with a partial first month need a calculation (plus any missing a move-in date, so it
+  // can be fixed). Tenants who moved in on the 1st pay the full agreed rent and are just counted.
+  const { rows, fullMonthCount } = useMemo(() => {
     const needle = search.trim().toLowerCase();
-    return (tenants ?? [])
+    const all = (tenants ?? [])
       .filter((t) => !needle || t.plotNumber.toLowerCase().includes(needle) || t.tenantName.toLowerCase().includes(needle))
       .map((t) => ({ t, calc: calcMoveIn({ ...t, paidByTenth: parseAmount(inputs[t.unitId] ?? "") }) }));
+    return { rows: all.filter((r) => !r.calc || isPartialFirstMonth(r.calc)), fullMonthCount: all.filter((r) => r.calc && !isPartialFirstMonth(r.calc)).length };
   }, [tenants, inputs, search]);
   const totals = useMemo(() => sumMoveIn(rows.map((r) => r.calc)), [rows]);
 
@@ -96,7 +99,9 @@ export default function MoveInProrationView({ onUnauthorized }: { onUnauthorized
           </div>
         </label>
         <p className="mt-2.5 text-xs text-foreground/55">
-          Each month counts as {BILLING_DAYS} days. Days charged = {BILLING_DAYS} − move-in day + 1. Enter the rent actually
+          Only the first month is prorated, and only when a tenant did not move in on the 1st - every later month is the full
+          agreed rent. Each month counts as {BILLING_DAYS} days; days charged = {BILLING_DAYS} − move-in day + 1.
+          {fullMonthCount > 0 && ` ${fullMonthCount} tenant${fullMonthCount === 1 ? "" : "s"} moved in on the 1st and pay the full rent, so they are not listed.`} Enter the rent actually
           received by the 10th of the month after move-in; a payment covers the prorated rent first, anything above it is an
           electricity credit, and any shortfall stays as a rent balance. Leave the box blank if nothing was received.
         </p>
@@ -110,7 +115,7 @@ export default function MoveInProrationView({ onUnauthorized }: { onUnauthorized
       </div>
 
       {rows.length === 0 ? (
-        <div className="rounded-2xl border border-primary/15 bg-white p-8 text-center text-foreground/60">No tenants match your search.</div>
+        <div className="rounded-2xl border border-primary/15 bg-white p-8 text-center text-foreground/60">No tenants with a partial first month match.</div>
       ) : (
         <div className="overflow-hidden rounded-2xl border border-primary/10 bg-white shadow-sm">
           <div className="max-h-[68vh] overflow-auto">

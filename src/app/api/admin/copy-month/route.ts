@@ -21,9 +21,13 @@ export async function POST(request: NextRequest) {
     if (payments.some((p) => p.unitId === unit.id && p.month === targetMonth)) continue;
     const source = payments.find((p) => p.unitId === unit.id && p.month === sourceMonth);
     const expected = expectedForMonth(unit, targetMonth);
-    // The move-in month is prorated; otherwise carry last month's amounts forward.
-    const rentAmount = expected.proration.prorated ? expected.rent : source?.rentAmount ?? expected.rent;
-    const maintenanceAmount = expected.proration.prorated ? expected.maintenance : source?.maintenanceAmount ?? expected.maintenance;
+    // Only the move-in month is prorated; every later month is the full agreed rent. Last month's
+    // amounts are carried forward unless that month was itself a prorated move-in month - its partial
+    // amount must not become the new month's rent.
+    const sourceWasProrated = expectedForMonth(unit, sourceMonth).proration.prorated;
+    const carried = source && !sourceWasProrated ? source : null;
+    const rentAmount = expected.proration.prorated ? expected.rent : carried?.rentAmount ?? expected.rent;
+    const maintenanceAmount = expected.proration.prorated ? expected.maintenance : carried?.maintenanceAmount ?? expected.maintenance;
     // Carry forward last month's current meter reading as this month's starting point —
     // admins only need to fill in the new current reading once it's next read.
     const prevReading = source?.currReading ?? 0; // ?? also covers legacy records saved before this field existed

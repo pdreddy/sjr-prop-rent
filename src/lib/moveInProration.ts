@@ -77,3 +77,6 @@ export function sumMoveIn(calcs: (MoveInCalc | null)[]): MoveInTotals {
     remainingBalance: cents(totals.remainingBalance),
   };
 }
+
+/** Only a tenant who moved in after the 1st has a partial first month; everyone else pays the full agreed rent. */
+export const isPartialFirstMonth = (calc: MoveInCalc) => calc.daysCharged < BILLING_DAYS;
