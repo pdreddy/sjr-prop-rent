@@ -88,9 +88,9 @@ export default function PaymentHistoryView({ onUnauthorized }: { onUnauthorized:
           </button>
         </div>
         <p className="mt-2.5 text-xs text-foreground/55">
-          Rent starts the month after move-in and runs to {formatMonthLabel(data.currentMonth)}. Everything paid counts as rent up to the
-          plot&apos;s full monthly rent; only what is paid above it (e.g. ₹20,500 on ₹20,000 rent) is moved to electricity. In a part-month
-          move-in record, payment above the prorated rent but within the full rent is rent paid ahead, not electricity. Electricity is billed
+          Rent starts the month after move-in and runs to {formatMonthLabel(data.currentMonth)}. Everything paid counts as rent. Only a small
+          amount over the month&apos;s rent (under ₹1,500, e.g. ₹500 or ₹1,000 on ₹20,000 rent) is moved to electricity as paid; a larger
+          excess (e.g. ₹20,000 paid on a ₹10,667 part-month) is rent paid ahead and covers later months. Electricity is billed
           from meter readings at ₹{data.ratePerUnit}/unit and any unused electricity payment carries forward to the next bill. With no meter reading, the bill defaults to ₹750 (plots 101, 201, 301, 401, 501) or ₹500 (all other plots). A payment shown
           as &ldquo;before rent start&rdquo; is filed under a month earlier than the tenant&apos;s first rent month. Click any month for
           every detail: rent, payment, electricity, credit and notes.

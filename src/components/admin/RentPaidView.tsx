@@ -67,9 +67,8 @@ export default function RentPaidView({ onUnauthorized }: { onUnauthorized: () =>
         </label>
         <p className="mt-2.5 text-xs text-foreground/55">
           Rent starts the month after move-in: the first record pays the move-in month (prorated if they didn&apos;t move in on the
-          1st), then full rent every month through {formatMonthLabel(data.currentMonth)}. A month with no record counts as unpaid. Everything paid counts as rent up to the
-          plot&apos;s full monthly rent (extra on a part-month move-in record is rent paid ahead); only what exceeds the full rent is shown
-          under &ldquo;To electricity&rdquo;.
+          1st), then full rent every month through {formatMonthLabel(data.currentMonth)}. A month with no record counts as unpaid. Everything paid counts as rent; only a small
+          excess over the month&apos;s rent (under ₹1,500) is shown under &ldquo;To electricity&rdquo;. A larger excess is rent paid ahead.
         </p>
       </div>
 

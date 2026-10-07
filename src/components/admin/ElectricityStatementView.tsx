@@ -110,8 +110,8 @@ export default function ElectricityStatementView({ onUnauthorized }: { onUnautho
           </div>
         </label>
         <p className="mt-2.5 text-xs text-foreground/55">
-          Rate ₹{data.ratePerUnit}/unit. Each month&apos;s baseline is rent + maintenance; anything paid above it is credited
-          to electricity, oldest bill first, and unused credit carries forward. Months run from the tenant&apos;s joining month
+          Rate ₹{data.ratePerUnit}/unit. Each month&apos;s baseline is rent + maintenance; a small amount paid above it (under ₹1,500)
+          is credited to electricity, oldest bill first, and unused credit carries forward. A larger excess is rent paid ahead. Months run from the tenant&apos;s joining month
           to {formatMonthLabel(data.currentMonth)}.
         </p>
       </div>

@@ -5,6 +5,7 @@ import { firstRentMonth, getCurrentMonth } from "@/lib/month";
 import { BUILDING_READY_MONTH } from "@/lib/constants";
 import { monthsBetween } from "@/lib/electricityLedger";
 import { expectedForMonth } from "@/lib/proration";
+import { electricityPortionOfExcess } from "@/lib/electricity";
 import type { RentPaidResponse } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -32,10 +33,10 @@ export async function GET() {
           // No record yet: what the tenant owes for that month (prorated in the first one), paid 0.
           const due = record ? record.rentAmount + record.maintenanceAmount : expected.rent + expected.maintenance;
           const received = record?.amountPaid ?? 0;
-          // Payments count as rent up to the plot's full monthly rent (a part-month first record included, so
-          // the extra there is rent paid ahead); only the excess over that is an electricity payment.
-          const threshold = expected.proration.prorated ? unit.monthlyRent + (unit.maintenanceAmount ?? 0) : due;
-          const paid = Math.min(received, threshold);
+          // A small excess over the month's rent (under ₹1,500) is an electricity payment; anything larger
+          // stays rent (paid ahead).
+          const toElectricity = electricityPortionOfExcess(received - due);
+          const paid = received - toElectricity;
           const net = paid + advance - due;
           totalDue += due;
           totalPaid += paid;

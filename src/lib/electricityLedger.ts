@@ -1,4 +1,4 @@
-import { computeElectricityAmount } from "./electricity";
+import { computeElectricityAmount, electricityPortionOfExcess } from "./electricity";
 
 export interface LedgerPayment {
   month: string;
@@ -8,8 +8,6 @@ export interface LedgerPayment {
   prevReading?: number | null;
   currReading?: number | null;
   electricityPaid?: boolean | null;
-  /** Payments up to this amount count as rent; only the excess is electricity. Defaults to rent + maintenance. */
-  electricityThreshold?: number | null;
 }
 
 export interface LedgerEntry {
@@ -20,7 +18,8 @@ export interface LedgerEntry {
   balance: number;
 }
 
-// Anything a tenant pays over rent + maintenance is treated as an electricity payment.
+// A small amount a tenant pays over rent + maintenance (under ₹1,500, e.g. ₹500 or ₹1,000) is treated
+// as an electricity payment; a larger excess is rent paid ahead and never becomes electricity credit.
 // Those overpayments form a running credit that is applied to the electricity bills
 // oldest-first, so e.g. a ₹500 overpayment in an earlier month covers that month's bill
 // and whatever is left carries forward to the next. A bill marked paid by hand is
@@ -29,7 +28,7 @@ export function buildElectricityLedger(payments: LedgerPayment[], rate: number, 
   const sorted = [...payments].sort((a, b) => a.month.localeCompare(b.month));
   let credit = 0;
   return sorted.map((p) => {
-    credit += Math.max(0, p.amountPaid - (p.electricityThreshold ?? p.rentAmount + p.maintenanceAmount));
+    credit += electricityPortionOfExcess(p.amountPaid - (p.rentAmount + p.maintenanceAmount));
     const bill = computeElectricityAmount(p.prevReading ?? 0, p.currReading ?? 0, rate, plotNumber);
     if (p.electricityPaid) return { month: p.month, bill, paid: bill, balance: 0 };
     const paid = Math.min(credit, bill);
@@ -51,7 +50,7 @@ export interface StatementMonth {
   /** Rent + maintenance: the baseline a payment has to cover before it counts as electricity. */
   baseline: number;
   totalPaid: number;
-  /** Amount paid over the baseline in this month. */
+  /** Part paid over the baseline this month that counts as an electricity payment (small excess only). */
   excess: number;
   /** Overpayment credit (this month's plus carried forward) applied to this month's bill. */
   credited: number;
@@ -102,7 +101,7 @@ export function buildElectricityStatement(
       };
     }
     const baseline = p.rentAmount + p.maintenanceAmount;
-    const excess = Math.max(0, p.amountPaid - (p.electricityThreshold ?? baseline));
+    const excess = electricityPortionOfExcess(p.amountPaid - baseline);
     credit += excess;
     const bill = computeElectricityAmount(p.prevReading ?? 0, p.currReading ?? 0, rate, plotNumber);
     const markedPaid = !!p.electricityPaid;

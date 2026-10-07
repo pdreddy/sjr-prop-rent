@@ -12,6 +12,11 @@ export function defaultElectricityAmount(plotNumber: string): number {
   return DEFAULT_HIGH_PLOTS.includes(plotNumber.trim()) ? DEFAULT_ELECTRICITY_HIGH : DEFAULT_ELECTRICITY_STANDARD;
 }
 
+// Money paid above a month's rent is an electricity payment only when it is a small amount (₹500,
+// ₹1,000, anything under this limit). A larger excess is rent paid ahead, not electricity.
+export const ELECTRICITY_EXCESS_LIMIT = 1500;
+export const electricityPortionOfExcess = (excess: number): number => (excess > 0 && excess < ELECTRICITY_EXCESS_LIMIT ? excess : 0);
+
 /** A current reading of 0 (or none) means the meter has not been read for the month yet. */
 export const hasMeterReading = (currReading: number | null | undefined): boolean => (currReading ?? 0) > 0;
 

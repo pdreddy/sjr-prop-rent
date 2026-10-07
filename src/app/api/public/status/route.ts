@@ -3,7 +3,6 @@ import { allPayments, allUnits, getElectricityRate } from "@/lib/store";
 import { BUILDING_NAME, PUBLIC_SHOW_TENANT_NAME } from "@/lib/constants";
 import { isValidMonth, getCurrentMonth, isBeforeMoveInMonth, isBeforeFirstRentMonth, isRentOverdue } from "@/lib/month";
 import { computeElectricityAmount } from "@/lib/electricity";
-import { withElectricityThreshold } from "@/lib/proration";
 import { buildElectricityLedger } from "@/lib/electricityLedger";
 
 export const dynamic = "force-dynamic";
@@ -23,7 +22,7 @@ export async function GET(request: NextRequest) {
     const prevReading = payment?.prevReading ?? 0;
     const currReading = payment?.currReading ?? 0;
     const ledger = buildElectricityLedger(
-      withElectricityThreshold(unit, payments.filter((item) => item.unitId === unit.id && !isBeforeMoveInMonth(moveInDate, item.month))),
+      payments.filter((item) => item.unitId === unit.id && !isBeforeMoveInMonth(moveInDate, item.month)),
       rate,
       unit.plotNumber
     );
