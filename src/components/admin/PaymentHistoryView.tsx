@@ -88,8 +88,9 @@ export default function PaymentHistoryView({ onUnauthorized }: { onUnauthorized:
           </button>
         </div>
         <p className="mt-2.5 text-xs text-foreground/55">
-          Rent starts the month after move-in and runs to {formatMonthLabel(data.currentMonth)}. Each month&apos;s rent paid is capped
-          at the rent due: anything paid above it (e.g. ₹20,500 on ₹20,000 rent) is moved to electricity as paid. Electricity is billed
+          Rent starts the month after move-in and runs to {formatMonthLabel(data.currentMonth)}. Everything paid counts as rent up to the
+          plot&apos;s full monthly rent; only what is paid above it (e.g. ₹20,500 on ₹20,000 rent) is moved to electricity. In a part-month
+          move-in record, payment above the prorated rent but within the full rent is rent paid ahead, not electricity. Electricity is billed
           from meter readings at ₹{data.ratePerUnit}/unit and any unused electricity payment carries forward to the next bill. With no meter reading, the bill defaults to ₹750 (plots 101, 201, 301, 401, 501) or ₹500 (all other plots). A payment shown
           as &ldquo;before rent start&rdquo; is filed under a month earlier than the tenant&apos;s first rent month. Click any month for
           every detail: rent, payment, electricity, credit and notes.
@@ -124,7 +125,7 @@ export default function PaymentHistoryView({ onUnauthorized }: { onUnauthorized:
                 <span aria-hidden="true" className="shrink-0 text-foreground/60">{expanded ? "−" : "+"}</span>
               </div>
               <div className="flex flex-wrap gap-x-5 gap-y-1 text-sm">
-                <span>Rent <b>{rupees(t.totals.rentPaid)}</b> of {rupees(t.totals.rentDue)} paid{t.totals.rentBalance > 0 && <b className="text-unpaid"> · {rupees(t.totals.rentBalance)} due</b>}</span>
+                <span>Rent <b>{rupees(t.totals.rentPaid)}</b> of {rupees(t.totals.rentDue)} paid{t.totals.rentBalance > 0 && <b className="text-unpaid"> · {rupees(t.totals.rentBalance)} due</b>}{t.totals.rentAdvance > 0 && <span className="text-partial"> · {rupees(t.totals.rentAdvance)} paid ahead</span>}</span>
                 <span>Electricity <b>{rupees(t.totals.electricityPaid)}</b> paid · {rupees(t.totals.electricityBill)} billed{t.totals.electricityBalance > 0 && <b className="text-unpaid"> · {rupees(t.totals.electricityBalance)} due</b>}</span>
                 {t.totals.unusedCredit > 0 && <span className="text-partial">Unused credit {rupees(t.totals.unusedCredit)}</span>}
               </div>

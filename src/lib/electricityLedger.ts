@@ -8,6 +8,8 @@ export interface LedgerPayment {
   prevReading?: number | null;
   currReading?: number | null;
   electricityPaid?: boolean | null;
+  /** Payments up to this amount count as rent; only the excess is electricity. Defaults to rent + maintenance. */
+  electricityThreshold?: number | null;
 }
 
 export interface LedgerEntry {
@@ -27,7 +29,7 @@ export function buildElectricityLedger(payments: LedgerPayment[], rate: number, 
   const sorted = [...payments].sort((a, b) => a.month.localeCompare(b.month));
   let credit = 0;
   return sorted.map((p) => {
-    credit += Math.max(0, p.amountPaid - (p.rentAmount + p.maintenanceAmount));
+    credit += Math.max(0, p.amountPaid - (p.electricityThreshold ?? p.rentAmount + p.maintenanceAmount));
     const bill = computeElectricityAmount(p.prevReading ?? 0, p.currReading ?? 0, rate, plotNumber);
     if (p.electricityPaid) return { month: p.month, bill, paid: bill, balance: 0 };
     const paid = Math.min(credit, bill);
@@ -100,7 +102,7 @@ export function buildElectricityStatement(
       };
     }
     const baseline = p.rentAmount + p.maintenanceAmount;
-    const excess = Math.max(0, p.amountPaid - baseline);
+    const excess = Math.max(0, p.amountPaid - (p.electricityThreshold ?? baseline));
     credit += excess;
     const bill = computeElectricityAmount(p.prevReading ?? 0, p.currReading ?? 0, rate, plotNumber);
     const markedPaid = !!p.electricityPaid;

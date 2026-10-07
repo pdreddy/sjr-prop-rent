@@ -4,6 +4,7 @@ import { isValidMonth, getCurrentMonth, getPreviousMonth, isBeforeMoveInMonth } 
 import { allPayments, allUnits, getElectricityRate, paymentDTO, paymentFor, savePayment, unitById } from "@/lib/store";
 import { expectedForMonth } from "@/lib/proration";
 import { computeElectricityAmount } from "@/lib/electricity";
+import { withElectricityThreshold } from "@/lib/proration";
 import { buildElectricityLedger } from "@/lib/electricityLedger";
 import { electricityUpsertSchema } from "@/lib/validation";
 import { recordAuditLog } from "@/lib/audit";
@@ -30,7 +31,7 @@ export async function GET(request: NextRequest) {
       // only the new current reading has to be entered.
       const unrecorded = !payment || (!payment.prevReading && !payment.currReading);
       const ledger = buildElectricityLedger(
-        payments.filter((p) => p.unitId === unit.id && !isBeforeMoveInMonth(unit.moveInDate, p.month)),
+        withElectricityThreshold(unit, payments.filter((p) => p.unitId === unit.id && !isBeforeMoveInMonth(unit.moveInDate, p.month))),
         rate,
         unit.plotNumber
       );

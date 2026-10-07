@@ -25,18 +25,24 @@ export async function GET() {
         const first = firstRentMonth(unit.moveInDate);
         const start = first && first < BUILDING_READY_MONTH ? BUILDING_READY_MONTH : first;
         const months = start && start <= currentMonth ? monthsBetween(start, currentMonth) : [];
-        let totalDue = 0, totalPaid = 0, overRent = 0, monthsPaid = 0, lastPaid: Date | null = null;
+        let totalDue = 0, totalPaid = 0, overRent = 0, balance = 0, advance = 0, monthsPaid = 0, lastPaid: Date | null = null;
         for (const month of months) {
           const record = payments.find((p) => p.unitId === unit.id && p.month === month);
           const expected = expectedForMonth(unit, month);
           // No record yet: what the tenant owes for that month (prorated in the first one), paid 0.
           const due = record ? record.rentAmount + record.maintenanceAmount : expected.rent + expected.maintenance;
           const received = record?.amountPaid ?? 0;
-          const paid = Math.min(received, due); // only rent counts here; the excess is an electricity payment
+          // Payments count as rent up to the plot's full monthly rent (a part-month first record included, so
+          // the extra there is rent paid ahead); only the excess over that is an electricity payment.
+          const threshold = expected.proration.prorated ? unit.monthlyRent + (unit.maintenanceAmount ?? 0) : due;
+          const paid = Math.min(received, threshold);
+          const net = paid + advance - due;
           totalDue += due;
           totalPaid += paid;
           overRent += received - paid;
-          if (due > 0 && paid >= due) monthsPaid++;
+          balance += Math.max(0, -net);
+          advance = Math.max(0, net);
+          if (due > 0 && net >= 0) monthsPaid++;
           if (paid > 0 && record?.paidDate && (!lastPaid || record.paidDate > lastPaid)) lastPaid = record.paidDate;
         }
         return {
@@ -50,7 +56,7 @@ export async function GET() {
           totalDue,
           totalPaid,
           overRent,
-          balance: totalDue - totalPaid,
+          balance,
           lastPaidDate: lastPaid?.toISOString() ?? null,
         };
       }),

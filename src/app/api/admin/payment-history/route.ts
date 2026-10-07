@@ -4,7 +4,7 @@ import { allPayments, allUnits, getElectricityRate } from "@/lib/store";
 import { firstRentMonth, getCurrentMonth } from "@/lib/month";
 import { BUILDING_READY_MONTH } from "@/lib/constants";
 import { buildElectricityStatement } from "@/lib/electricityLedger";
-import { expectedForMonth } from "@/lib/proration";
+import { expectedForMonth, withElectricityThreshold } from "@/lib/proration";
 import { hasMeterReading } from "@/lib/electricity";
 import type { PaymentHistoryMonth, PaymentHistoryResponse } from "@/lib/types";
 
@@ -32,7 +32,8 @@ export async function GET() {
       const joinMonth = unit.moveInDate?.toISOString().slice(0, 7);
       let start = joinMonth ?? unitPayments.map((p) => p.month).sort()[0] ?? BUILDING_READY_MONTH;
       if (start < BUILDING_READY_MONTH) start = BUILDING_READY_MONTH;
-      const statement = start <= currentMonth ? buildElectricityStatement(unitPayments, rate, start, currentMonth, unit.plotNumber) : [];
+      const statement = start <= currentMonth ? buildElectricityStatement(withElectricityThreshold(unit, unitPayments), rate, start, currentMonth, unit.plotNumber) : [];
+      let advance = 0; // rent paid ahead, e.g. a full month paid on a part-month first record
 
       const months: PaymentHistoryMonth[] = statement
         .map((m) => {
@@ -44,11 +45,19 @@ export async function GET() {
           // No record yet: what was owed (prorated in the first rent month), nothing paid.
           const rentDue = before ? 0 : record ? record.rentAmount + record.maintenanceAmount : expected.rent + expected.maintenance;
           const received = record?.amountPaid ?? 0;
-          // Anything paid above the month's rent is an electricity payment, not extra rent.
-          const rentPaid = before ? received : Math.min(received, rentDue);
-          const overRent = before ? 0 : Math.max(0, received - rentDue);
+          // Only what is paid above the plot's FULL monthly rent is an electricity payment. In a part-month
+          // first record, money between the prorated rent and the full rent is rent paid ahead: it stays
+          // rent and covers any shortfall in the following months.
+          const overRent = before ? 0 : m.excess;
+          const rentPaid = received - overRent;
+          let rentBalance = 0;
+          if (!before) {
+            const net = rentPaid + advance - rentDue;
+            rentBalance = Math.max(0, -net);
+            advance = Math.max(0, net);
+          }
           return {
-            month: m.month, beforeRentStart: before, recorded: !!record, rentDue, rentPaid, rentBalance: Math.max(0, rentDue - rentPaid),
+            month: m.month, beforeRentStart: before, recorded: !!record, rentDue, rentPaid, rentBalance, rentAdvance: cents(advance),
             paidDate: record?.paidDate?.toISOString() ?? null, prevReading: record?.prevReading ?? 0, currReading: record?.currReading ?? 0,
             electricityBill: cents(m.electricityBill), electricityPaid: cents(overRent + (m.markedPaid ? m.electricityBill : 0)), electricityCovered: cents(m.credited),
             electricityBalance: cents(m.balance), electricityStatus: m.status, amountReceived: received,
@@ -69,7 +78,7 @@ export async function GET() {
         firstRentMonth: first,
         months,
         totals: {
-          rentDue: sum((m) => m.rentDue), rentPaid: sum((m) => m.rentPaid), rentBalance: sum((m) => m.rentBalance),
+          rentDue: sum((m) => m.rentDue), rentPaid: sum((m) => m.rentPaid), rentBalance: sum((m) => m.rentBalance), rentAdvance: months.length ? months[months.length - 1].rentAdvance : 0,
           electricityBill: sum((m) => m.electricityBill), electricityPaid: sum((m) => m.electricityPaid), electricityBalance: sum((m) => m.electricityBalance),
           unusedCredit: statement.length ? cents(statement[statement.length - 1].carriedForward) : 0,
         },

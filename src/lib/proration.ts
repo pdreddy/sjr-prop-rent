@@ -31,6 +31,20 @@ export function prorate(amount: number, p: Proration): number {
   return p.prorated ? Math.round(amount * p.factor) : amount;
 }
 
+/**
+ * Money paid in the first (part-month) rent record counts as rent up to the plot's FULL monthly rent -
+ * the part above the prorated amount is rent paid ahead, not electricity. Only what exceeds the full
+ * rent is an electricity payment. Other months keep the default (rent + maintenance of the record).
+ */
+export function withElectricityThreshold<T extends { month: string }>(
+  unit: { monthlyRent: number; maintenanceAmount: number; moveInDate: string | Date | null },
+  payments: T[]
+): (T & { electricityThreshold?: number })[] {
+  return payments.map((p) =>
+    moveInProration(unit.moveInDate, p.month).prorated ? { ...p, electricityThreshold: unit.monthlyRent + (unit.maintenanceAmount ?? 0) } : p
+  );
+}
+
 /** What a unit owes (rent, maintenance) for `month`, prorated if it is the move-in month. */
 export function expectedForMonth(
   unit: { monthlyRent: number; maintenanceAmount: number; moveInDate: string | Date | null },

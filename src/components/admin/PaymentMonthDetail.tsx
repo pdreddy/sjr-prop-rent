@@ -37,8 +37,9 @@ export default function PaymentMonthDetail({ tenant, month, ratePerUnit, monthLa
             {month.proratedDays !== null && <Line label="Move-in month" value={`${month.proratedDays}/30 days charged`} />}
             <Line label="Total rent due" value={rupees(month.rentDue)} strong />
             {month.amountReceived !== month.rentPaid && <Line label="Total received" value={rupees(month.amountReceived)} />}
-            <Line label="Rent paid" value={rupees(month.rentPaid)} tone="paid" strong />
+            <Line label="Counted as rent" value={rupees(month.rentPaid)} tone="paid" strong />
             {month.overpayment > 0 && <Line label="Moved to electricity" value={rupees(month.overpayment)} />}
+            {month.rentAdvance > 0 && <Line label="Rent paid ahead (carried)" value={rupees(month.rentAdvance)} />}
             <Line label="Paid on" value={month.paidDate ? formatDate(month.paidDate) : "—"} />
             <Line label="Rent balance" value={rupees(month.rentBalance)} tone={month.rentBalance > 0 ? "unpaid" : undefined} strong />
             <Line label="Status" value={month.recorded ? month.paymentStatus ?? "—" : "No record yet"} />
