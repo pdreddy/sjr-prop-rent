@@ -137,14 +137,15 @@ export default function PaymentHistoryView({ onUnauthorized }: { onUnauthorized:
             </button>
             {expanded && (
               <div className="overflow-x-auto border-t border-primary/10">
-                <table className="w-full min-w-[1040px] text-left text-sm">
+                <table className="w-full min-w-[980px] text-left text-sm">
                   <thead className="text-xs uppercase tracking-wide text-foreground/45">
                     <tr>
                       <th className="px-3 py-2 font-semibold">Month</th>
+                      <th className="px-3 py-2 text-right font-semibold">Rent due</th>
                       <th className="px-3 py-2 text-right font-semibold">Total paid</th>
                       <th className="px-3 py-2 font-semibold">Paid on</th>
-                      <th className="px-3 py-2 text-right font-semibold">Rent due</th>
                       <th className="px-3 py-2 text-right font-semibold">Rent paid</th>
+                      <th className="px-3 py-2 text-right font-semibold">Excess → elec.</th>
                       <th className="px-3 py-2 text-right font-semibold">Rent balance</th>
                       <th className="px-3 py-2 text-right font-semibold">Meter</th>
                       <th className="px-3 py-2 text-right font-semibold">Elec. bill</th>
@@ -169,17 +170,11 @@ export default function PaymentHistoryView({ onUnauthorized }: { onUnauthorized:
                           {m.beforeRentStart && <span className="block text-[11px] text-partial">before rent start</span>}
                           {!m.recorded && !m.beforeRentStart && <span className="block text-[11px] text-foreground/45">no record</span>}
                         </td>
-                        <td className="px-3 py-2 text-right font-semibold">
-                          {rupees(m.amountReceived)}
-                          {m.overpayment > 0 && (
-                            <span className="block text-[11px] font-normal text-foreground/55">
-                              {rupees(m.rentPaid)} rent + {rupees(m.overpayment)} electricity
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-3 py-2">{m.paidDate ? formatDate(m.paidDate) : "—"}</td>
                         <td className="px-3 py-2 text-right">{rupees(m.rentDue)}</td>
+                        <td className="px-3 py-2 text-right font-semibold">{rupees(m.amountReceived)}</td>
+                        <td className="whitespace-nowrap px-3 py-2">{m.paidDate ? formatDate(m.paidDate) : "—"}</td>
                         <td className="px-3 py-2 text-right font-semibold text-paid">{rupees(m.rentPaid)}</td>
+                        <td className={`px-3 py-2 text-right ${m.overpayment > 0 ? "font-semibold text-partial" : "text-foreground/50"}`}>{m.overpayment > 0 ? rupees(m.overpayment) : "—"}</td>
                         <td className={`px-3 py-2 text-right ${m.rentBalance > 0 ? "font-semibold text-unpaid" : "text-foreground/50"}`}>{rupees(m.rentBalance)}</td>
                         <td className="px-3 py-2 text-right text-foreground/70">{m.electricityDefault ? "default" : m.currReading > 0 || m.prevReading > 0 ? `${m.prevReading} → ${m.currReading}` : "—"}</td>
                         <td className="px-3 py-2 text-right">{rupees(m.electricityBill)}</td>
@@ -188,7 +183,7 @@ export default function PaymentHistoryView({ onUnauthorized }: { onUnauthorized:
                       </tr>,
                       monthOpen && (
                         <tr key={`${m.month}-detail`}>
-                          <td colSpan={10} className="p-0">
+                          <td colSpan={11} className="p-0">
                             <PaymentMonthDetail tenant={t} month={m} ratePerUnit={data.ratePerUnit} monthLabel={formatMonthLabel(m.month)} />
                           </td>
                         </tr>
@@ -199,10 +194,11 @@ export default function PaymentHistoryView({ onUnauthorized }: { onUnauthorized:
                   <tfoot className="border-t-2 border-primary/20 bg-primary-light font-bold text-primary-dark">
                     <tr>
                       <td className="px-3 py-2">Total</td>
+                      <td className="px-3 py-2 text-right">{rupees(t.totals.rentDue)}</td>
                       <td className="px-3 py-2 text-right">{rupees(t.totals.totalReceived)}</td>
                       <td />
-                      <td className="px-3 py-2 text-right">{rupees(t.totals.rentDue)}</td>
                       <td className="px-3 py-2 text-right">{rupees(t.totals.rentPaid)}</td>
+                      <td className="px-3 py-2 text-right">{t.totals.totalReceived > t.totals.rentPaid ? rupees(t.totals.totalReceived - t.totals.rentPaid) : "—"}</td>
                       <td className="px-3 py-2 text-right">{rupees(t.totals.rentBalance)}</td>
                       <td />
                       <td className="px-3 py-2 text-right">{rupees(t.totals.electricityBill)}</td>
