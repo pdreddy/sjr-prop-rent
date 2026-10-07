@@ -219,3 +219,46 @@ export interface RentPaidResponse {
   currentMonth: string;
   tenants: RentPaidTenant[];
 }
+
+export interface PaymentHistoryMonth {
+  month: string;
+  /** Payment recorded before the tenant's rent starts - usually belongs to the first rent month. */
+  beforeRentStart: boolean;
+  recorded: boolean;
+  rentDue: number;
+  rentPaid: number;
+  rentBalance: number;
+  paidDate: string | null;
+  prevReading: number;
+  currReading: number;
+  electricityBill: number;
+  /** Part of the bill covered by overpaid rent, or the whole bill when marked paid. */
+  electricityPaid: number;
+  electricityBalance: number;
+  electricityStatus: ElectricityMonthStatus;
+}
+
+export interface PaymentHistoryTenant {
+  unitId: string;
+  plotNumber: string;
+  tenantName: string;
+  moveInDate: string | null;
+  firstRentMonth: string | null;
+  months: PaymentHistoryMonth[];
+  totals: {
+    rentDue: number;
+    rentPaid: number;
+    rentBalance: number;
+    electricityBill: number;
+    electricityPaid: number;
+    electricityBalance: number;
+    /** Overpayment not yet used by an electricity bill. */
+    unusedCredit: number;
+  };
+}
+
+export interface PaymentHistoryResponse {
+  currentMonth: string;
+  ratePerUnit: number;
+  tenants: PaymentHistoryTenant[];
+}

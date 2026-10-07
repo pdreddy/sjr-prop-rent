@@ -12,6 +12,7 @@ import ElectricityStatementView from "./ElectricityStatementView";
 import RentalHistoryView from "./RentalHistoryView";
 import MoveInProrationView from "./MoveInProrationView";
 import RentPaidView from "./RentPaidView";
+import PaymentHistoryView from "./PaymentHistoryView";
 import AllDetailsView from "./AllDetailsView";
 import {
   getCurrentMonth,
@@ -36,9 +37,9 @@ import {
 const monthOptions = getMonthOptions();
 const STATUS_FILTERS = ["ALL", "PAID", "UNPAID", "PARTIAL", "VACANT"] as const;
 type StatusFilter = (typeof STATUS_FILTERS)[number];
-const TABS = ["overview", "all-details", "electricity", "history", "proration", "rent-paid"] as const;
+const TABS = ["overview", "all-details", "electricity", "history", "proration", "rent-paid", "payment-history"] as const;
 type Tab = (typeof TABS)[number];
-const TAB_LABELS: Record<Tab, string> = { overview: "Overview", "all-details": "All details", electricity: "Electricity bills", history: "Rental history", proration: "Move-in Proration", "rent-paid": "Rent paid" };
+const TAB_LABELS: Record<Tab, string> = { overview: "Overview", "all-details": "All details", electricity: "Electricity bills", history: "Rental history", proration: "Move-in Proration", "rent-paid": "Rent paid", "payment-history": "Payment history" };
 
 export default function AdminDashboard({ username }: { username: string }) {
   const router = useRouter();
@@ -133,7 +134,7 @@ export default function AdminDashboard({ username }: { username: string }) {
 
   const totals = data?.totals;
   // These tabs load their own data and ignore the month/search/filter bar.
-  const standaloneTab = tab === "electricity" || tab === "history" || tab === "proration" || tab === "rent-paid";
+  const standaloneTab = tab === "electricity" || tab === "history" || tab === "proration" || tab === "rent-paid" || tab === "payment-history";
 
   return (
     <div className="flex flex-1 flex-col bg-background">
@@ -208,6 +209,7 @@ export default function AdminDashboard({ username }: { username: string }) {
         {tab === "history" && <RentalHistoryView onUnauthorized={handleUnauthorized} />}
         {tab === "proration" && <MoveInProrationView onUnauthorized={handleUnauthorized} />}
         {tab === "rent-paid" && <RentPaidView onUnauthorized={handleUnauthorized} />}
+        {tab === "payment-history" && <PaymentHistoryView onUnauthorized={handleUnauthorized} />}
 
         <div className={`mb-4 flex flex-wrap items-end gap-3 rounded-2xl border border-primary/10 bg-white p-3 shadow-sm sm:p-4 ${standaloneTab ? "hidden" : ""}`}>
           <MonthYearSelector month={month} options={monthOptions} onChange={setMonth} />
