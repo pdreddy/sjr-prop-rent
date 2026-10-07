@@ -1,4 +1,5 @@
 import { monthsBetween } from "./electricityLedger";
+import { getNextMonth } from "./month";
 
 // A plot only stores its *current* tenant, so earlier tenants are rebuilt from the audit log
 // of unit edits: every time the tenant name / move-in date changed (or the plot was vacated)
@@ -51,13 +52,15 @@ export function buildStays(snapshots: UnitSnapshot[], currentMonth: string): Sta
   ];
 
   return all.map((stay, i) => {
-    const startMonth = month(stay.moveInDate ?? stay.at.toISOString());
+    // Rent records start the month after move-in (that record pays the move-in month's rent).
+    const startMonth = getNextMonth(month(stay.moveInDate ?? stay.at.toISOString()));
     const next = all[i + 1];
     let endMonth: string | null = null;
     if (stay.ended) {
       const outMonth = month(stay.movedOutDate!);
       // Replaced by a new tenant: months before theirs. Vacated: through the month it was recorded.
       endMonth = stay.vacated ? outMonth : next ? prevMonthOf(month(next.moveInDate ?? next.at.toISOString())) : outMonth;
+      endMonth = getNextMonth(endMonth); // the last stay month is paid in the following month
       if (endMonth < startMonth) endMonth = startMonth;
     }
     if (endMonth && endMonth > currentMonth) endMonth = currentMonth;

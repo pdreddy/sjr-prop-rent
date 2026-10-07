@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthedAdmin } from "@/lib/auth";
-import { isValidMonth, getCurrentMonth, isBeforeMoveInMonth } from "@/lib/month";
+import { isValidMonth, getCurrentMonth, isBeforeFirstRentMonth } from "@/lib/month";
 import { expectedForMonth } from "@/lib/proration";
 import { allPayments, allUnits, getElectricityRate, paymentDTO, unitDTO } from "@/lib/store";
 
@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
     .map((unit) => {
     const payment = paymentRecords.find((p) => p.unitId === unit.id && p.month === month) ?? null;
     const isVacant = !unit.tenantName?.trim();
-    const isBeforeMoveIn = isBeforeMoveInMonth(unit.moveInDate, month);
+    const isBeforeMoveIn = isBeforeFirstRentMonth(unit.moveInDate, month);
     const expected = expectedForMonth({ monthlyRent: unit.monthlyRent, maintenanceAmount: unit.maintenanceAmount, moveInDate: unit.moveInDate }, month);
     return {
       unit: unitDTO(unit), payment: payment ? paymentDTO(payment, rate) : null, isVacant, isBeforeMoveIn, effectiveStatus: payment?.paymentStatus ?? "UNPAID",

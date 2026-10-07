@@ -5,6 +5,7 @@ import { allPayments, allUnits, getElectricityRate, savePayment } from "@/lib/st
 import { recordAuditLog } from "@/lib/audit";
 import { expectedForMonth } from "@/lib/proration";
 import { computeElectricityAmount } from "@/lib/electricity";
+import { isBeforeFirstRentMonth } from "@/lib/month";
 
 export async function POST(request: NextRequest) {
   const admin = await getAuthedAdmin();
@@ -15,7 +16,8 @@ export async function POST(request: NextRequest) {
   const { sourceMonth, targetMonth } = parsed.data;
   if (sourceMonth === targetMonth) return NextResponse.json({ error: "Source and target month must be different." }, { status: 400 });
   const [units, payments, rate] = await Promise.all([allUnits(), allPayments(), getElectricityRate()]);
-  const active = units.filter((unit) => unit.active);
+  // A tenant has no rent record before the month after they move in.
+  const active = units.filter((unit) => unit.active && !isBeforeFirstRentMonth(unit.moveInDate, targetMonth));
   let createdCount = 0;
   for (const unit of active) {
     if (payments.some((p) => p.unitId === unit.id && p.month === targetMonth)) continue;

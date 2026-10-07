@@ -199,3 +199,23 @@ export interface MoveInProrationTenant {
 export interface MoveInProrationResponse {
   tenants: MoveInProrationTenant[];
 }
+
+export interface RentPaidTenant {
+  unitId: string;
+  plotNumber: string;
+  tenantName: string;
+  moveInDate: string | null;
+  /** First month a rent record exists: the month after move-in (null without a move-in date). */
+  firstRentMonth: string | null;
+  monthsBilled: number;
+  monthsPaid: number;
+  totalDue: number;
+  totalPaid: number;
+  balance: number;
+  lastPaidDate: string | null;
+}
+
+export interface RentPaidResponse {
+  currentMonth: string;
+  tenants: RentPaidTenant[];
+}

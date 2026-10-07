@@ -1,6 +1,9 @@
-// Rent for the move-in month covers only the days actually stayed. Months are always treated
-// as 30 days for the daily rate (rent / 30), and the move-in day itself counts as a stayed day:
-// moving in on the 15th means 16 days (15th–30th) → rent × 16 / 30.
+import { firstRentMonth } from "./month";
+
+// A tenant's first rent record is the month AFTER move-in (see firstRentMonth) and holds the rent for
+// the move-in month, which covers only the days actually stayed. Months are always treated as 30
+// days (rent / 30 per day) and the move-in day itself counts: moving in on the 10th is 30 - 10 + 1 =
+// 21 days -> rent x 21 / 30. Moving in on the 1st is a full month. Every later record is full rent.
 export interface Proration {
   /** Days charged in the month (1–30). */
   days: number;
@@ -17,11 +20,10 @@ export function daysInMonth(month: string): number {
 }
 
 export function moveInProration(moveInDate: string | Date | null, month: string): Proration {
-  if (!moveInDate) return FULL;
+  if (!moveInDate || firstRentMonth(moveInDate) !== month) return FULL;
   const iso = moveInDate instanceof Date ? moveInDate.toISOString() : moveInDate;
-  if (iso.slice(0, 7) !== month) return FULL;
   const day = Number(iso.slice(8, 10));
-  const days = Math.max(1, Math.min(30, daysInMonth(month) - day + 1));
+  const days = Math.max(1, Math.min(30, 30 - day + 1));
   return days >= 30 ? FULL : { days, factor: days / 30, prorated: true };
 }
 

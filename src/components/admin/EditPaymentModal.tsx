@@ -3,7 +3,7 @@
 import { useState } from "react";
 import ModalShell from "./ModalShell";
 import StatusBadge from "@/components/StatusBadge";
-import { isBeforeMoveInMonth } from "@/lib/month";
+import { isBeforeFirstRentMonth } from "@/lib/month";
 import { stripElectricityNote, withElectricityNote } from "@/lib/notes";
 import { moveInProration, prorate } from "@/lib/proration";
 import { computeElectricityAmount, computeElectricityUnits } from "@/lib/electricity";
@@ -52,7 +52,7 @@ export default function EditPaymentModal({ row, month, ratePerUnit, onClose, onS
   const balanceDue = Math.max(0, rentSum - paidNumber);
   const excessAmount = Math.max(0, paidNumber - rentSum);
   const status: PaymentStatus = paidNumber <= 0 ? "UNPAID" : paidNumber >= rentSum ? "PAID" : "PARTIAL";
-  const isBeforeMoveIn = isBeforeMoveInMonth(moveInDate || null, month);
+  const isBeforeMoveIn = isBeforeFirstRentMonth(moveInDate || null, month);
 
   const prevReadingNumber = Number(prevReading || 0);
   const currReadingNumber = Number(currReading || 0);

@@ -13,6 +13,7 @@
     "db:backup": "tsx --env-file=.env scripts/backup.ts",
     "db:restore": "tsx --env-file=.env scripts/restore.ts",
     "db:where": "tsx --env-file=.env scripts/where.ts",
+    "db:fix-months": "tsx --env-file=.env scripts/fix-months.ts",
     "db:seed": "tsx --env-file=.env scripts/seed.ts",
     "setup:data": "npm run db:seed && npm run import:tenants",
     "import:tenants": "tsx --env-file=.env scripts/import-tenants.ts",
