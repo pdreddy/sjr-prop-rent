@@ -1,7 +1,7 @@
 import { BUILDING_READY_MONTH } from "./constants";
 import { computeElectricityAmount } from "./electricity";
 import { monthsBetween } from "./electricityLedger";
-import { getCurrentMonth, firstRentMonth } from "./month";
+import { getCurrentMonth, firstRentMonth, isBeforeBuildingOpened } from "./month";
 import { expectedForMonth } from "./proration";
 import { allPayments, allUnits, getElectricityRate, paymentStatus, savePayment } from "./store";
 import { deleteDocument } from "./firebase";
@@ -33,6 +33,11 @@ export async function backfillMonths(opts: { dryRun: boolean; removeEmpty?: bool
     if (!unit.active || !unit.tenantName?.trim() || !unit.moveInDate) continue;
     const first = firstRentMonth(unit.moveInDate)!;
     const label = `Plot ${unit.plotNumber} (${unit.tenantName.trim()})`;
+    if (isBeforeBuildingOpened(unit.moveInDate)) {
+      // Almost certainly a wrong year (2016 for 2026): creating months from it would bill rent that was never due.
+      result.notes.push(`${label}: move-in date ${unit.moveInDate.toISOString().slice(0, 10)} is before the building opened - skipped. Fix the year on the Overview tab, then run again.`);
+      continue;
+    }
     let unitPayments = payments.filter((p) => p.unitId === unit.id);
 
     for (const early of unitPayments.filter((p) => p.month < first)) {
