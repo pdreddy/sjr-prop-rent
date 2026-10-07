@@ -1,4 +1,4 @@
-import { getDocument, listDocuments, newDocumentId, setDocument, type FirebaseValue } from "./firebase";
+import { deleteDocument, getDocument, listDocuments, newDocumentId, setDocument, type FirebaseValue } from "./firebase";
 import { computeElectricityAmount } from "./electricity";
 import { ELECTRICITY_RATE_PER_UNIT } from "./constants";
 import type { PaymentDTO, PaymentStatus, UnitDTO } from "./types";
@@ -77,6 +77,8 @@ export async function savePayment(unitId: string, month: string, data: Omit<Stor
   await setDocument(`payments/${id}`, value);
   return { id, ...value };
 }
+
+export async function deletePayment(unitId: string, month: string) { await deleteDocument(`payments/${unitId}_${month}`); }
 
 export async function addAuditLog(data: Omit<AuditRecord, "id" | "createdAt">) {
   const id = newDocumentId();

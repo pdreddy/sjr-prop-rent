@@ -59,6 +59,8 @@ export const upsertPaymentSchema = z
   .object({
     unitId: z.string().min(1),
     month: monthSchema,
+    /** Set when the record is being moved from another month (fixing a record filed under the wrong month). */
+    originalMonth: monthSchema.optional(),
     paymentStatus: paymentStatusEnum,
     rentAmount: z.coerce.number().min(0).max(10_000_000),
     maintenanceAmount: z.coerce.number().min(0).max(10_000_000).default(0),
@@ -70,8 +72,8 @@ export const upsertPaymentSchema = z
     currReading: z.coerce.number().min(0).max(10_000_000).default(0),
     electricityPaid: z.coerce.boolean().default(false),
   })
-  .refine((data) => data.currReading >= data.prevReading, {
-    message: "Current meter reading must be greater than or equal to the previous reading.",
+  .refine((data) => data.currReading === 0 || data.currReading >= data.prevReading, {
+    message: "Current meter reading must be greater than or equal to the previous reading (or 0 if not read yet).",
     path: ["currReading"],
   });
 
@@ -83,8 +85,8 @@ export const electricityUpsertSchema = z
     currReading: z.coerce.number().min(0).max(10_000_000),
     electricityPaid: z.coerce.boolean().default(false),
   })
-  .refine((data) => data.currReading >= data.prevReading, {
-    message: "Current meter reading must be greater than or equal to the previous reading.",
+  .refine((data) => data.currReading === 0 || data.currReading >= data.prevReading, {
+    message: "Current meter reading must be greater than or equal to the previous reading (or 0 if not read yet).",
     path: ["currReading"],
   });
 

@@ -5,7 +5,7 @@ import { getCurrentMonth } from "@/lib/month";
 import { BUILDING_READY_MONTH } from "@/lib/constants";
 import { expectedForMonth } from "@/lib/proration";
 import { buildStays, monthsOfStay } from "@/lib/rentalHistory";
-import type { RentalHistoryResponse } from "@/lib/types";
+import type { RentalHistoryMonth, RentalHistoryResponse } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -30,40 +30,57 @@ export async function GET() {
         if (stays[0] && !stays[0].moveInDate && earliest && earliest < stays[0].startMonth) stays[0].startMonth = earliest;
         if (stays[0] && stays[0].startMonth < BUILDING_READY_MONTH) stays[0].startMonth = BUILDING_READY_MONTH;
 
+        const toMonth = (month: string, p: (typeof unitPayments)[number] | undefined, moveInDate: string | null): RentalHistoryMonth => {
+          // No record: show what was owed (prorated in the first rent month) so empty months aren't blank.
+          const expected = expectedForMonth({ ...unit, moveInDate }, month);
+          const owed = expected.rent + expected.maintenance;
+          return {
+            month,
+            recorded: !!p,
+            status: p?.paymentStatus ?? null,
+            due: p ? p.rentAmount + p.maintenanceAmount : owed,
+            amountPaid: p?.amountPaid ?? 0,
+            balanceDue: p ? p.balanceDue : owed,
+            paidDate: p?.paidDate?.toISOString() ?? null,
+            proratedDays: expected.proration.prorated ? expected.proration.days : null,
+            rentAmount: p?.rentAmount ?? expected.rent,
+            maintenanceAmount: p?.maintenanceAmount ?? expected.maintenance,
+            notes: p?.notes ?? null,
+            prevReading: p?.prevReading ?? 0,
+            currReading: p?.currReading ?? 0,
+            electricityPaid: p?.electricityPaid ?? false,
+          };
+        };
+        const builtStays = stays
+          .map((stay) => {
+            const months = monthsOfStay(stay, currentMonth).map((month) => toMonth(month, unitPayments.find((item) => item.month === month), stay.moveInDate));
+            return {
+              tenantName: stay.tenantName,
+              moveInDate: stay.moveInDate,
+              movedOutDate: stay.movedOutDate,
+              startMonth: stay.startMonth,
+              endMonth: stay.endMonth,
+              monthsPaid: months.filter((m) => m.status === "PAID").length,
+              totalPaid: months.reduce((sum, m) => sum + m.amountPaid, 0),
+              months,
+            };
+          })
+          .reverse(); // latest tenant first
+        const shown = new Set(builtStays.flatMap((stay) => stay.months.map((m) => m.month)));
+
         return {
           unitId: unit.id,
           plotNumber: unit.plotNumber,
           currentTenant: unit.tenantName?.trim() || null,
-          stays: stays
-            .map((stay) => {
-              const months = monthsOfStay(stay, currentMonth).map((month) => {
-                const p = unitPayments.find((item) => item.month === month);
-                // No record: show what was owed (prorated in the move-in month) so empty months aren't blank.
-                const expected = expectedForMonth({ ...unit, moveInDate: stay.moveInDate }, month);
-                const owed = expected.rent + expected.maintenance;
-                return {
-                  month,
-                  recorded: !!p,
-                  status: p?.paymentStatus ?? null,
-                  due: p ? p.rentAmount + p.maintenanceAmount : owed,
-                  amountPaid: p?.amountPaid ?? 0,
-                  balanceDue: p ? p.balanceDue : owed,
-                  paidDate: p?.paidDate?.toISOString() ?? null,
-                  proratedDays: expected.proration.prorated ? expected.proration.days : null,
-                };
-              });
-              return {
-                tenantName: stay.tenantName,
-                moveInDate: stay.moveInDate,
-                movedOutDate: stay.movedOutDate,
-                startMonth: stay.startMonth,
-                endMonth: stay.endMonth,
-                monthsPaid: months.filter((m) => m.status === "PAID").length,
-                totalPaid: months.reduce((sum, m) => sum + m.amountPaid, 0),
-                months,
-              };
-            })
-            .reverse(), // latest tenant first
+          moveInDate: unit.moveInDate?.toISOString() ?? null,
+          monthlyRent: unit.monthlyRent,
+          maintenanceAmount: unit.maintenanceAmount ?? 0,
+          stays: builtStays,
+          // Anything not inside a stay (a payment filed under the wrong month) stays visible and fixable.
+          otherRecords: unitPayments
+            .filter((p) => !shown.has(p.month))
+            .sort((x, y) => x.month.localeCompare(y.month))
+            .map((p) => toMonth(p.month, p, unit.moveInDate?.toISOString() ?? null)),
         };
       })
   );

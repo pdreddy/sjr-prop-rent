@@ -24,13 +24,14 @@ export interface BackfillResult {
 // record that was saved at the full rent, and - with removeEmpty - deletes completely empty records
 // from before the first rent month. Nothing that has a payment or a meter reading is ever changed or
 // deleted. dryRun only counts.
-export async function backfillMonths(opts: { dryRun: boolean; removeEmpty?: boolean; moveEarly?: boolean; updatedBy: string }): Promise<BackfillResult> {
+export async function backfillMonths(opts: { dryRun: boolean; removeEmpty?: boolean; moveEarly?: boolean; updatedBy: string; unitId?: string }): Promise<BackfillResult> {
   const [units, payments, rate] = await Promise.all([allUnits(), allPayments(), getElectricityRate()]);
   const currentMonth = getCurrentMonth();
   const result: BackfillResult = { created: 0, adjusted: 0, needsReview: 0, removed: 0, moved: 0, notes: [] };
 
   for (const unit of units) {
     if (!unit.active || !unit.tenantName?.trim() || !unit.moveInDate) continue;
+    if (opts.unitId && unit.id !== opts.unitId) continue;
     const first = firstRentMonth(unit.moveInDate)!;
     const label = `Plot ${unit.plotNumber} (${unit.tenantName.trim()})`;
     if (isBeforeBuildingOpened(unit.moveInDate)) {

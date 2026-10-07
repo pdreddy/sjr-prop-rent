@@ -4,7 +4,9 @@ import { useEffect, useMemo, useState } from "react";
 import StatusBadge from "@/components/StatusBadge";
 import { formatDate, formatMonthLabel, isRentOverdue } from "@/lib/month";
 import type { RentalHistoryMonth, RentalHistoryResponse, RentalHistoryPlot, RentalStay } from "@/lib/types";
-import { IconSearch } from "@/components/icons";
+import HistoryMonthEditModal from "./HistoryMonthEditModal";
+import HistoryTenantEditModal from "./HistoryTenantEditModal";
+import { IconEdit, IconSearch } from "@/components/icons";
 
 const rupees = (n: number) => `₹${n.toFixed(0)}`;
 
@@ -21,7 +23,9 @@ const ROW_STYLE: Record<RowTone, string> = {
   due: "bg-partial-bg/60 border-l-4 border-l-partial",
 };
 
-export default function RentalHistoryView({ onUnauthorized }: { onUnauthorized: () => void }) {
+interface MonthEdit { plot: RentalHistoryPlot; month: RentalHistoryMonth; moveInDate: string | null; tenantName: string }
+
+export default function RentalHistoryView({ onUnauthorized, onChanged }: { onUnauthorized: () => void; onChanged?: () => void }) {
   const [data, setData] = useState<RentalHistoryResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -31,6 +35,18 @@ export default function RentalHistoryView({ onUnauthorized }: { onUnauthorized: 
   const [fixing, setFixing] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const [editMonth, setEditMonth] = useState<MonthEdit | null>(null);
+  const [editTenant, setEditTenant] = useState<RentalHistoryPlot | null>(null);
+
+  // After any edit: close the dialog, reload this tab and tell the dashboard to refresh its own data,
+  // so the change shows up on every tab straight away.
+  function handleSaved(message: string) {
+    setEditMonth(null);
+    setEditTenant(null);
+    setNotice(message);
+    setReloadKey((k) => k + 1);
+    onChanged?.();
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -137,7 +153,9 @@ export default function RentalHistoryView({ onUnauthorized }: { onUnauthorized: 
         </div>
         <p className="mt-2.5 text-xs text-foreground/55">
           Past tenants are rebuilt from recorded plot edits, so a tenant who was set up before edits were logged may show
-          only as the current tenant. Move-out is the date the next tenant moved in (or the plot was marked vacant).
+          only as the current tenant. Move-out is the date the next tenant moved in (or the plot was marked vacant). Open a plot and click any
+          month to edit its rent, payment, paid date, meter readings or notes, move it to the right month, or delete it; use &ldquo;Edit
+          move-in &amp; rent&rdquo; on the current tenant to fix the move-in date. Changes show on every tab straight away.
         </p>
       </div>
 
@@ -146,8 +164,28 @@ export default function RentalHistoryView({ onUnauthorized }: { onUnauthorized: 
       )}
 
       {plots.map((plot) => (
-        <PlotHistory key={plot.unitId} plot={plot} expanded={open === plot.unitId} onToggle={() => setOpen(open === plot.unitId ? null : plot.unitId)} />
+        <PlotHistory
+          key={plot.unitId}
+          plot={plot}
+          expanded={open === plot.unitId}
+          onToggle={() => setOpen(open === plot.unitId ? null : plot.unitId)}
+          onEditMonth={(month, moveInDate, tenantName) => setEditMonth({ plot, month, moveInDate, tenantName })}
+          onEditTenant={() => setEditTenant(plot)}
+        />
       ))}
+
+      {editMonth && (
+        <HistoryMonthEditModal
+          key={`${editMonth.plot.unitId}-${editMonth.month.month}`}
+          plot={editMonth.plot}
+          moveInDate={editMonth.moveInDate}
+          tenantName={editMonth.tenantName}
+          month={editMonth.month}
+          onClose={() => setEditMonth(null)}
+          onSaved={handleSaved}
+        />
+      )}
+      {editTenant && <HistoryTenantEditModal plot={editTenant} onClose={() => setEditTenant(null)} onSaved={handleSaved} />}
     </div>
   );
 }
@@ -159,7 +197,9 @@ const CARD_STYLE: Record<RowTone, string> = {
   due: "border-l-partial bg-partial-bg/40",
 };
 
-function PlotHistory({ plot, expanded, onToggle }: { plot: RentalHistoryPlot; expanded: boolean; onToggle: () => void }) {
+type EditMonthFn = (month: RentalHistoryMonth, moveInDate: string | null, tenantName: string) => void;
+
+function PlotHistory({ plot, expanded, onToggle, onEditMonth, onEditTenant }: { plot: RentalHistoryPlot; expanded: boolean; onToggle: () => void; onEditMonth: EditMonthFn; onEditTenant: () => void }) {
   // Summary visible without expanding: every month of every stay, coloured by payment state.
   const months = plot.stays.flatMap((stay) => stay.months).sort((a, b) => a.month.localeCompare(b.month));
   const tones = months.map((m) => ({ m, tone: rowTone(m) }));
@@ -215,15 +255,21 @@ function PlotHistory({ plot, expanded, onToggle }: { plot: RentalHistoryPlot; ex
         <div className="flex flex-col gap-4 border-t border-primary/10 p-3.5 sm:p-4">
           {plot.stays.length === 0 && <p className="text-sm text-foreground/60">No tenant history recorded for this plot.</p>}
           {plot.stays.map((stay, i) => (
-            <Stay key={`${stay.tenantName}-${stay.startMonth}-${i}`} stay={stay} />
+            <Stay
+              key={`${stay.tenantName}-${stay.startMonth}-${i}`}
+              stay={stay}
+              onEditMonth={(m) => onEditMonth(m, stay.moveInDate, stay.tenantName)}
+              onEditTenant={stay.endMonth === null ? onEditTenant : undefined}
+            />
           ))}
+          {plot.otherRecords.length > 0 && <OtherRecords plot={plot} onEditMonth={(m) => onEditMonth(m, plot.moveInDate, plot.currentTenant ?? "Vacant")} />}
         </div>
       )}
     </section>
   );
 }
 
-function Stay({ stay }: { stay: RentalStay }) {
+function Stay({ stay, onEditMonth, onEditTenant }: { stay: RentalStay; onEditMonth: (m: RentalHistoryMonth) => void; onEditTenant?: () => void }) {
   const current = stay.endMonth === null;
   return (
     <div className="rounded-xl border border-primary/10">
@@ -235,9 +281,17 @@ function Stay({ stay }: { stay: RentalStay }) {
             {current ? "Current tenant" : `Moved out ${formatDate(stay.movedOutDate)}`}
           </p>
         </div>
-        <p className="text-xs font-medium text-primary-dark">
-          {stay.monthsPaid} of {stay.months.length} months paid · {rupees(stay.totalPaid)} received
-        </p>
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="text-xs font-medium text-primary-dark">
+            {stay.monthsPaid} of {stay.months.length} months paid · {rupees(stay.totalPaid)} received
+          </p>
+          {onEditTenant && (
+            <button type="button" onClick={onEditTenant} className="inline-flex min-h-8 items-center gap-1 rounded-full border border-primary/30 bg-white px-3 text-xs font-semibold text-primary-dark hover:bg-primary-light">
+              <IconEdit className="h-3.5 w-3.5" />
+              Edit move-in &amp; rent
+            </button>
+          )}
+        </div>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full min-w-[560px] text-left text-sm">
@@ -255,7 +309,12 @@ function Stay({ stay }: { stay: RentalStay }) {
             {stay.months.map((m) => {
               const tone = rowTone(m);
               return (
-              <tr key={m.month} className={ROW_STYLE[tone]}>
+              <tr
+                key={m.month}
+                onClick={() => onEditMonth(m)}
+                title="Click to edit this month"
+                className={`cursor-pointer hover:brightness-95 ${ROW_STYLE[tone]}`}
+              >
                 <td className="px-3 py-2 font-medium">{formatMonthLabel(m.month)}</td>
                 <td className="px-3 py-2">
                   {m.recorded && m.status && !(m.status === "UNPAID" && tone === "due") ? (
@@ -280,6 +339,33 @@ function Stay({ stay }: { stay: RentalStay }) {
               </tr>
               );
             })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// Records that fall outside every tenant stay - typically a payment entered under the wrong month.
+function OtherRecords({ plot, onEditMonth }: { plot: RentalHistoryPlot; onEditMonth: (m: RentalHistoryMonth) => void }) {
+  return (
+    <div className="rounded-xl border border-partial/40 bg-partial-bg/40">
+      <div className="px-3 py-2.5">
+        <p className="font-bold text-partial">Other records for plot {plot.plotNumber}</p>
+        <p className="text-xs text-foreground/60">These months fall outside any tenant&apos;s stay, so they are not counted. Click one to move it to the right month, correct it, or delete it.</p>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[480px] text-left text-sm">
+          <tbody className="divide-y divide-primary/10">
+            {plot.otherRecords.map((m) => (
+              <tr key={m.month} onClick={() => onEditMonth(m)} title="Click to edit this month" className="cursor-pointer hover:bg-white/60">
+                <td className="px-3 py-2 font-medium">{formatMonthLabel(m.month)}</td>
+                <td className="px-3 py-2 text-right">Due {rupees(m.due)}</td>
+                <td className="px-3 py-2 text-right">Paid {rupees(m.amountPaid)}</td>
+                <td className="px-3 py-2">{m.paidDate ? formatDate(m.paidDate) : "—"}</td>
+                <td className="px-3 py-2 text-right text-xs font-semibold text-primary-dark">Edit</td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>

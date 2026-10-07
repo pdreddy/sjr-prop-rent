@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getElectricityRate, paymentDTO, paymentFor, savePayment, unitById } from "@/lib/store";
+import { deletePayment, getElectricityRate, paymentDTO, paymentFor, savePayment, unitById } from "@/lib/store";
+import { isValidMonth } from "@/lib/month";
 import { getAuthedAdmin } from "@/lib/auth";
 import { upsertPaymentSchema } from "@/lib/validation";
 import { recordAuditLog } from "@/lib/audit";
@@ -36,6 +37,15 @@ export async function PUT(request: NextRequest) {
 
   const existing = await paymentFor(parsed.data.unitId, parsed.data.month);
 
+  // Moving a record to another month (it was filed under the wrong one): the target month must be free,
+  // so nothing is silently overwritten; the old record is removed once the new one is saved.
+  const originalMonth = parsed.data.originalMonth && parsed.data.originalMonth !== parsed.data.month ? parsed.data.originalMonth : null;
+  const original = originalMonth ? await paymentFor(parsed.data.unitId, originalMonth) : null;
+  if (originalMonth) {
+    if (!original) return NextResponse.json({ error: `There is no record for ${originalMonth} to move.` }, { status: 404 });
+    if (existing) return NextResponse.json({ error: `A record for ${parsed.data.month} already exists. Edit or delete that one first.` }, { status: 409 });
+  }
+
   const data = {
     paymentStatus: parsed.data.paymentStatus,
     rentAmount: parsed.data.rentAmount,
@@ -52,16 +62,46 @@ export async function PUT(request: NextRequest) {
   };
 
   const payment = await savePayment(parsed.data.unitId, parsed.data.month, data);
+  if (originalMonth) await deletePayment(parsed.data.unitId, originalMonth);
 
   await recordAuditLog({
     adminId: admin.id,
     adminUsername: admin.username,
-    action: existing ? "UPDATE" : "CREATE",
+    action: originalMonth ? "MOVE" : existing ? "UPDATE" : "CREATE",
     recordType: "Payment",
     recordId: payment.id,
-    previousValue: existing ? paymentDTO(existing, rate, unit.plotNumber) : null,
+    previousValue: original ? paymentDTO(original, rate, unit.plotNumber) : existing ? paymentDTO(existing, rate, unit.plotNumber) : null,
     newValue: paymentDTO(payment, rate, unit.plotNumber),
   });
 
   return NextResponse.json({ payment: paymentDTO(payment, rate, unit.plotNumber) });
+}
+
+// Deletes one month's record (e.g. entered by mistake): /api/admin/payments?unitId=...&month=YYYY-MM
+export async function DELETE(request: NextRequest) {
+  const admin = await getAuthedAdmin();
+  if (!admin) return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
+  if (admin.role !== "ADMIN") return NextResponse.json({ error: "Not authorized." }, { status: 403 });
+
+  const unitId = request.nextUrl.searchParams.get("unitId");
+  const month = request.nextUrl.searchParams.get("month");
+  if (!unitId || !month || !isValidMonth(month)) return NextResponse.json({ error: "unitId and a valid month are required." }, { status: 400 });
+
+  const unit = await unitById(unitId);
+  if (!unit) return NextResponse.json({ error: "Plot not found." }, { status: 404 });
+  const existing = await paymentFor(unitId, month);
+  if (!existing) return NextResponse.json({ error: "No record for that month." }, { status: 404 });
+
+  const rate = await getElectricityRate();
+  await deletePayment(unitId, month);
+  await recordAuditLog({
+    adminId: admin.id,
+    adminUsername: admin.username,
+    action: "DELETE",
+    recordType: "Payment",
+    recordId: existing.id,
+    previousValue: paymentDTO(existing, rate, unit.plotNumber),
+    newValue: null,
+  });
+  return NextResponse.json({ deleted: true });
 }

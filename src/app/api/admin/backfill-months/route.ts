@@ -14,7 +14,8 @@ export async function POST(request: NextRequest) {
 
   const body = await request.json().catch(() => null);
   const dryRun = body?.dryRun === true;
-  const { created, adjusted, needsReview } = await backfillMonths({ dryRun, updatedBy: admin.username });
+  const unitId = typeof body?.unitId === "string" ? body.unitId : undefined; // limit to one plot
+  const { created, adjusted, needsReview } = await backfillMonths({ dryRun, updatedBy: admin.username, unitId });
 
   if (!dryRun && (created > 0 || adjusted > 0)) {
     await recordAuditLog({

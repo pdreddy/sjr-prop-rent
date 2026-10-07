@@ -207,7 +207,7 @@ export default function AdminDashboard({ username }: { username: string }) {
         {tab === "overview" && totals && <StatsPanel totals={totals} month={month} />}
 
         {tab === "electricity" && <ElectricityStatementView onUnauthorized={handleUnauthorized} />}
-        {tab === "history" && <RentalHistoryView onUnauthorized={handleUnauthorized} />}
+        {tab === "history" && <RentalHistoryView onUnauthorized={handleUnauthorized} onChanged={load} />}
         {tab === "proration" && <MoveInProrationView onUnauthorized={handleUnauthorized} />}
         {tab === "rent-paid" && <RentPaidView onUnauthorized={handleUnauthorized} />}
         {tab === "payment-history" && <PaymentHistoryView onUnauthorized={handleUnauthorized} />}

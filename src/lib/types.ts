@@ -160,6 +160,13 @@ export interface RentalHistoryMonth {
   paidDate: string | null;
   /** Days charged when this is the move-in month (rent × days / 30), otherwise null. */
   proratedDays: number | null;
+  // The month's record, so it can be edited from the history tab (expected values when nothing is recorded).
+  rentAmount: number;
+  maintenanceAmount: number;
+  notes: string | null;
+  prevReading: number;
+  currReading: number;
+  electricityPaid: boolean;
 }
 
 export interface RentalStay {
@@ -177,7 +184,13 @@ export interface RentalHistoryPlot {
   unitId: string;
   plotNumber: string;
   currentTenant: string | null;
+  /** The current tenant's move-in date and the plot's agreed rent, for editing. */
+  moveInDate: string | null;
+  monthlyRent: number;
+  maintenanceAmount: number;
   stays: RentalStay[];
+  /** Records filed under months outside every stay (e.g. a payment entered under the wrong month). */
+  otherRecords: RentalHistoryMonth[];
 }
 
 export interface RentalHistoryResponse {
