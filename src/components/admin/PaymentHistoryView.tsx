@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { formatDate, formatMonthLabel } from "@/lib/month";
 import type { PaymentHistoryResponse, PaymentHistoryTenant } from "@/lib/types";
+import PaymentMonthDetail from "./PaymentMonthDetail";
 import { IconSearch } from "@/components/icons";
 
 const rupees = (n: number) => `₹${n.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
@@ -12,6 +13,7 @@ export default function PaymentHistoryView({ onUnauthorized }: { onUnauthorized:
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState<Set<string>>(new Set());
+  const [openMonth, setOpenMonth] = useState<string | null>(null); // `${unitId}|${month}`
 
   useEffect(() => {
     let cancelled = false;
@@ -88,7 +90,8 @@ export default function PaymentHistoryView({ onUnauthorized }: { onUnauthorized:
         <p className="mt-2.5 text-xs text-foreground/55">
           Rent starts the month after move-in and runs to {formatMonthLabel(data.currentMonth)}. Electricity is billed from meter
           readings at ₹{data.ratePerUnit}/unit and counts as paid when rent is overpaid or the bill is marked paid. A payment shown
-          as &ldquo;before rent start&rdquo; is filed under a month earlier than the tenant&apos;s first rent month.
+          as &ldquo;before rent start&rdquo; is filed under a month earlier than the tenant&apos;s first rent month. Click any month for
+          every detail: rent, payment, electricity, credit and notes.
         </p>
       </div>
 
@@ -142,8 +145,17 @@ export default function PaymentHistoryView({ onUnauthorized }: { onUnauthorized:
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-primary/10">
-                    {t.months.map((m) => (
-                      <tr key={m.month} className={m.beforeRentStart ? "bg-partial-bg/50" : ""}>
+                    {t.months.map((m) => {
+                      const key = `${t.unitId}|${m.month}`;
+                      const monthOpen = openMonth === key;
+                      return [
+                      <tr
+                        key={m.month}
+                        onClick={() => setOpenMonth(monthOpen ? null : key)}
+                        aria-expanded={monthOpen}
+                        title="Click for full details"
+                        className={`cursor-pointer hover:bg-primary-light/40 ${monthOpen ? "bg-primary-light/60" : m.beforeRentStart ? "bg-partial-bg/50" : ""}`}
+                      >
                         <td className="px-3 py-2 font-medium">
                           {formatMonthLabel(m.month)}
                           {m.beforeRentStart && <span className="block text-[11px] text-partial">before rent start</span>}
@@ -157,8 +169,16 @@ export default function PaymentHistoryView({ onUnauthorized }: { onUnauthorized:
                         <td className="px-3 py-2 text-right">{rupees(m.electricityBill)}</td>
                         <td className="px-3 py-2 text-right text-paid">{rupees(m.electricityPaid)}</td>
                         <td className={`px-3 py-2 text-right ${m.electricityBalance > 0 ? "font-semibold text-unpaid" : "text-foreground/50"}`}>{rupees(m.electricityBalance)}</td>
-                      </tr>
-                    ))}
+                      </tr>,
+                      monthOpen && (
+                        <tr key={`${m.month}-detail`}>
+                          <td colSpan={9} className="p-0">
+                            <PaymentMonthDetail tenant={t} month={m} ratePerUnit={data.ratePerUnit} monthLabel={formatMonthLabel(m.month)} />
+                          </td>
+                        </tr>
+                      ),
+                      ];
+                    })}
                   </tbody>
                   <tfoot className="border-t-2 border-primary/20 bg-primary-light font-bold text-primary-dark">
                     <tr>

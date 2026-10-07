@@ -236,6 +236,21 @@ export interface PaymentHistoryMonth {
   electricityPaid: number;
   electricityBalance: number;
   electricityStatus: ElectricityMonthStatus;
+  // Full detail shown when a month is opened.
+  rentAmount: number;
+  maintenanceAmount: number;
+  /** Days charged when this is the first (prorated) rent record, otherwise null. */
+  proratedDays: number | null;
+  paymentStatus: PaymentStatus | null;
+  notes: string | null;
+  updatedBy: string | null;
+  updatedAt: string | null;
+  electricityUnits: number;
+  electricityMarkedPaid: boolean;
+  /** Paid above rent + maintenance this month (goes to electricity). */
+  overpayment: number;
+  /** Unused overpayment credit carried into the next month. */
+  creditCarriedForward: number;
 }
 
 export interface PaymentHistoryTenant {

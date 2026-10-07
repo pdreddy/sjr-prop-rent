@@ -7,6 +7,8 @@ import type {
   ElectricityStatementResponse,
   ElectricityStatementTenant,
 } from "@/lib/types";
+import PaymentMonthDetail from "./PaymentMonthDetail";
+import type { PaymentHistoryResponse } from "@/lib/types";
 import { IconSearch } from "@/components/icons";
 
 const STATUS_STYLE: Record<ElectricityMonthStatus, { label: string; cls: string }> = {
@@ -29,6 +31,28 @@ export default function ElectricityStatementView({ onUnauthorized }: { onUnautho
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState<string | null>(null);
+  // Full rent + electricity detail for a clicked month, fetched once on the first click.
+  const [history, setHistory] = useState<PaymentHistoryResponse | null>(null);
+  const [historyError, setHistoryError] = useState(false);
+  const [historyRequested, setHistoryRequested] = useState(false);
+
+  useEffect(() => {
+    if (!historyRequested) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/admin/payment-history", { cache: "no-store" });
+        if (!res.ok) throw new Error("Failed to load");
+        const json: PaymentHistoryResponse = await res.json();
+        if (!cancelled) setHistory(json);
+      } catch {
+        if (!cancelled) setHistoryError(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [historyRequested]);
 
   useEffect(() => {
     let cancelled = false;
@@ -104,6 +128,9 @@ export default function ElectricityStatementView({ onUnauthorized }: { onUnautho
           tenant={tenant}
           expanded={open === tenant.unitId}
           onToggle={() => setOpen(open === tenant.unitId ? null : tenant.unitId)}
+          history={history}
+          historyError={historyError}
+          onMonthClick={() => setHistoryRequested(true)}
         />
       ))}
     </div>
@@ -114,12 +141,20 @@ function TenantStatement({
   tenant,
   expanded,
   onToggle,
+  history,
+  historyError,
+  onMonthClick,
 }: {
   tenant: ElectricityStatementTenant;
   expanded: boolean;
   onToggle: () => void;
+  history: PaymentHistoryResponse | null;
+  historyError: boolean;
+  onMonthClick: () => void;
 }) {
   const { totals } = tenant;
+  const [openMonth, setOpenMonth] = useState<string | null>(null);
+  const historyTenant = history?.tenants.find((t) => t.unitId === tenant.unitId) ?? null;
   return (
     <section className="rounded-2xl border border-primary/10 bg-white shadow-sm">
       <button type="button" onClick={onToggle} aria-expanded={expanded} className="flex w-full flex-wrap items-center justify-between gap-3 p-3.5 text-left sm:p-4">
@@ -156,8 +191,17 @@ function TenantStatement({
                 </tr>
               </thead>
               <tbody className="divide-y divide-primary/10">
-                {tenant.months.map((m) => (
-                  <tr key={m.month}>
+                {tenant.months.map((m) => [
+                  <tr
+                    key={m.month}
+                    onClick={() => {
+                      onMonthClick();
+                      setOpenMonth(openMonth === m.month ? null : m.month);
+                    }}
+                    aria-expanded={openMonth === m.month}
+                    title="Click for full details"
+                    className={`cursor-pointer hover:bg-primary-light/40 ${openMonth === m.month ? "bg-primary-light/60" : ""}`}
+                  >
                     <td className="px-3 py-2 font-medium">{formatMonthLabel(m.month)}</td>
                     {m.recorded ? (
                       <>
@@ -190,8 +234,26 @@ function TenantStatement({
                     <td className="px-3 py-2">
                       <MonthStatusBadge status={m.status} />
                     </td>
-                  </tr>
-                ))}
+                  </tr>,
+                  openMonth === m.month && (
+                    <tr key={`${m.month}-detail`}>
+                      <td colSpan={8} className="p-0">
+                        {historyError ? (
+                          <p className="px-4 py-3 text-sm text-unpaid">Could not load the full details. Please try again.</p>
+                        ) : !history || !historyTenant ? (
+                          <p className="px-4 py-3 text-sm text-foreground/60">Loading details…</p>
+                        ) : (
+                          <PaymentMonthDetail
+                            tenant={historyTenant}
+                            month={historyTenant.months.find((x) => x.month === m.month) ?? null}
+                            ratePerUnit={history.ratePerUnit}
+                            monthLabel={formatMonthLabel(m.month)}
+                          />
+                        )}
+                      </td>
+                    </tr>
+                  ),
+                ])}
               </tbody>
             </table>
           )}
