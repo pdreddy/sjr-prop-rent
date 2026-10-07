@@ -5,7 +5,7 @@ import { firstRentMonth, getCurrentMonth, isBeforeBuildingOpened } from "@/lib/m
 import { BUILDING_READY_MONTH } from "@/lib/constants";
 import { buildElectricityStatement } from "@/lib/electricityLedger";
 import { expectedForMonth } from "@/lib/proration";
-import { hasMeterReading } from "@/lib/electricity";
+import { computeElectricityUnits, hasMeterReading } from "@/lib/electricity";
 import type { PaymentHistoryMonth, PaymentHistoryResponse } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -69,7 +69,7 @@ export async function GET() {
             rentAmount: record?.rentAmount ?? expected.rent, maintenanceAmount: record?.maintenanceAmount ?? expected.maintenance,
             proratedDays: !noRent && expected.proration.prorated ? expected.proration.days : null, paymentStatus: record?.paymentStatus ?? null,
             notes: record?.notes ?? null, updatedBy: record?.updatedBy ?? null, updatedAt: record?.updatedAt?.toISOString() ?? null,
-            electricityUnits: Math.max(0, (record?.currReading ?? 0) - (record?.prevReading ?? 0)), electricityDefault: !!record && !hasMeterReading(record.currReading), electricityMarkedPaid: m.markedPaid,
+            electricityUnits: computeElectricityUnits(record?.prevReading ?? 0, record?.currReading ?? 0), electricityDefault: !!record && !hasMeterReading(record.currReading), electricityMarkedPaid: m.markedPaid,
             overpayment: overRent, creditCarriedForward: cents(m.carriedForward),
           };
         })

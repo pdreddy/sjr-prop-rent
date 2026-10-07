@@ -32,5 +32,6 @@ export function computeElectricityAmount(
 }
 
 export function computeElectricityUnits(prevReading: number, currReading: number): number {
-  return Math.max(0, currReading - prevReading);
+  // Readings can be decimals (148.8 - 53), so round away floating-point noise like 95.80000000000001.
+  return Math.round(Math.max(0, currReading - prevReading) * 100) / 100;
 }

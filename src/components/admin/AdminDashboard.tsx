@@ -24,6 +24,7 @@ import {
 } from "@/lib/month";
 import type { DashboardResponse, DashboardRow, DashboardTotals } from "@/lib/types";
 import { BUILDING_READY_MONTH, ELECTRICITY_RATE_PER_UNIT } from "@/lib/constants";
+import { computeElectricityUnits } from "@/lib/electricity";
 import {
   IconBuilding,
   IconCopy,
@@ -465,7 +466,7 @@ function ReadRow({
               <StatusBadge status={electricityStatus} />
             </div>
             <p className="text-foreground/60">
-              {prevReading} → {currReading} ({currReading - prevReading} units)
+              {prevReading} → {currReading} ({computeElectricityUnits(prevReading, currReading)} units)
             </p>
           </>
         )}

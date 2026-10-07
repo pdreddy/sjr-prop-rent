@@ -569,7 +569,7 @@ function BulkEntry({
                 <li key={row.unitId} className="flex items-center justify-between gap-2 px-3 py-1.5">
                   <span className="font-medium">Plot {row.plotNumber}</span>
                   <span className="text-foreground/60">
-                    {prev} → {curr} · {Math.max(0, curr - prev)} units · ₹
+                    {prev} → {curr} · {computeElectricityUnits(prev, curr)} units · ₹
                     {computeElectricityAmount(prev, curr, ratePerUnit, row.plotNumber).toFixed(0)}
                   </span>
                 </li>

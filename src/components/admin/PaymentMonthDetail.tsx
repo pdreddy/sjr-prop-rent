@@ -15,7 +15,7 @@ export interface TenantContext {
 // Everything recorded for one tenant-month: rent, payment, electricity, credit and notes.
 export default function PaymentMonthDetail({ tenant, month, ratePerUnit, monthLabel }: { tenant: TenantContext; month: PaymentHistoryMonth | null; ratePerUnit: number; monthLabel: string }) {
   return (
-    <div className="bg-background px-3 py-3.5 sm:px-4">
+    <div className="sticky left-0 w-[min(calc(100vw-3rem),64rem)] max-w-full bg-background px-3 py-3.5 sm:px-4">
       <p className="mb-2.5 text-sm font-bold text-primary-dark">
         Plot {tenant.plotNumber} · {tenant.tenantName} · {monthLabel}
         <span className="ml-2 font-normal text-foreground/55">

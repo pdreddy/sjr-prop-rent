@@ -5,6 +5,7 @@ import Link from "next/link";
 import MonthYearSelector from "@/components/MonthYearSelector";
 import StatusBadge from "@/components/StatusBadge";
 import { getCurrentMonth, getMonthOptions, formatDate, formatMonthLabel } from "@/lib/month";
+import { computeElectricityUnits } from "@/lib/electricity";
 import type { PublicStatusResponse } from "@/lib/types";
 import { IconBuilding, IconCalendar, IconSearch } from "@/components/icons";
 
@@ -264,7 +265,7 @@ export default function Home() {
                         {plot.electricityStatus !== "NA" && (
                           <p className="text-xs text-foreground/50">
                             {plot.currReading > 0
-                              ? `${plot.prevReading} → ${plot.currReading} (${plot.currReading - plot.prevReading} units)`
+                              ? `${plot.prevReading} → ${plot.currReading} (${computeElectricityUnits(plot.prevReading, plot.currReading)} units)`
                               : "No reading yet · default bill"}
                           </p>
                         )}

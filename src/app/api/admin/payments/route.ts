@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { deletePayment, getElectricityRate, paymentDTO, paymentFor, savePayment, unitById } from "@/lib/store";
-import { isValidMonth } from "@/lib/month";
+import { formatMonthLabel, isValidMonth } from "@/lib/month";
 import { getAuthedAdmin } from "@/lib/auth";
 import { upsertPaymentSchema } from "@/lib/validation";
 import { recordAuditLog } from "@/lib/audit";
@@ -42,8 +42,8 @@ export async function PUT(request: NextRequest) {
   const originalMonth = parsed.data.originalMonth && parsed.data.originalMonth !== parsed.data.month ? parsed.data.originalMonth : null;
   const original = originalMonth ? await paymentFor(parsed.data.unitId, originalMonth) : null;
   if (originalMonth) {
-    if (!original) return NextResponse.json({ error: `There is no record for ${originalMonth} to move.` }, { status: 404 });
-    if (existing) return NextResponse.json({ error: `A record for ${parsed.data.month} already exists. Edit or delete that one first.` }, { status: 409 });
+    if (!original) return NextResponse.json({ error: `There is no record for ${formatMonthLabel(originalMonth)} to move.` }, { status: 404 });
+    if (existing) return NextResponse.json({ error: `A record for ${formatMonthLabel(parsed.data.month)} already exists. Edit or delete that one first.` }, { status: 409 });
   }
 
   const data = {
