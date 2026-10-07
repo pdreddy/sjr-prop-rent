@@ -24,6 +24,20 @@ export interface ElectricityListResponse {
   rows: ElectricityRow[];
 }
 
+export interface PublicElectricityMonth {
+  month: string;
+  prevReading: number;
+  currReading: number;
+  /** Units used; 0 when the meter was not read and the flat default is billed. */
+  units: number;
+  /** True when there was no meter reading, so the flat default bill applies. */
+  isDefault: boolean;
+  bill: number;
+  paid: number;
+  balance: number;
+  status: "PAID" | "PARTIAL" | "UNPAID";
+}
+
 export interface PublicPlot {
   plotNumber: string;
   tenantName: string | null;
@@ -40,6 +54,9 @@ export interface PublicPlot {
   /** Sum of electricity bills across all months that are still unpaid. */
   unpaidElectricityTotal: number;
   unpaidElectricityMonths: { month: string; bill: number; paid: number; amount: number }[];
+  /** Every month's electricity for the plot: units, bill, paid and what is still due. */
+  electricityMonths: PublicElectricityMonth[];
+  electricityTotals: { billed: number; paid: number; due: number };
 }
 
 export interface PublicStatusResponse {

@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { allPayments, allUnits, getElectricityRate } from "@/lib/store";
 import { BUILDING_NAME, PUBLIC_SHOW_TENANT_NAME } from "@/lib/constants";
 import { isValidMonth, getCurrentMonth, isBeforeMoveInMonth, isBeforeFirstRentMonth, isRentOverdue } from "@/lib/month";
-import { computeElectricityAmount } from "@/lib/electricity";
-import { buildElectricityLedger } from "@/lib/electricityLedger";
+import { computeElectricityAmount, computeElectricityUnits, hasMeterReading } from "@/lib/electricity";
+import { BUILDING_READY_MONTH } from "@/lib/constants";
+import { buildElectricityLedger, buildElectricityStatement } from "@/lib/electricityLedger";
 
 export const dynamic = "force-dynamic";
 
@@ -33,7 +34,39 @@ export async function GET(request: NextRequest) {
       .filter((entry) => entry.balance > 0)
       .map((entry) => ({ month: entry.month, bill: entry.bill, paid: entry.paid, amount: entry.balance }));
     const unpaidElectricityTotal = unpaidElectricityMonths.reduce((sum, item) => sum + item.amount, 0);
+
+    // Every month with a record, oldest first: what was read, billed, paid and is still due.
+    const unitPayments = payments.filter((item) => item.unitId === unit.id);
+    let electricityStart = moveInDate?.slice(0, 7) ?? unitPayments.map((p) => p.month).sort()[0] ?? BUILDING_READY_MONTH;
+    if (electricityStart < BUILDING_READY_MONTH) electricityStart = BUILDING_READY_MONTH;
+    const cents = (n: number) => Math.round(n * 100) / 100;
+    const electricityMonths =
+      unit.tenantName?.trim() && electricityStart <= getCurrentMonth()
+        ? buildElectricityStatement(unitPayments, rate, electricityStart, getCurrentMonth(), unit.plotNumber)
+            .filter((m) => m.recorded)
+            .map((m) => {
+              const record = unitPayments.find((p) => p.month === m.month);
+              return {
+                month: m.month,
+                prevReading: record?.prevReading ?? 0,
+                currReading: record?.currReading ?? 0,
+                units: computeElectricityUnits(record?.prevReading ?? 0, record?.currReading ?? 0),
+                isDefault: !hasMeterReading(record?.currReading),
+                bill: cents(m.electricityBill),
+                paid: cents(m.credited),
+                balance: cents(m.balance),
+                status: (m.balance <= 0 ? "PAID" : m.credited > 0 ? "PARTIAL" : "UNPAID") as "PAID" | "PARTIAL" | "UNPAID",
+              };
+            })
+        : [];
+    const electricityTotals = {
+      billed: cents(electricityMonths.reduce((s, m) => s + m.bill, 0)),
+      paid: cents(electricityMonths.reduce((s, m) => s + m.paid, 0)),
+      due: cents(electricityMonths.reduce((s, m) => s + m.balance, 0)),
+    };
     return {
+      electricityMonths,
+      electricityTotals,
       unpaidElectricityTotal,
       unpaidElectricityMonths,
       plotNumber: unit.plotNumber,

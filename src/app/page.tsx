@@ -4,9 +4,8 @@ import { useEffect, useState, useCallback, useMemo, type ReactNode } from "react
 import Link from "next/link";
 import MonthYearSelector from "@/components/MonthYearSelector";
 import StatusBadge from "@/components/StatusBadge";
-import { getCurrentMonth, getMonthOptions, formatDate, formatMonthLabel } from "@/lib/month";
-import { computeElectricityUnits } from "@/lib/electricity";
-import type { PublicStatusResponse } from "@/lib/types";
+import { getCurrentMonth, getMonthOptions, formatDate } from "@/lib/month";
+import type { PublicPlot, PublicStatusResponse } from "@/lib/types";
 import { IconBuilding, IconCalendar, IconSearch } from "@/components/icons";
 
 const monthOptions = getMonthOptions();
@@ -219,7 +218,7 @@ export default function Home() {
                 {data.plots.length === 0 ? "No plots have been added yet." : "No plots match your search or filters."}
               </div>
             ) : (
-              <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <ul className="grid grid-cols-1 gap-3">
                 {plots.map((plot) => (
                   <li
                     key={plot.plotNumber}
@@ -250,44 +249,7 @@ export default function Home() {
                       )}
                     </div>
 
-                    <div className="mt-3 flex items-center justify-between gap-2 rounded-xl bg-background px-3 py-2">
-                      <div className="min-w-0">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-foreground/40">Electricity</p>
-                        <p className="text-sm font-bold text-foreground">
-                          {plot.electricityStatus === "NA" ? "N/A" : `₹${plot.electricityAmount.toFixed(0)}`}
-                        </p>
-                        {plot.electricityStatus !== "NA" && plot.electricityCovered > 0 && (
-                          <p className="text-xs text-paid">
-                            ₹{plot.electricityCovered.toFixed(0)} paid from rent overpayment
-                            {plot.electricityBalance > 0 ? ` · ₹${plot.electricityBalance.toFixed(0)} balance` : ""}
-                          </p>
-                        )}
-                        {plot.electricityStatus !== "NA" && (
-                          <p className="text-xs text-foreground/50">
-                            {plot.currReading > 0
-                              ? `${plot.prevReading} → ${plot.currReading} (${computeElectricityUnits(plot.prevReading, plot.currReading)} units)`
-                              : "No reading yet · default bill"}
-                          </p>
-                        )}
-                      </div>
-                      <StatusBadge status={plot.electricityStatus} />
-                    </div>
-                    {plot.unpaidElectricityTotal > 0 && (
-                      <div className="mt-2 rounded-xl bg-unpaid-bg px-3 py-2 text-xs text-unpaid">
-                        <p className="text-sm font-bold">
-                          Total unpaid electricity: ₹{plot.unpaidElectricityTotal.toFixed(0)}
-                        </p>
-                        <p className="mt-0.5 opacity-90">
-                          {plot.unpaidElectricityMonths
-                            .map((m) =>
-                              m.paid > 0
-                                ? `${formatMonthLabel(m.month)} ₹${m.amount.toFixed(0)} due (₹${m.paid.toFixed(0)} of ₹${m.bill.toFixed(0)} paid)`
-                                : `${formatMonthLabel(m.month)} ₹${m.amount.toFixed(0)}`
-                            )
-                            .join(" · ")}
-                        </p>
-                      </div>
-                    )}
+                    <ElectricityHistory plot={plot} selectedMonth={data.month} />
                   </li>
                 ))}
               </ul>
@@ -343,5 +305,68 @@ function MiniChip({ label, value, colorClass }: { label: string; value: number; 
     <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${colorClass}`}>
       {value} {label}
     </span>
+  );
+}
+
+const shortMonth = (month: string) => {
+  const [y, m] = month.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, 1)).toLocaleDateString("en-US", { month: "short", year: "numeric", timeZone: "UTC" });
+};
+const rupee = (n: number) => `₹${n.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
+
+// Every month of electricity for one plot: meter reading, units, bill, paid, and whether it is settled.
+function ElectricityHistory({ plot, selectedMonth }: { plot: PublicPlot; selectedMonth: string }) {
+  const months = plot.electricityMonths;
+  return (
+    <div className="mt-3 overflow-hidden rounded-xl border border-primary/10">
+      <div className="flex items-center justify-between gap-2 bg-primary-light px-3 py-2">
+        <p className="text-xs font-semibold uppercase tracking-wide text-primary-dark">Electricity · all months</p>
+        {months.length > 0 && (
+          <p className={`text-xs font-bold ${plot.electricityTotals.due > 0 ? "text-unpaid" : "text-paid"}`}>
+            {plot.electricityTotals.due > 0 ? `${rupee(plot.electricityTotals.due)} due` : "All paid"}
+          </p>
+        )}
+      </div>
+
+      {months.length === 0 ? (
+        <p className="px-3 py-3 text-sm text-foreground/55">No electricity records yet.</p>
+      ) : (
+        <>
+          <div className="grid grid-cols-[minmax(0,1.5fr)_minmax(0,0.8fr)_minmax(0,0.8fr)_minmax(0,0.8fr)_minmax(0,1fr)] gap-x-2 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-foreground/45">
+            <span>Month</span>
+            <span className="text-right">Units</span>
+            <span className="text-right">Bill</span>
+            <span className="text-right">Paid</span>
+            <span className="text-right">Status</span>
+          </div>
+          <ul className="divide-y divide-primary/10">
+            {months.map((m) => (
+              <li
+                key={m.month}
+                className={`grid grid-cols-[minmax(0,1.5fr)_minmax(0,0.8fr)_minmax(0,0.8fr)_minmax(0,0.8fr)_minmax(0,1fr)] items-center gap-x-2 px-3 py-2 text-sm ${m.month === selectedMonth ? "bg-primary-light/50" : ""}`}
+              >
+                <div className="min-w-0">
+                  <p className="font-semibold text-foreground">{shortMonth(m.month)}</p>
+                  <p className="truncate text-[11px] text-foreground/50">{m.isDefault ? "default bill" : `${m.prevReading} → ${m.currReading}`}</p>
+                </div>
+                <span className="text-right text-foreground/80">{m.isDefault ? "—" : m.units}</span>
+                <span className="text-right font-semibold text-foreground">{rupee(m.bill)}</span>
+                <span className={`text-right ${m.paid > 0 ? "font-semibold text-paid" : "text-foreground/45"}`}>{rupee(m.paid)}</span>
+                <span className="flex justify-end">
+                  <StatusBadge status={m.status} />
+                </span>
+              </li>
+            ))}
+          </ul>
+          <div className="grid grid-cols-[minmax(0,1.5fr)_minmax(0,0.8fr)_minmax(0,0.8fr)_minmax(0,0.8fr)_minmax(0,1fr)] items-center gap-x-2 border-t-2 border-primary/15 bg-primary-light/60 px-3 py-2 text-sm font-bold text-primary-dark">
+            <span>Total</span>
+            <span />
+            <span className="text-right">{rupee(plot.electricityTotals.billed)}</span>
+            <span className="text-right text-paid">{rupee(plot.electricityTotals.paid)}</span>
+            <span className={`text-right ${plot.electricityTotals.due > 0 ? "text-unpaid" : "text-paid"}`}>{plot.electricityTotals.due > 0 ? rupee(plot.electricityTotals.due) : "Paid"}</span>
+          </div>
+        </>
+      )}
+    </div>
   );
 }
