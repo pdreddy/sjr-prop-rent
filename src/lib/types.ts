@@ -253,6 +253,8 @@ export interface PaymentHistoryMonth {
   updatedBy: string | null;
   updatedAt: string | null;
   electricityUnits: number;
+  /** No meter reading for the month, so the flat default (₹750 / ₹500) is billed. */
+  electricityDefault: boolean;
   electricityMarkedPaid: boolean;
   /** Paid above rent + maintenance this month (goes to electricity). */
   overpayment: number;

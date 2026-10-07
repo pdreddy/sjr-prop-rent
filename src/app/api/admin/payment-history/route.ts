@@ -5,6 +5,7 @@ import { firstRentMonth, getCurrentMonth } from "@/lib/month";
 import { BUILDING_READY_MONTH } from "@/lib/constants";
 import { buildElectricityStatement } from "@/lib/electricityLedger";
 import { expectedForMonth } from "@/lib/proration";
+import { hasMeterReading } from "@/lib/electricity";
 import type { PaymentHistoryMonth, PaymentHistoryResponse } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -31,7 +32,7 @@ export async function GET() {
       const joinMonth = unit.moveInDate?.toISOString().slice(0, 7);
       let start = joinMonth ?? unitPayments.map((p) => p.month).sort()[0] ?? BUILDING_READY_MONTH;
       if (start < BUILDING_READY_MONTH) start = BUILDING_READY_MONTH;
-      const statement = start <= currentMonth ? buildElectricityStatement(unitPayments, rate, start, currentMonth) : [];
+      const statement = start <= currentMonth ? buildElectricityStatement(unitPayments, rate, start, currentMonth, unit.plotNumber) : [];
 
       const months: PaymentHistoryMonth[] = statement
         .map((m) => {
@@ -54,7 +55,7 @@ export async function GET() {
             rentAmount: record?.rentAmount ?? expected.rent, maintenanceAmount: record?.maintenanceAmount ?? expected.maintenance,
             proratedDays: !before && expected.proration.prorated ? expected.proration.days : null, paymentStatus: record?.paymentStatus ?? null,
             notes: record?.notes ?? null, updatedBy: record?.updatedBy ?? null, updatedAt: record?.updatedAt?.toISOString() ?? null,
-            electricityUnits: Math.max(0, (record?.currReading ?? 0) - (record?.prevReading ?? 0)), electricityMarkedPaid: m.markedPaid,
+            electricityUnits: Math.max(0, (record?.currReading ?? 0) - (record?.prevReading ?? 0)), electricityDefault: !!record && !hasMeterReading(record.currReading), electricityMarkedPaid: m.markedPaid,
             overpayment: overRent, creditCarriedForward: cents(m.carriedForward),
           };
         })

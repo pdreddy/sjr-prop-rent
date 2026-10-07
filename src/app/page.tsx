@@ -263,7 +263,9 @@ export default function Home() {
                         )}
                         {plot.electricityStatus !== "NA" && (
                           <p className="text-xs text-foreground/50">
-                            {plot.prevReading} → {plot.currReading} ({plot.currReading - plot.prevReading} units)
+                            {plot.currReading > 0
+                              ? `${plot.prevReading} → ${plot.currReading} (${plot.currReading - plot.prevReading} units)`
+                              : "No reading yet · default bill"}
                           </p>
                         )}
                       </div>

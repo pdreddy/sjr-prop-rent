@@ -46,7 +46,7 @@ export async function PUT(request: NextRequest) {
     notes: parsed.data.notes || null,
     prevReading: parsed.data.prevReading,
     currReading: parsed.data.currReading,
-    electricityAmount: computeElectricityAmount(parsed.data.prevReading, parsed.data.currReading, rate),
+    electricityAmount: computeElectricityAmount(parsed.data.prevReading, parsed.data.currReading, rate, unit.plotNumber),
     electricityPaid: parsed.data.electricityPaid,
     updatedBy: admin.username,
   };
@@ -59,9 +59,9 @@ export async function PUT(request: NextRequest) {
     action: existing ? "UPDATE" : "CREATE",
     recordType: "Payment",
     recordId: payment.id,
-    previousValue: existing ? paymentDTO(existing, rate) : null,
-    newValue: paymentDTO(payment, rate),
+    previousValue: existing ? paymentDTO(existing, rate, unit.plotNumber) : null,
+    newValue: paymentDTO(payment, rate, unit.plotNumber),
   });
 
-  return NextResponse.json({ payment: paymentDTO(payment, rate) });
+  return NextResponse.json({ payment: paymentDTO(payment, rate, unit.plotNumber) });
 }

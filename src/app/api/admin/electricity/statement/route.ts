@@ -26,7 +26,7 @@ export async function GET() {
       // Start at the joining month; tenants without a joining date start at their first record.
       let start = joinMonth ?? earliestPayment ?? BUILDING_READY_MONTH;
       if (start < BUILDING_READY_MONTH) start = BUILDING_READY_MONTH;
-      const months = start <= currentMonth ? buildElectricityStatement(unitPayments, rate, start, currentMonth) : [];
+      const months = start <= currentMonth ? buildElectricityStatement(unitPayments, rate, start, currentMonth, unit.plotNumber) : [];
       return {
         unitId: unit.id,
         plotNumber: unit.plotNumber,

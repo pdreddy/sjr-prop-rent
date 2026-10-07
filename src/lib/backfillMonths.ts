@@ -60,7 +60,7 @@ export async function backfillMonths(opts: { dryRun: boolean; removeEmpty?: bool
           notes: [target?.notes, early.notes].filter(Boolean).join("\n") || null,
           prevReading: meter.prevReading ?? 0,
           currReading: meter.currReading ?? 0,
-          electricityAmount: computeElectricityAmount(meter.prevReading ?? 0, meter.currReading ?? 0, rate),
+          electricityAmount: computeElectricityAmount(meter.prevReading ?? 0, meter.currReading ?? 0, rate, unit.plotNumber),
           electricityPaid: meter.electricityPaid ?? false,
           updatedBy: opts.updatedBy,
         };
@@ -112,7 +112,7 @@ export async function backfillMonths(opts: { dryRun: boolean; removeEmpty?: bool
             notes: existing.notes,
             prevReading: existing.prevReading ?? 0,
             currReading: existing.currReading ?? 0,
-            electricityAmount: computeElectricityAmount(existing.prevReading ?? 0, existing.currReading ?? 0, rate),
+            electricityAmount: computeElectricityAmount(existing.prevReading ?? 0, existing.currReading ?? 0, rate, unit.plotNumber),
             electricityPaid: existing.electricityPaid ?? false,
             updatedBy: opts.updatedBy,
           });

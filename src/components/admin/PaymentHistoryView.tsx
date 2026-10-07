@@ -90,7 +90,7 @@ export default function PaymentHistoryView({ onUnauthorized }: { onUnauthorized:
         <p className="mt-2.5 text-xs text-foreground/55">
           Rent starts the month after move-in and runs to {formatMonthLabel(data.currentMonth)}. Each month&apos;s rent paid is capped
           at the rent due: anything paid above it (e.g. ₹20,500 on ₹20,000 rent) is moved to electricity as paid. Electricity is billed
-          from meter readings at ₹{data.ratePerUnit}/unit and any unused electricity payment carries forward to the next bill. A payment shown
+          from meter readings at ₹{data.ratePerUnit}/unit and any unused electricity payment carries forward to the next bill. With no meter reading, the bill defaults to ₹750 (plots 101, 201, 301, 401, 501) or ₹500 (all other plots). A payment shown
           as &ldquo;before rent start&rdquo; is filed under a month earlier than the tenant&apos;s first rent month. Click any month for
           every detail: rent, payment, electricity, credit and notes.
         </p>
@@ -166,7 +166,7 @@ export default function PaymentHistoryView({ onUnauthorized }: { onUnauthorized:
                         <td className="px-3 py-2 text-right font-semibold text-paid">{rupees(m.rentPaid)}</td>
                         <td className="px-3 py-2">{m.paidDate ? formatDate(m.paidDate) : "—"}</td>
                         <td className={`px-3 py-2 text-right ${m.rentBalance > 0 ? "font-semibold text-unpaid" : "text-foreground/50"}`}>{rupees(m.rentBalance)}</td>
-                        <td className="px-3 py-2 text-right text-foreground/70">{m.currReading > 0 || m.prevReading > 0 ? `${m.prevReading} → ${m.currReading}` : "—"}</td>
+                        <td className="px-3 py-2 text-right text-foreground/70">{m.electricityDefault ? "default" : m.currReading > 0 || m.prevReading > 0 ? `${m.prevReading} → ${m.currReading}` : "—"}</td>
                         <td className="px-3 py-2 text-right">{rupees(m.electricityBill)}</td>
                         <td className="px-3 py-2 text-right text-paid">{rupees(m.electricityPaid)}</td>
                         <td className={`px-3 py-2 text-right ${m.electricityBalance > 0 ? "font-semibold text-unpaid" : "text-foreground/50"}`}>{rupees(m.electricityBalance)}</td>

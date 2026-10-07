@@ -31,7 +31,8 @@ export async function GET(request: NextRequest) {
       const unrecorded = !payment || (!payment.prevReading && !payment.currReading);
       const ledger = buildElectricityLedger(
         payments.filter((p) => p.unitId === unit.id && !isBeforeMoveInMonth(unit.moveInDate, p.month)),
-        rate
+        rate,
+        unit.plotNumber
       );
       const entry = ledger.find((e) => e.month === month);
       const lastMonthPayment = payments.find((p) => p.unitId === unit.id && p.month === previousMonth);
@@ -44,7 +45,7 @@ export async function GET(request: NextRequest) {
         isBeforeMoveIn: isBeforeMoveInMonth(unit.moveInDate, month),
         prevReading,
         currReading,
-        electricityAmount: computeElectricityAmount(prevReading, currReading, rate),
+        electricityAmount: computeElectricityAmount(prevReading, currReading, rate, unit.plotNumber),
         electricityPaid: payment?.electricityPaid ?? false,
         electricityCovered: entry?.paid ?? 0,
         electricityBalance: entry?.balance ?? 0,
@@ -90,7 +91,7 @@ export async function PUT(request: NextRequest) {
     notes: existing?.notes ?? null,
     prevReading: parsed.data.prevReading,
     currReading: parsed.data.currReading,
-    electricityAmount: computeElectricityAmount(parsed.data.prevReading, parsed.data.currReading, rate),
+    electricityAmount: computeElectricityAmount(parsed.data.prevReading, parsed.data.currReading, rate, unit.plotNumber),
     electricityPaid: parsed.data.electricityPaid,
     updatedBy: admin.username,
   };
@@ -103,9 +104,9 @@ export async function PUT(request: NextRequest) {
     action: existing ? "UPDATE" : "CREATE",
     recordType: "Electricity",
     recordId: payment.id,
-    previousValue: existing ? paymentDTO(existing, rate) : null,
-    newValue: paymentDTO(payment, rate),
+    previousValue: existing ? paymentDTO(existing, rate, unit.plotNumber) : null,
+    newValue: paymentDTO(payment, rate, unit.plotNumber),
   });
 
-  return NextResponse.json({ payment: paymentDTO(payment, rate) });
+  return NextResponse.json({ payment: paymentDTO(payment, rate, unit.plotNumber) });
 }

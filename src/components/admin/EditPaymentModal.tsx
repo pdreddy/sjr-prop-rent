@@ -58,7 +58,7 @@ export default function EditPaymentModal({ row, month, ratePerUnit, onClose, onS
   const currReadingNumber = Number(currReading || 0);
   const readingError = currReadingNumber < prevReadingNumber;
   const electricityUnits = computeElectricityUnits(prevReadingNumber, currReadingNumber);
-  const electricityAmount = computeElectricityAmount(prevReadingNumber, currReadingNumber, ratePerUnit);
+  const electricityAmount = computeElectricityAmount(prevReadingNumber, currReadingNumber, ratePerUnit, plotNumber);
 
   async function save() {
     if (paidNumber > 0 && !paidDate) {
@@ -201,7 +201,7 @@ export default function EditPaymentModal({ row, month, ratePerUnit, onClose, onS
               <span className={labelClass}>Electricity (₹)</span>
               <div className="flex min-h-11 items-center rounded-xl bg-primary-light px-3 text-base font-semibold text-primary-dark">
                 ₹{electricityAmount.toFixed(0)}
-                <span className="ml-1.5 text-sm font-normal text-primary-dark/60">({electricityUnits} units)</span>
+                <span className="ml-1.5 text-sm font-normal text-primary-dark/60">({currReadingNumber > 0 ? `${electricityUnits} units` : "default, no reading"})</span>
               </div>
             </div>
             <div className="flex flex-col gap-1">

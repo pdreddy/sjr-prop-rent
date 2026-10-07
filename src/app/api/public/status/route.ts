@@ -23,7 +23,8 @@ export async function GET(request: NextRequest) {
     const currReading = payment?.currReading ?? 0;
     const ledger = buildElectricityLedger(
       payments.filter((item) => item.unitId === unit.id && !isBeforeMoveInMonth(moveInDate, item.month)),
-      rate
+      rate,
+      unit.plotNumber
     );
     const thisMonth = ledger.find((entry) => entry.month === month);
     const unpaidElectricityMonths = ledger
@@ -47,7 +48,7 @@ export async function GET(request: NextRequest) {
         : payment?.electricityPaid || (thisMonth && thisMonth.bill > 0 && thisMonth.balance <= 0)
           ? ("PAID" as const)
           : ("UNPAID" as const),
-      electricityAmount: computeElectricityAmount(prevReading, currReading, rate),
+      electricityAmount: computeElectricityAmount(prevReading, currReading, rate, unit.plotNumber),
       electricityCovered: thisMonth?.paid ?? 0,
       electricityBalance: thisMonth?.balance ?? 0,
       prevReading,

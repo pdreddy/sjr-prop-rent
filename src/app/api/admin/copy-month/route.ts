@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
       notes: null,
       prevReading,
       currReading,
-      electricityAmount: computeElectricityAmount(prevReading, currReading, rate),
+      electricityAmount: computeElectricityAmount(prevReading, currReading, rate, unit.plotNumber),
       electricityPaid: false,
       updatedBy: admin.username,
     });

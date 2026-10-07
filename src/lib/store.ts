@@ -32,14 +32,14 @@ export const unitDTO = (unit: StoredUnit & { id: string } & { phone?: string | n
     updatedAt: unit.updatedAt.toISOString(),
   };
 };
-export const paymentDTO = (payment: StoredPayment & { id: string }, rate: number = ELECTRICITY_RATE_PER_UNIT): PaymentDTO => {
+export const paymentDTO = (payment: StoredPayment & { id: string }, rate: number = ELECTRICITY_RATE_PER_UNIT, plotNumber?: string): PaymentDTO => {
   const prevReading = payment.prevReading ?? 0;
   const currReading = payment.currReading ?? 0;
   return {
     ...payment,
     prevReading,
     currReading,
-    electricityAmount: computeElectricityAmount(prevReading, currReading, rate),
+    electricityAmount: computeElectricityAmount(prevReading, currReading, rate, plotNumber),
     electricityPaid: payment.electricityPaid ?? false,
     paidDate: iso(payment.paidDate),
     createdAt: payment.createdAt.toISOString(),

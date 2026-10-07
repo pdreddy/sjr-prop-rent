@@ -259,7 +259,7 @@ function ElectricityRowCard({
   const currReadingNumber = Number(currReading || 0);
   // A current reading of 0 means "not entered yet", so it is not flagged as an error.
   const readingError = currReadingNumber !== 0 && currReadingNumber < prevReadingNumber;
-  const electricityAmount = computeElectricityAmount(prevReadingNumber, currReadingNumber, ratePerUnit);
+  const electricityAmount = computeElectricityAmount(prevReadingNumber, currReadingNumber, ratePerUnit, row.plotNumber);
   const electricityUnits = computeElectricityUnits(prevReadingNumber, currReadingNumber);
   const dirty =
     prevReadingNumber !== row.prevReading || currReadingNumber !== row.currReading || electricityPaid !== row.electricityPaid;
@@ -367,7 +367,7 @@ function ElectricityRowCard({
           <span className={labelClass}>Electricity (₹)</span>
           <div className="flex min-h-10 items-center rounded-lg bg-primary-light px-2.5 text-sm font-semibold text-primary-dark">
             ₹{electricityAmount.toFixed(0)}
-            <span className="ml-1.5 font-normal text-primary-dark/60">({electricityUnits} units)</span>
+            <span className="ml-1.5 font-normal text-primary-dark/60">({currReadingNumber > 0 ? `${electricityUnits} units` : "default, no reading"})</span>
           </div>
         </div>
         <button
@@ -570,7 +570,7 @@ function BulkEntry({
                   <span className="font-medium">Plot {row.plotNumber}</span>
                   <span className="text-foreground/60">
                     {prev} → {curr} · {Math.max(0, curr - prev)} units · ₹
-                    {computeElectricityAmount(prev, curr, ratePerUnit).toFixed(0)}
+                    {computeElectricityAmount(prev, curr, ratePerUnit, row.plotNumber).toFixed(0)}
                   </span>
                 </li>
               ))}

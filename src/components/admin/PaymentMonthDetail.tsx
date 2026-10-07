@@ -45,9 +45,15 @@ export default function PaymentMonthDetail({ tenant, month, ratePerUnit, monthLa
           </Card>
 
           <Card title="Electricity">
-            <Line label="Meter reading" value={month.prevReading > 0 || month.currReading > 0 ? `${month.prevReading} → ${month.currReading}` : "Not entered"} />
-            <Line label="Units used" value={String(month.electricityUnits)} />
-            <Line label="Rate" value={`₹${ratePerUnit} / unit`} />
+            <Line label="Meter reading" value={month.electricityDefault ? "Not entered" : `${month.prevReading} → ${month.currReading}`} />
+            {month.electricityDefault ? (
+              <Line label="Billed as" value="Default (no reading)" />
+            ) : (
+              <>
+                <Line label="Units used" value={String(month.electricityUnits)} />
+                <Line label="Rate" value={`₹${ratePerUnit} / unit`} />
+              </>
+            )}
             <Line label="Electricity bill" value={rupees(month.electricityBill)} strong />
             <Line label="Electricity paid (received)" value={rupees(month.electricityPaid)} tone="paid" strong />
             <Line label="Bill covered by payments" value={rupees(month.electricityCovered)} />

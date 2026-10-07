@@ -23,12 +23,12 @@ export interface LedgerEntry {
 // oldest-first, so e.g. a ₹500 overpayment in an earlier month covers that month's bill
 // and whatever is left carries forward to the next. A bill marked paid by hand is
 // settled as-is and does not draw on the credit.
-export function buildElectricityLedger(payments: LedgerPayment[], rate: number): LedgerEntry[] {
+export function buildElectricityLedger(payments: LedgerPayment[], rate: number, plotNumber?: string): LedgerEntry[] {
   const sorted = [...payments].sort((a, b) => a.month.localeCompare(b.month));
   let credit = 0;
   return sorted.map((p) => {
     credit += Math.max(0, p.amountPaid - (p.rentAmount + p.maintenanceAmount));
-    const bill = computeElectricityAmount(p.prevReading ?? 0, p.currReading ?? 0, rate);
+    const bill = computeElectricityAmount(p.prevReading ?? 0, p.currReading ?? 0, rate, plotNumber);
     if (p.electricityPaid) return { month: p.month, bill, paid: bill, balance: 0 };
     const paid = Math.min(credit, bill);
     credit -= paid;
@@ -86,7 +86,8 @@ export function buildElectricityStatement(
   payments: StatementPayment[],
   rate: number,
   startMonth: string,
-  currentMonth: string
+  currentMonth: string,
+  plotNumber?: string
 ): StatementMonth[] {
   const byMonth = new Map(payments.map((p) => [p.month, p]));
   let credit = 0;
@@ -101,7 +102,7 @@ export function buildElectricityStatement(
     const baseline = p.rentAmount + p.maintenanceAmount;
     const excess = Math.max(0, p.amountPaid - baseline);
     credit += excess;
-    const bill = computeElectricityAmount(p.prevReading ?? 0, p.currReading ?? 0, rate);
+    const bill = computeElectricityAmount(p.prevReading ?? 0, p.currReading ?? 0, rate, plotNumber);
     const markedPaid = !!p.electricityPaid;
     let credited = 0;
     let balance = 0;

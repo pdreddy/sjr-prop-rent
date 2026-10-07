@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
     const isBeforeMoveIn = isBeforeFirstRentMonth(unit.moveInDate, month);
     const expected = expectedForMonth({ monthlyRent: unit.monthlyRent, maintenanceAmount: unit.maintenanceAmount, moveInDate: unit.moveInDate }, month);
     return {
-      unit: unitDTO(unit), payment: payment ? paymentDTO(payment, rate) : null, isVacant, isBeforeMoveIn, effectiveStatus: payment?.paymentStatus ?? "UNPAID",
+      unit: unitDTO(unit), payment: payment ? paymentDTO(payment, rate, unit.plotNumber) : null, isVacant, isBeforeMoveIn, effectiveStatus: payment?.paymentStatus ?? "UNPAID",
       expectedRent: expected.rent, expectedMaintenance: expected.maintenance, proratedDays: expected.proration.prorated ? expected.proration.days : null,
     };
   });
