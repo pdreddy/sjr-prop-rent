@@ -3,6 +3,8 @@ import { unitById, unitByPlot, unitDTO, updateUnit } from "@/lib/store";
 import { getAuthedAdmin } from "@/lib/auth";
 import { updateUnitSchema } from "@/lib/validation";
 import { recordAuditLog } from "@/lib/audit";
+import { formatMonthLabel, isBeforeBuildingOpened } from "@/lib/month";
+import { BUILDING_READY_MONTH } from "@/lib/constants";
 
 export async function PATCH(
   request: NextRequest,
@@ -47,6 +49,12 @@ export async function PATCH(
     if (parsed.data.moveInDate && Number.isNaN(moveInDate?.getTime())) {
       return NextResponse.json({ error: "Invalid move-in date." }, { status: 400 });
     }
+  }
+
+  // Reject a move-in date from before the building opened (a wrong year), but only when it is being
+  // changed, so other edits to a plot that already has a bad date are not blocked.
+  if (moveInDate && isBeforeBuildingOpened(moveInDate) && moveInDate.toISOString().slice(0, 10) !== existing.moveInDate?.toISOString().slice(0, 10)) {
+    return NextResponse.json({ error: `Move-in date is before the building opened (${formatMonthLabel(BUILDING_READY_MONTH)}). Check the year.` }, { status: 400 });
   }
 
   let advancePaidDate: Date | null | undefined;

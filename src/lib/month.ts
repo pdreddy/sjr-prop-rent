@@ -63,6 +63,13 @@ export function firstRentMonth(moveInDate: string | Date | null): string | null 
   return getNextMonth(iso.slice(0, 7));
 }
 
+/** True when a move-in date is earlier than the month the building opened, which is almost always a wrong year (2016 for 2026). */
+export function isBeforeBuildingOpened(moveInDate: string | Date | null): boolean {
+  if (!moveInDate) return false;
+  const iso = moveInDate instanceof Date ? moveInDate.toISOString() : moveInDate;
+  return iso.slice(0, 7) < BUILDING_READY_MONTH;
+}
+
 /** True for months before the tenant's first rent record (no rent exists yet). */
 export function isBeforeFirstRentMonth(moveInDate: string | Date | null, month: string): boolean {
   const first = firstRentMonth(moveInDate);

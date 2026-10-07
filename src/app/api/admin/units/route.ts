@@ -3,6 +3,8 @@ import { allUnits, createUnit, unitByPlot, unitDTO } from "@/lib/store";
 import { getAuthedAdmin } from "@/lib/auth";
 import { createUnitSchema } from "@/lib/validation";
 import { recordAuditLog } from "@/lib/audit";
+import { formatMonthLabel, isBeforeBuildingOpened } from "@/lib/month";
+import { BUILDING_READY_MONTH } from "@/lib/constants";
 
 export async function GET(request: NextRequest) {
   const admin = await getAuthedAdmin();
@@ -55,6 +57,10 @@ export async function POST(request: NextRequest) {
   const moveInDate = parsed.data.moveInDate ? new Date(parsed.data.moveInDate) : null;
   if (parsed.data.moveInDate && Number.isNaN(moveInDate?.getTime())) {
     return NextResponse.json({ error: "Invalid move-in date." }, { status: 400 });
+  }
+
+  if (isBeforeBuildingOpened(moveInDate)) {
+    return NextResponse.json({ error: `Move-in date is before the building opened (${formatMonthLabel(BUILDING_READY_MONTH)}). Check the year.` }, { status: 400 });
   }
 
   const advancePaidDate = parsed.data.advancePaidDate ? new Date(parsed.data.advancePaidDate) : null;
