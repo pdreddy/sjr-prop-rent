@@ -10,6 +10,7 @@ import PlotDetailsModal from "./PlotDetailsModal";
 import EditPaymentModal from "./EditPaymentModal";
 import ElectricityStatementView from "./ElectricityStatementView";
 import RentalHistoryView from "./RentalHistoryView";
+import MoveInProrationView from "./MoveInProrationView";
 import AllDetailsView from "./AllDetailsView";
 import {
   getCurrentMonth,
@@ -34,9 +35,9 @@ import {
 const monthOptions = getMonthOptions();
 const STATUS_FILTERS = ["ALL", "PAID", "UNPAID", "PARTIAL", "VACANT"] as const;
 type StatusFilter = (typeof STATUS_FILTERS)[number];
-const TABS = ["overview", "all-details", "electricity", "history"] as const;
+const TABS = ["overview", "all-details", "electricity", "history", "proration"] as const;
 type Tab = (typeof TABS)[number];
-const TAB_LABELS: Record<Tab, string> = { overview: "Overview", "all-details": "All details", electricity: "Electricity bills", history: "Rental history" };
+const TAB_LABELS: Record<Tab, string> = { overview: "Overview", "all-details": "All details", electricity: "Electricity bills", history: "Rental history", proration: "Move-in Proration" };
 
 export default function AdminDashboard({ username }: { username: string }) {
   const router = useRouter();
@@ -130,6 +131,8 @@ export default function AdminDashboard({ username }: { username: string }) {
   }
 
   const totals = data?.totals;
+  // These tabs load their own data and ignore the month/search/filter bar.
+  const standaloneTab = tab === "electricity" || tab === "history" || tab === "proration";
 
   return (
     <div className="flex flex-1 flex-col bg-background">
@@ -184,7 +187,7 @@ export default function AdminDashboard({ username }: { username: string }) {
           </div>
         )}
 
-        <div className="mb-4 flex gap-1.5 rounded-full border border-primary/10 bg-white p-1 shadow-sm w-fit">
+        <div className="mb-4 flex max-w-full gap-1.5 overflow-x-auto rounded-full border border-primary/10 bg-white p-1 shadow-sm w-fit">
           {TABS.map((t) => (
             <button
               key={t}
@@ -202,8 +205,9 @@ export default function AdminDashboard({ username }: { username: string }) {
 
         {tab === "electricity" && <ElectricityStatementView onUnauthorized={handleUnauthorized} />}
         {tab === "history" && <RentalHistoryView onUnauthorized={handleUnauthorized} />}
+        {tab === "proration" && <MoveInProrationView onUnauthorized={handleUnauthorized} />}
 
-        <div className={`mb-4 flex flex-wrap items-end gap-3 rounded-2xl border border-primary/10 bg-white p-3 shadow-sm sm:p-4 ${tab === "electricity" || tab === "history" ? "hidden" : ""}`}>
+        <div className={`mb-4 flex flex-wrap items-end gap-3 rounded-2xl border border-primary/10 bg-white p-3 shadow-sm sm:p-4 ${standaloneTab ? "hidden" : ""}`}>
           <MonthYearSelector month={month} options={monthOptions} onChange={setMonth} />
 
           <label className="flex flex-1 min-w-[160px] flex-col gap-1">
@@ -258,7 +262,7 @@ export default function AdminDashboard({ username }: { username: string }) {
           </div>
         </div>
 
-        {loading && tab !== "electricity" && tab !== "history" && (
+        {loading && !standaloneTab && (
           <div className="flex flex-col gap-2" aria-busy="true">
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="h-14 animate-pulse rounded-xl bg-primary-light" />

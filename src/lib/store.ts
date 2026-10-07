@@ -6,6 +6,10 @@ import type { PaymentDTO, PaymentStatus, UnitDTO } from "./types";
 type StoredUnit = Omit<UnitDTO, "id" | "createdAt" | "updatedAt" | "moveInDate" | "advancePaidDate"> & {
   moveInDate: Date | null;
   advancePaidDate: Date | null;
+  /** Rent received by the 10th after move-in, recorded on the Move-in Proration tab. Only valid while
+   *  moveInPaidFor still equals the unit's current move-in date (YYYY-MM-DD). */
+  moveInPaid?: number | null;
+  moveInPaidFor?: string | null;
   createdAt: Date;
   updatedAt: Date;
 };

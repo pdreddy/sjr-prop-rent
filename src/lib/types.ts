@@ -184,3 +184,18 @@ export interface RentalHistoryResponse {
   currentMonth: string;
   plots: RentalHistoryPlot[];
 }
+
+export interface MoveInProrationTenant {
+  unitId: string;
+  plotNumber: string;
+  tenantName: string;
+  moveInDate: string | null;
+  monthlyRent: number;
+  maintenanceAmount: number;
+  /** Rent received by the 10th of the month after move-in; null until entered. */
+  paidByTenth: number | null;
+}
+
+export interface MoveInProrationResponse {
+  tenants: MoveInProrationTenant[];
+}
