@@ -77,7 +77,7 @@ export async function GET() {
         firstRentMonth: first,
         months,
         totals: {
-          rentDue: sum((m) => m.rentDue), rentPaid: sum((m) => m.rentPaid), rentBalance: sum((m) => m.rentBalance), rentAdvance: months.length ? months[months.length - 1].rentAdvance : 0,
+          totalReceived: sum((m) => m.amountReceived), rentDue: sum((m) => m.rentDue), rentPaid: sum((m) => m.rentPaid), rentBalance: sum((m) => m.rentBalance), rentAdvance: months.length ? months[months.length - 1].rentAdvance : 0,
           electricityBill: sum((m) => m.electricityBill), electricityPaid: sum((m) => m.electricityPaid), electricityBalance: sum((m) => m.electricityBalance),
           unusedCredit: statement.length ? cents(statement[statement.length - 1].carriedForward) : 0,
         },

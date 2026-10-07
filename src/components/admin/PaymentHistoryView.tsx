@@ -40,7 +40,7 @@ export default function PaymentHistoryView({ onUnauthorized }: { onUnauthorized:
   const grand = useMemo(() => {
     const sum = (pick: (t: PaymentHistoryTenant) => number) => tenants.reduce((s, t) => s + pick(t), 0);
     return {
-      rentDue: sum((t) => t.totals.rentDue), rentPaid: sum((t) => t.totals.rentPaid), rentBalance: sum((t) => t.totals.rentBalance),
+      totalReceived: sum((t) => t.totals.totalReceived), rentDue: sum((t) => t.totals.rentDue), rentPaid: sum((t) => t.totals.rentPaid), rentBalance: sum((t) => t.totals.rentBalance),
       electricityBill: sum((t) => t.totals.electricityBill), electricityPaid: sum((t) => t.totals.electricityPaid), electricityBalance: sum((t) => t.totals.electricityBalance),
     };
   }, [tenants]);
@@ -97,7 +97,8 @@ export default function PaymentHistoryView({ onUnauthorized }: { onUnauthorized:
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-6">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
+        <Summary label="Total received" value={rupees(grand.totalReceived)} cls="bg-paid-bg text-paid" />
         <Summary label="Rent due" value={rupees(grand.rentDue)} cls="bg-primary-light text-primary-dark" />
         <Summary label="Rent paid" value={rupees(grand.rentPaid)} cls="bg-paid-bg text-paid" />
         <Summary label="Rent balance" value={rupees(grand.rentBalance)} cls="bg-unpaid-bg text-unpaid" />
@@ -125,6 +126,10 @@ export default function PaymentHistoryView({ onUnauthorized }: { onUnauthorized:
                 <span aria-hidden="true" className="shrink-0 text-foreground/60">{expanded ? "−" : "+"}</span>
               </div>
               <div className="flex flex-wrap gap-x-5 gap-y-1 text-sm">
+                <span>
+                  Total paid <b>{rupees(t.totals.totalReceived)}</b>
+                  {t.totals.totalReceived !== t.totals.rentPaid && <span className="text-foreground/55"> = {rupees(t.totals.rentPaid)} rent{t.totals.totalReceived > t.totals.rentPaid && ` + ${rupees(t.totals.totalReceived - t.totals.rentPaid)} electricity`}</span>}
+                </span>
                 <span>Rent <b>{rupees(t.totals.rentPaid)}</b> of {rupees(t.totals.rentDue)} paid{t.totals.rentBalance > 0 && <b className="text-unpaid"> · {rupees(t.totals.rentBalance)} due</b>}{t.totals.rentAdvance > 0 && <span className="text-partial"> · {rupees(t.totals.rentAdvance)} paid ahead</span>}</span>
                 <span>Electricity <b>{rupees(t.totals.electricityPaid)}</b> paid · {rupees(t.totals.electricityBill)} billed{t.totals.electricityBalance > 0 && <b className="text-unpaid"> · {rupees(t.totals.electricityBalance)} due</b>}</span>
                 {t.totals.unusedCredit > 0 && <span className="text-partial">Unused credit {rupees(t.totals.unusedCredit)}</span>}
@@ -132,13 +137,14 @@ export default function PaymentHistoryView({ onUnauthorized }: { onUnauthorized:
             </button>
             {expanded && (
               <div className="overflow-x-auto border-t border-primary/10">
-                <table className="w-full min-w-[860px] text-left text-sm">
+                <table className="w-full min-w-[1040px] text-left text-sm">
                   <thead className="text-xs uppercase tracking-wide text-foreground/45">
                     <tr>
                       <th className="px-3 py-2 font-semibold">Month</th>
+                      <th className="px-3 py-2 text-right font-semibold">Total paid</th>
+                      <th className="px-3 py-2 font-semibold">Paid on</th>
                       <th className="px-3 py-2 text-right font-semibold">Rent due</th>
                       <th className="px-3 py-2 text-right font-semibold">Rent paid</th>
-                      <th className="px-3 py-2 font-semibold">Paid on</th>
                       <th className="px-3 py-2 text-right font-semibold">Rent balance</th>
                       <th className="px-3 py-2 text-right font-semibold">Meter</th>
                       <th className="px-3 py-2 text-right font-semibold">Elec. bill</th>
@@ -163,9 +169,17 @@ export default function PaymentHistoryView({ onUnauthorized }: { onUnauthorized:
                           {m.beforeRentStart && <span className="block text-[11px] text-partial">before rent start</span>}
                           {!m.recorded && !m.beforeRentStart && <span className="block text-[11px] text-foreground/45">no record</span>}
                         </td>
+                        <td className="px-3 py-2 text-right font-semibold">
+                          {rupees(m.amountReceived)}
+                          {m.overpayment > 0 && (
+                            <span className="block text-[11px] font-normal text-foreground/55">
+                              {rupees(m.rentPaid)} rent + {rupees(m.overpayment)} electricity
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-3 py-2">{m.paidDate ? formatDate(m.paidDate) : "—"}</td>
                         <td className="px-3 py-2 text-right">{rupees(m.rentDue)}</td>
                         <td className="px-3 py-2 text-right font-semibold text-paid">{rupees(m.rentPaid)}</td>
-                        <td className="px-3 py-2">{m.paidDate ? formatDate(m.paidDate) : "—"}</td>
                         <td className={`px-3 py-2 text-right ${m.rentBalance > 0 ? "font-semibold text-unpaid" : "text-foreground/50"}`}>{rupees(m.rentBalance)}</td>
                         <td className="px-3 py-2 text-right text-foreground/70">{m.electricityDefault ? "default" : m.currReading > 0 || m.prevReading > 0 ? `${m.prevReading} → ${m.currReading}` : "—"}</td>
                         <td className="px-3 py-2 text-right">{rupees(m.electricityBill)}</td>
@@ -174,7 +188,7 @@ export default function PaymentHistoryView({ onUnauthorized }: { onUnauthorized:
                       </tr>,
                       monthOpen && (
                         <tr key={`${m.month}-detail`}>
-                          <td colSpan={9} className="p-0">
+                          <td colSpan={10} className="p-0">
                             <PaymentMonthDetail tenant={t} month={m} ratePerUnit={data.ratePerUnit} monthLabel={formatMonthLabel(m.month)} />
                           </td>
                         </tr>
@@ -185,9 +199,10 @@ export default function PaymentHistoryView({ onUnauthorized }: { onUnauthorized:
                   <tfoot className="border-t-2 border-primary/20 bg-primary-light font-bold text-primary-dark">
                     <tr>
                       <td className="px-3 py-2">Total</td>
+                      <td className="px-3 py-2 text-right">{rupees(t.totals.totalReceived)}</td>
+                      <td />
                       <td className="px-3 py-2 text-right">{rupees(t.totals.rentDue)}</td>
                       <td className="px-3 py-2 text-right">{rupees(t.totals.rentPaid)}</td>
-                      <td />
                       <td className="px-3 py-2 text-right">{rupees(t.totals.rentBalance)}</td>
                       <td />
                       <td className="px-3 py-2 text-right">{rupees(t.totals.electricityBill)}</td>

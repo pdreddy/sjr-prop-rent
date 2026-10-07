@@ -272,6 +272,8 @@ export interface PaymentHistoryTenant {
   firstRentMonth: string | null;
   months: PaymentHistoryMonth[];
   totals: {
+    /** Everything received, before it is split into rent and electricity. */
+    totalReceived: number;
     rentDue: number;
     rentPaid: number;
     rentBalance: number;
