@@ -36,7 +36,9 @@ export default function PaymentMonthDetail({ tenant, month, ratePerUnit, monthLa
             <Line label="Maintenance" value={rupees(month.maintenanceAmount)} />
             {month.proratedDays !== null && <Line label="Move-in month" value={`${month.proratedDays}/30 days charged`} />}
             <Line label="Total rent due" value={rupees(month.rentDue)} strong />
+            {month.amountReceived !== month.rentPaid && <Line label="Total received" value={rupees(month.amountReceived)} />}
             <Line label="Rent paid" value={rupees(month.rentPaid)} tone="paid" strong />
+            {month.overpayment > 0 && <Line label="Moved to electricity" value={rupees(month.overpayment)} />}
             <Line label="Paid on" value={month.paidDate ? formatDate(month.paidDate) : "—"} />
             <Line label="Rent balance" value={rupees(month.rentBalance)} tone={month.rentBalance > 0 ? "unpaid" : undefined} strong />
             <Line label="Status" value={month.recorded ? month.paymentStatus ?? "—" : "No record yet"} />
@@ -47,15 +49,16 @@ export default function PaymentMonthDetail({ tenant, month, ratePerUnit, monthLa
             <Line label="Units used" value={String(month.electricityUnits)} />
             <Line label="Rate" value={`₹${ratePerUnit} / unit`} />
             <Line label="Electricity bill" value={rupees(month.electricityBill)} strong />
-            <Line label="Paid / covered" value={rupees(month.electricityPaid)} tone="paid" strong />
+            <Line label="Electricity paid (received)" value={rupees(month.electricityPaid)} tone="paid" strong />
+            <Line label="Bill covered by payments" value={rupees(month.electricityCovered)} />
             <Line label="Electricity balance" value={rupees(month.electricityBalance)} tone={month.electricityBalance > 0 ? "unpaid" : undefined} strong />
             <Line label="Marked paid by hand" value={month.electricityMarkedPaid ? "Yes" : "No"} />
             <Line label="Status" value={month.electricityStatus === "NONE" ? "No bill yet" : month.electricityStatus} />
           </Card>
 
           <Card title="Credit & notes">
-            <Line label="Paid over rent this month" value={rupees(month.overpayment)} />
-            <Line label="Credit carried forward" value={rupees(month.creditCarriedForward)} />
+            <Line label="Paid over rent (to electricity)" value={rupees(month.overpayment)} />
+            <Line label="Unused electricity payment carried forward" value={rupees(month.creditCarriedForward)} />
             <Line label="Notes" value={month.notes || "—"} wrap />
             <Line label="Last updated by" value={month.updatedBy || "—"} />
             <Line label="Last updated" value={month.updatedAt ? formatDate(month.updatedAt) : "—"} />

@@ -210,7 +210,10 @@ export interface RentPaidTenant {
   monthsBilled: number;
   monthsPaid: number;
   totalDue: number;
+  /** Rent only: each month's payment capped at that month's rent. */
   totalPaid: number;
+  /** Paid above rent, counted as electricity. */
+  overRent: number;
   balance: number;
   lastPaidDate: string | null;
 }
@@ -232,8 +235,12 @@ export interface PaymentHistoryMonth {
   prevReading: number;
   currReading: number;
   electricityBill: number;
-  /** Part of the bill covered by overpaid rent, or the whole bill when marked paid. */
+  /** Money received for electricity: whatever was paid above rent that month (or the whole bill when marked paid). */
   electricityPaid: number;
+  /** Part of this month's bill actually covered, from received money carried forward. */
+  electricityCovered: number;
+  /** Total received this month before splitting it into rent and electricity. */
+  amountReceived: number;
   electricityBalance: number;
   electricityStatus: ElectricityMonthStatus;
   // Full detail shown when a month is opened.

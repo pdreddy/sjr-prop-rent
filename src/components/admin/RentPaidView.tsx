@@ -35,7 +35,7 @@ export default function RentPaidView({ onUnauthorized }: { onUnauthorized: () =>
     return (data?.tenants ?? []).filter((t) => !needle || t.plotNumber.toLowerCase().includes(needle) || t.tenantName.toLowerCase().includes(needle));
   }, [data, search]);
   const totals = useMemo(
-    () => ({ due: tenants.reduce((s, t) => s + t.totalDue, 0), paid: tenants.reduce((s, t) => s + t.totalPaid, 0), balance: tenants.reduce((s, t) => s + t.balance, 0) }),
+    () => ({ due: tenants.reduce((s, t) => s + t.totalDue, 0), paid: tenants.reduce((s, t) => s + t.totalPaid, 0), overRent: tenants.reduce((s, t) => s + t.overRent, 0), balance: tenants.reduce((s, t) => s + t.balance, 0) }),
     [tenants]
   );
 
@@ -67,7 +67,8 @@ export default function RentPaidView({ onUnauthorized }: { onUnauthorized: () =>
         </label>
         <p className="mt-2.5 text-xs text-foreground/55">
           Rent starts the month after move-in: the first record pays the move-in month (prorated if they didn&apos;t move in on the
-          1st), then full rent every month through {formatMonthLabel(data.currentMonth)}. A month with no record counts as unpaid.
+          1st), then full rent every month through {formatMonthLabel(data.currentMonth)}. A month with no record counts as unpaid. Rent paid
+          is capped at each month&apos;s rent; anything paid above it is shown under &ldquo;To electricity&rdquo;.
         </p>
       </div>
 
@@ -92,6 +93,7 @@ export default function RentPaidView({ onUnauthorized }: { onUnauthorized: () =>
                   <th className="px-3 py-3 text-right font-semibold">Months paid</th>
                   <th className="px-3 py-3 text-right font-semibold">Rent due</th>
                   <th className="px-3 py-3 text-right font-semibold">Rent paid</th>
+                  <th className="px-3 py-3 text-right font-semibold">To electricity</th>
                   <th className="px-3 py-3 text-right font-semibold">Balance</th>
                   <th className="px-3 py-3 font-semibold">Last paid</th>
                 </tr>
@@ -106,6 +108,7 @@ export default function RentPaidView({ onUnauthorized }: { onUnauthorized: () =>
                     <td className="px-3 py-3 text-right">{t.monthsPaid} of {t.monthsBilled}</td>
                     <td className="px-3 py-3 text-right">{rupees(t.totalDue)}</td>
                     <td className="px-3 py-3 text-right font-semibold text-paid">{rupees(t.totalPaid)}</td>
+                    <td className="px-3 py-3 text-right text-partial">{t.overRent > 0 ? rupees(t.overRent) : "—"}</td>
                     <td className={`px-3 py-3 text-right font-semibold ${t.balance > 0 ? "text-unpaid" : "text-foreground/50"}`}>{rupees(t.balance)}</td>
                     <td className="px-3 py-3">{t.lastPaidDate ? formatDate(t.lastPaidDate) : "—"}</td>
                   </tr>
@@ -116,6 +119,7 @@ export default function RentPaidView({ onUnauthorized }: { onUnauthorized: () =>
                   <td className="px-3 py-3" colSpan={5}>Total ({tenants.length} tenants)</td>
                   <td className="px-3 py-3 text-right">{rupees(totals.due)}</td>
                   <td className="px-3 py-3 text-right">{rupees(totals.paid)}</td>
+                  <td className="px-3 py-3 text-right">{rupees(totals.overRent)}</td>
                   <td className="px-3 py-3 text-right">{rupees(totals.balance)}</td>
                   <td />
                 </tr>

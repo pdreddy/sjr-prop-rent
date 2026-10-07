@@ -25,15 +25,17 @@ export async function GET() {
         const first = firstRentMonth(unit.moveInDate);
         const start = first && first < BUILDING_READY_MONTH ? BUILDING_READY_MONTH : first;
         const months = start && start <= currentMonth ? monthsBetween(start, currentMonth) : [];
-        let totalDue = 0, totalPaid = 0, monthsPaid = 0, lastPaid: Date | null = null;
+        let totalDue = 0, totalPaid = 0, overRent = 0, monthsPaid = 0, lastPaid: Date | null = null;
         for (const month of months) {
           const record = payments.find((p) => p.unitId === unit.id && p.month === month);
           const expected = expectedForMonth(unit, month);
           // No record yet: what the tenant owes for that month (prorated in the first one), paid 0.
           const due = record ? record.rentAmount + record.maintenanceAmount : expected.rent + expected.maintenance;
-          const paid = record?.amountPaid ?? 0;
+          const received = record?.amountPaid ?? 0;
+          const paid = Math.min(received, due); // only rent counts here; the excess is an electricity payment
           totalDue += due;
           totalPaid += paid;
+          overRent += received - paid;
           if (due > 0 && paid >= due) monthsPaid++;
           if (paid > 0 && record?.paidDate && (!lastPaid || record.paidDate > lastPaid)) lastPaid = record.paidDate;
         }
@@ -47,6 +49,7 @@ export async function GET() {
           monthsPaid,
           totalDue,
           totalPaid,
+          overRent,
           balance: totalDue - totalPaid,
           lastPaidDate: lastPaid?.toISOString() ?? null,
         };
