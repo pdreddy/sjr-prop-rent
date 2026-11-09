@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { buildPaymentHistory } from "../../src/lib/paymentHistory";
 import { buildPublicRentHistory } from "../../src/lib/publicRentHistory";
 import { DEFAULT_ELECTRICITY_CONFIG } from "../../src/lib/config";
 
@@ -26,20 +27,19 @@ test("rent excludes electricity excess and includes missing months without expos
     payment("2026-08", 11500), // 500 goes to electricity
     payment("2026-09", 5000, "PARTIAL"),
   ], DEFAULT_ELECTRICITY_CONFIG, "2026-10");
-  assert.deepEqual(result.rentTotals, { billed: 33000, paid: 16000, due: 17000, advance: 0 });
+  assert.deepEqual(Object.keys(result), ["rentMonths"]);
+  for (const month of result.rentMonths) assert.deepEqual(Object.keys(month).sort(), ["month", "status"]);
   assert.deepEqual(result.rentMonths.map(m => m.status), ["PAID", "PARTIAL", "UNPAID"]);
-  assert.equal(result.rentMonths[2].recorded, false);
-  assert.equal(result.rentMonths[2].paidDate, null);
+
   assert.doesNotMatch(JSON.stringify(result), /private|Private|notes|unitId|tenantName|updatedBy/);
 });
 
 test("large rent advances cover later months and first rent is prorated", () => {
   const result = buildPublicRentHistory(unit, [payment("2026-08", 22000)], DEFAULT_ELECTRICITY_CONFIG, "2026-09");
-  assert.deepEqual(result.rentTotals, { billed: 22000, paid: 22000, due: 0, advance: 0 });
-  assert.equal(result.rentMonths[0].advance, 11000);
+  assert.equal(result.rentMonths[0].status, "PAID");
   assert.equal(result.rentMonths[1].status, "PAID");
-  const prorated = buildPublicRentHistory({ ...unit, moveInDate: new Date("2026-07-16T00:00:00Z") }, [], DEFAULT_ELECTRICITY_CONFIG, "2026-08");
-  assert.equal(prorated.rentMonths[0].bill, 5500);
+  const prorated = buildPaymentHistory({ ...unit, moveInDate: new Date("2026-07-16T00:00:00Z") }, [], DEFAULT_ELECTRICITY_CONFIG, "2026-08");
+  assert.equal(prorated.months[0].rentDue, 5500);
 });
 
 test("vacant and future tenants have no rent history; unknown move-in dates do not invent bills", () => {
@@ -49,5 +49,5 @@ test("vacant and future tenants have no rent history; unknown move-in dates do n
   const unknown = buildPublicRentHistory({ ...unit, moveInDate: null }, [payment("2026-08", 11000)], DEFAULT_ELECTRICITY_CONFIG, "2026-10");
   assert.equal(unknown.rentMonths.length, 1);
   assert.equal(unknown.rentMonths[0].status, "NA");
-  assert.equal(unknown.rentTotals.billed, 0);
+  assert.deepEqual(Object.keys(unknown.rentMonths[0]).sort(), ["month", "status"]);
 });

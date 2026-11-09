@@ -17,7 +17,7 @@ npm run setup:data
 npm run dev
 ```
 
-`npm run setup:data` removes the old A-101…B-202 demo rows and loads the supplied plots 101–503 with their June 2026 payment figures. The admin dashboard has **Tenant details** and **Update rent** tabs. Click **Edit row** to change values directly in the table. Rent sum, balance, and status recalculate automatically, and paid amounts require a paid date. **Save** writes both the unit and monthly payment to Realtime Database. The public page shows rent and electricity history, charges, payments, dates, and balances while keeping phone numbers and admin notes private.
+`npm run setup:data` removes the old A-101…B-202 demo rows and loads the supplied plots 101–503 with their June 2026 payment figures. The admin dashboard has **Tenant details** and **Update rent** tabs. Click **Edit row** to change values directly in the table. Rent sum, balance, and status recalculate automatically, and paid amounts require a paid date. **Save** writes both the unit and monthly payment to Realtime Database. The public page shows electricity charges, payments and balances, with rent shown only as payment status. Rent amounts, phone numbers and admin notes stay private.
 
 If an IDE reports that it cannot resolve `next/package.json` or
 `default-transpiled-packages.json`, run the commands from the repository root
@@ -182,11 +182,9 @@ as Unicode graphemes so accented characters and emoji are not split.
 ### Public payment history
 
 Click anywhere on a plot row (or focus its plot-number button and press Enter)
-to expand rent and electricity history directly below that row. Click the same
-row again to collapse it. Rent includes monthly rent plus
-maintenance, paid amounts, payment dates, recorded status, balance due and rent
-paid ahead. Missing rent records show expected charges through the current month.
-Rent calculations share the admin payment-history implementation; electricity
-continues to show recorded units, bills, credits applied, and balances. History
-belongs to the current tenant. Masked/hidden names remain enforced on the server;
-contact details, admin notes and audit fields are never included.
+to expand one electricity history table directly below it. Click again to collapse.
+Each month shows rent payment status alongside electricity readings, units,
+bills, credits applied, balances and electricity status. Totals are electricity only.
+Rent amounts and totals are excluded from the public API, along with contact
+details, admin notes and audit fields. Admin payment history retains full details.
+Masked/hidden names remain enforced on the server.

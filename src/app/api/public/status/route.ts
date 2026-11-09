@@ -140,7 +140,6 @@ export const GET = withErrorHandling(async (request: NextRequest) => {
               !isRentOverdue(month)
             ? ("DUE" as const)
             : (payment?.paymentStatus ?? ("UNPAID" as const)),
-      paidDate: payment?.paidDate?.toISOString() ?? null,
       // Same rule as rent: a tenant who moved in this month is not tracked until the following month.
       electricityStatus:
         isBeforeFirstRent || isVacant

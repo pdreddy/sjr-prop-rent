@@ -44,25 +44,17 @@ export interface PublicElectricityMonth {
 
 export interface PublicRentMonth {
   month: string;
-  recorded: boolean;
-  bill: number;
-  paid: number;
-  balance: number;
-  paidDate: string | null;
   status: PaymentStatus | "DUE" | "NA";
-  advance: number;
 }
 
 export interface PublicPlot {
   rentMonths: PublicRentMonth[];
-  rentTotals: { billed: number; paid: number; due: number; advance: number };
 
   plotNumber: string;
   tenantName: string | null;
   moveInDate: string | null;
   /** DUE: unpaid, but the first-week-of-next-month payment window hasn't passed yet. */
   status: PaymentStatus | "DUE" | "NA";
-  paidDate: string | null;
   electricityStatus: "PAID" | "UNPAID" | "NA";
   electricityAmount: number;
   electricityCovered: number;

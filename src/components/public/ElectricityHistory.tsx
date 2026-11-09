@@ -28,7 +28,6 @@ export default function ElectricityHistory({
   // API totals describe the existing credit ledger; no billing rules change here.
   const totals = plot.electricityTotals;
   const rentMonths = plot.rentMonths ?? [];
-  const rentTotals = plot.rentTotals;
   return (
     <section
       id={`plot-history-${plot.plotNumber}`}
@@ -63,15 +62,7 @@ export default function ElectricityHistory({
           >
             <h3>Rent</h3>
             <StatusBadge status={plot.status} />
-            <p>
-              {plot.status === "NA"
-                ? "Rent does not apply to this plot for the selected month."
-                : plot.paidDate
-                  ? `Payment recorded on ${formatDate(plot.paidDate)}`
-                  : plot.status === "PAID"
-                    ? "Marked paid. Payment date not recorded."
-                    : "No paid date recorded."}
-            </p>
+
           </section>
           <section
             className="plot-month-detail"
@@ -94,56 +85,6 @@ export default function ElectricityHistory({
             )}
           </section>
         </div>
-        <section className="public-rent-ledger" aria-labelledby="public-rent-ledger-title">
-          <h3 id="public-rent-ledger-title">Rent history</h3>
-          {rentMonths.length === 0 ? (
-            <p className="no-electricity-history">No rent history available for this tenant yet.</p>
-          ) : (
-            <>
-              {rentTotals && (
-                <dl className="electricity-history-totals" aria-label="Rent history totals">
-                  <div><dt>Total rent + maintenance</dt><dd>{rupee(rentTotals.billed)}</dd></div>
-                  <div><dt>Total rent paid</dt><dd>{rupee(rentTotals.paid)}</dd></div>
-                  <div><dt>Rent balance due</dt><dd>{rupee(rentTotals.due)}</dd></div>
-                  <div><dt>Rent paid ahead</dt><dd>{rupee(rentTotals.advance)}</dd></div>
-                </dl>
-              )}
-              <p className="history-ledger-note">
-                Current tenant, through this month. Rent includes maintenance.
-                Status is the recorded rent status; balances include rent paid ahead.
-                Months without a record show the expected bill and no payment.
-              </p>
-              <div className="history-table-scroll">
-                <table>
-                  <thead><tr>
-                    <th scope="col">Month</th><th scope="col">Rent + maintenance</th>
-                    <th scope="col">Paid</th><th scope="col">Balance due</th>
-                    <th scope="col">Payment date</th><th scope="col">Status</th>
-                  </tr></thead>
-                  <tbody>
-                    {rentMonths.map((entry) => (
-                      <tr key={entry.month} className={entry.month === selectedMonth ? "is-selected-month" : undefined}
-                        aria-current={entry.month === selectedMonth ? "true" : undefined}>
-                        <th scope="row">
-                          {formatMonthLabel(entry.month)}
-                          {entry.month === selectedMonth && <span className="selected-month-label">Selected</span>}
-                          {!entry.recorded && <small className="history-meter-readings">No payment record</small>}
-                          {entry.status === "NA" && <small className="history-meter-readings">Rent not yet applicable</small>}
-                          {entry.advance > 0 && <small className="history-meter-readings">{rupee(entry.advance)} paid ahead</small>}
-                        </th>
-                        <td data-label="Rent + maintenance">{rupee(entry.bill)}</td>
-                        <td data-label="Paid">{rupee(entry.paid)}</td>
-                        <td data-label="Balance due">{rupee(entry.balance)}</td>
-                        <td data-label="Payment date">{formatDate(entry.paidDate)}</td>
-                        <td data-label="Status"><StatusBadge status={entry.status} /></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </>
-          )}
-        </section>
         <section
           className="public-electricity-ledger"
           aria-labelledby="public-electricity-ledger-title"
@@ -185,7 +126,7 @@ export default function ElectricityHistory({
                 )}
               </dl>
               <p className="history-ledger-note">
-                All recorded months. Paid includes credits applied by the
+                Rent shows payment status only. All amounts are electricity charges. Paid includes credits applied by the
                 electricity ledger.
                 {defaultMonths > 0 &&
                   ` ${defaultMonths} default-bill ${defaultMonths === 1 ? "month has" : "months have"} no recorded units and ${defaultMonths === 1 ? "is" : "are"} excluded from the unit total.`}
@@ -195,11 +136,12 @@ export default function ElectricityHistory({
                   <thead>
                     <tr>
                       <th scope="col">Month</th>
+                      <th scope="col">Rent status</th>
                       <th scope="col">Units</th>
                       <th scope="col">Bill</th>
                       <th scope="col">Paid / credited</th>
                       <th scope="col">Balance due</th>
-                      <th scope="col">Status</th>
+                      <th scope="col">Electricity status</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -228,6 +170,9 @@ export default function ElectricityHistory({
                               : `${entry.prevReading} → ${entry.currReading}`}
                           </small>
                         </th>
+                        <td data-label="Rent status">
+                          <StatusBadge status={rentMonths.find((rent) => rent.month === entry.month)?.status ?? (entry.month === selectedMonth ? plot.status : "NA")} />
+                        </td>
                         <td data-label="Units used">
                           {entry.isDefault
                             ? "—"
@@ -240,7 +185,7 @@ export default function ElectricityHistory({
                           {rupee(entry.paid)}
                         </td>
                         <td data-label="Balance due">{rupee(entry.balance)}</td>
-                        <td data-label="Status">
+                        <td data-label="Electricity status">
                           <StatusBadge status={entry.status} />
                         </td>
                       </tr>
@@ -250,6 +195,7 @@ export default function ElectricityHistory({
                     <tfoot>
                       <tr>
                         <th scope="row">Total</th>
+                        <td />
                         <td data-label="Recorded units">
                           {totalUnits.toLocaleString("en-IN", {
                             maximumFractionDigits: 2,

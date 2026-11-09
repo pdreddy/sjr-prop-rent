@@ -506,11 +506,7 @@ export default function Home() {
                             <span>
                               <small>Rent</small>
                               <StatusBadge status={plot.status} />
-                              {plot.status === "PAID" && plot.paidDate && (
-                                <small className="payment-detail">
-                                  {formatDate(plot.paidDate)}
-                                </small>
-                              )}
+
                             </span>
                             <span>
                               <small>
@@ -576,7 +572,7 @@ export default function Home() {
           <div>
             <strong>A little transparency. A lot of privacy.</strong>
             <p>
-              Tenant names follow your building’s privacy settings. Contact details and admin notes stay private.
+              Tenant names follow your building’s privacy settings. Rent amounts, contact details and admin notes stay private.
             </p>
           </div>
           <span className="privacy-label">
