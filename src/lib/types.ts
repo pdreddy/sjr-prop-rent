@@ -73,6 +73,8 @@ export interface PublicStatusResponse {
   buildingName: string;
   notice: string;
   ratePerUnit: number;
+  /** Billing formula in force for the requested month, e.g. "₹7/unit". Electricity tariff only. */
+  formula?: string;
   month: string;
   totalPlots: number;
   paidCount: number;
