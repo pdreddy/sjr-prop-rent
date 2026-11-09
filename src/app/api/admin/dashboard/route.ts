@@ -37,11 +37,13 @@ export async function GET(request: NextRequest) {
     });
   }
   const totals = rows.reduce((acc, row) => {
-    if (row.isBeforeMoveIn) return acc;
+    // Vacant plots and tenants who have not started yet are not part of the month's progress.
+    if (row.isBeforeMoveIn || row.isVacant) return acc;
+    acc.applicable++;
     const expected = row.payment ? row.payment.rentAmount + row.payment.maintenanceAmount : row.expectedRent + row.expectedMaintenance;
     acc.totalExpected += expected; acc.totalCollected += row.payment?.amountPaid ?? 0;
     if (row.effectiveStatus === "PAID") acc.numPaid++; else if (row.effectiveStatus === "PARTIAL") acc.numPartial++; else acc.numUnpaid++;
     return acc;
-  }, { totalExpected: 0, totalCollected: 0, numPaid: 0, numPartial: 0, numUnpaid: 0 });
-  return NextResponse.json({ month, electricityRatePerUnit: rate.ratePerUnit, electricityConfig: rate, rows, totals: { ...totals, outstandingBalance: totals.totalExpected - totals.totalCollected, totalUnits: rows.length } });
+  }, { totalExpected: 0, totalCollected: 0, numPaid: 0, numPartial: 0, numUnpaid: 0, applicable: 0 });
+  return NextResponse.json({ month, electricityRatePerUnit: rate.ratePerUnit, electricityConfig: rate, rows, totals: { ...totals, outstandingBalance: totals.totalExpected - totals.totalCollected, totalUnits: totals.applicable } });
 }

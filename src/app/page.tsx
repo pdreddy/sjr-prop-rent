@@ -96,9 +96,12 @@ export default function Home() {
     return { rent, electricity };
   }, [data]);
 
-  const paidPct = data && data.totalPlots > 0 ? Math.round((data.paidCount / data.totalPlots) * 100) : 0;
-  const electricityPct =
-    data && data.totalPlots > 0 ? Math.round((counts.electricity.PAID / data.totalPlots) * 100) : 0;
+// Progress only counts plots that apply this month: a tenant who has not moved in yet (or a vacant plot)
+  // is N/A and is left out of the totals.
+  const rentTotal = counts.rent.PAID + counts.rent.DUE + counts.rent.UNPAID + counts.rent.PARTIAL;
+  const electricityTotal = counts.electricity.PAID + counts.electricity.UNPAID;
+  const paidPct = rentTotal > 0 ? Math.round((counts.rent.PAID / rentTotal) * 100) : 0;
+  const electricityPct = electricityTotal > 0 ? Math.round((counts.electricity.PAID / electricityTotal) * 100) : 0;
 
   return (
     <div className="flex flex-1 flex-col bg-background">
@@ -184,14 +187,14 @@ export default function Home() {
             </button>
 
             <div className="mb-4 grid grid-cols-2 gap-3">
-              <SummaryCard title="Rent collection" paidCount={data.paidCount} totalCount={data.totalPlots} pct={paidPct}>
+              <SummaryCard title="Rent collection" paidCount={counts.rent.PAID} totalCount={rentTotal} pct={paidPct}>
                 <MiniChip label="Paid" value={counts.rent.PAID} colorClass="bg-paid-bg text-paid" />
                 <MiniChip label="Due" value={counts.rent.DUE} colorClass="bg-partial-bg text-partial" />
                 <MiniChip label="Unpaid" value={counts.rent.UNPAID} colorClass="bg-unpaid-bg text-unpaid" />
                 <MiniChip label="Partial" value={counts.rent.PARTIAL} colorClass="bg-partial-bg text-partial" />
                 <MiniChip label="N/A" value={counts.rent.NA} colorClass="bg-vacant-bg text-vacant" />
               </SummaryCard>
-              <SummaryCard title="Electricity collection" paidCount={counts.electricity.PAID} totalCount={data.totalPlots} pct={electricityPct}>
+              <SummaryCard title="Electricity collection" paidCount={counts.electricity.PAID} totalCount={electricityTotal} pct={electricityPct}>
                 <MiniChip label="Paid" value={counts.electricity.PAID} colorClass="bg-paid-bg text-paid" />
                 <MiniChip label="Unpaid" value={counts.electricity.UNPAID} colorClass="bg-unpaid-bg text-unpaid" />
                 <MiniChip label="N/A" value={counts.electricity.NA} colorClass="bg-vacant-bg text-vacant" />

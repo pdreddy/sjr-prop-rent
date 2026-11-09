@@ -19,6 +19,7 @@ export async function GET(request: NextRequest) {
     const moveInDate = unit.moveInDate?.toISOString() ?? null;
     const isBeforeMoveIn = isBeforeMoveInMonth(moveInDate, month);
     const isBeforeFirstRent = isBeforeFirstRentMonth(moveInDate, month);
+    const isVacant = !unit.tenantName?.trim();
     // The no-reading default bill only applies to an occupied plot (not vacant, not before move-in).
     const billPlot = unit.tenantName?.trim() && !isBeforeMoveIn ? unit.plotNumber : undefined;
     const prevReading = payment?.prevReading ?? 0;
@@ -71,13 +72,14 @@ export async function GET(request: NextRequest) {
       plotNumber: unit.plotNumber,
       tenantName: general.showTenantNames ? unit.tenantName : null,
       moveInDate,
-      status: isBeforeFirstRent
+      // Vacant plots and tenants who have not started yet are N/A, so they are left out of the month's totals.
+      status: isBeforeFirstRent || isVacant
         ? ("NA" as const)
         : (payment?.paymentStatus ?? "UNPAID") === "UNPAID" && !isRentOverdue(month)
           ? ("DUE" as const)
           : payment?.paymentStatus ?? ("UNPAID" as const),
       paidDate: payment?.paidDate?.toISOString() ?? null,
-      electricityStatus: isBeforeMoveIn
+      electricityStatus: isBeforeMoveIn || isVacant
         ? ("NA" as const)
         : payment?.electricityPaid || (thisMonth && thisMonth.bill > 0 && thisMonth.balance <= 0)
           ? ("PAID" as const)
@@ -97,6 +99,7 @@ export async function GET(request: NextRequest) {
     notice: general.notice,
     ratePerUnit: rate.ratePerUnit,
     month,
+    // Plots in the list (including N/A ones); the progress totals only count plots that apply that month.
     totalPlots: plots.length,
     paidCount,
     plots,

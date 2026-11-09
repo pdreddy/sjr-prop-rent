@@ -457,7 +457,7 @@ function StatsPanel({ totals, month }: { totals: DashboardTotals; month: string 
         <div className="h-full rounded-full bg-paid transition-all" style={{ width: `${Math.min(100, collectedPct)}%` }} />
       </div>
       <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-5">
-        <StatCard label="Plots" value={totals.totalUnits} colorClass="bg-primary-light text-ink" />
+        <StatCard label="Tenants" value={totals.totalUnits} colorClass="bg-primary-light text-ink" />
         <StatCard label="Paid" value={totals.numPaid} colorClass="bg-paid-bg text-paid" />
         <StatCard label="Partial" value={totals.numPartial} colorClass="bg-partial-bg text-partial" />
         <StatCard label="Unpaid" value={totals.numUnpaid} colorClass="bg-unpaid-bg text-unpaid" />
