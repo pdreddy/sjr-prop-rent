@@ -49,11 +49,16 @@ export default function Home() {
       const res = await fetch(`/api/public/status?month=${encodeURIComponent(m)}`, {
         cache: "no-store",
       });
-      if (!res.ok) throw new Error("Failed to load status");
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        throw new Error(typeof body?.error === "string" ? body.error : "Failed to load status");
+      }
       const json: PublicStatusResponse = await res.json();
       setData(json);
-    } catch {
-      setError("Could not load rent status. Please try again.");
+    } catch (err) {
+      // The server message is detailed in development (e.g. missing Firebase credentials) and generic in production.
+      const reason = err instanceof Error && err.message !== "Failed to load status" && err.message !== "Failed to fetch" ? ` (${err.message})` : "";
+      setError(`Could not load rent status${reason}. Please try again.`);
     } finally {
       setLoading(false);
     }

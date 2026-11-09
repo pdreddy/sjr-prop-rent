@@ -87,11 +87,15 @@ export default function AdminDashboard({ username }: { username: string }) {
         router.push("/admin/login");
         return;
       }
-      if (!res.ok) throw new Error("Failed to load");
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        throw new Error(typeof body?.error === "string" ? body.error : "Failed to load");
+      }
       const json: DashboardResponse = await res.json();
       setData(json);
-    } catch {
-      setError("Could not load dashboard data. Please try again.");
+    } catch (err) {
+      const reason = err instanceof Error && err.message !== "Failed to load" && err.message !== "Failed to fetch" ? ` (${err.message})` : "";
+      setError(`Could not load dashboard data${reason}. Please try again.`);
     } finally {
       setLoading(false);
     }
