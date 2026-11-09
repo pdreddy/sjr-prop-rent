@@ -441,12 +441,24 @@ export default function Home() {
                   </thead>
                   <tbody>
                     {plots.map((plot, index) => (
-                      <tr key={plot.plotNumber}>
+                      <tr
+                        key={plot.plotNumber}
+                        className="plot-history-row"
+                        onClick={() => setHistoryPlot(plot)}
+                      >
                         <th scope="row">
-                          <span className="plot-number">
-                            <Icon name="home" />
+                          <button
+                            className="plot-number plot-row-trigger"
+                            aria-label={`View details for plot ${plot.plotNumber}`}
+                            aria-haspopup="dialog"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              setHistoryPlot(plot);
+                            }}
+                          >
                             {plot.plotNumber}
-                          </span>
+                            <Icon name="arrow" />
+                          </button>
                         </th>
                         <td>
                           <div className="resident-name">
@@ -472,13 +484,6 @@ export default function Home() {
                                   ? `Joined ${formatDate(plot.moveInDate)}`
                                   : "Move-in date unavailable"}
                               </span>
-                              <button
-                                className="plot-details-link"
-                                aria-label={`View details for plot ${plot.plotNumber}`}
-                                onClick={() => setHistoryPlot(plot)}
-                              >
-                                View details <Icon name="arrow" />
-                              </button>
                             </span>
                           </div>
                         </td>
@@ -504,22 +509,7 @@ export default function Home() {
                                   ? ` · ₹${plot.electricityAmount.toLocaleString("en-IN")}`
                                   : ""}
                               </small>
-                              {plot.electricityMonths?.length > 0 ? (
-                                <button
-                                  className="payment-history-button"
-                                  onClick={() => setHistoryPlot(plot)}
-                                  aria-label={`Electricity history for plot ${plot.plotNumber}`}
-                                >
-                                  <StatusBadge
-                                    status={plot.electricityStatus ?? "NA"}
-                                  />
-                                  <Icon name="arrow" />
-                                </button>
-                              ) : (
-                                <StatusBadge
-                                  status={plot.electricityStatus ?? "NA"}
-                                />
-                              )}
+                              <StatusBadge status={plot.electricityStatus ?? "NA"} />
                               {plot.electricityStatus !== "NA" &&
                                 plot.electricityBalance > 0 && (
                                   <small className="payment-detail">

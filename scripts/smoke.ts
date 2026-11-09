@@ -61,7 +61,11 @@ async function main() {
   check("units math: 40 units = ₹280, 50 units = ₹350", months.find((m: any) => m.month === M2)?.bill === 280 && months.find((m: any) => m.month === M1)?.bill === 350, months.map((m: any) => [m.month, m.bill]));
   check("no-reading month bills fixed ₹750 (high plot)", months.find((m: any) => m.month === M)?.bill === 750 && months.find((m: any) => m.month === M)?.isDefault === true);
   check("electricity total due = 280 + 350 + 750", p("101")?.electricityTotals?.due === 1380, p("101")?.electricityTotals);
-  check("no private fields leaked (rent amounts, phones)", !/monthlyRent|phoneNumbers|rentAmount|advance/.test(pub.text));
+  check("no private fields leaked (contacts, notes, audit)", !/monthlyRent|phoneNumbers|notes|updatedBy|advanceNotes/.test(pub.text));
+  check("public rent history contains all 3 rent months", p("101")?.rentMonths?.length === 3);
+  check("public rent totals", p("101")?.rentTotals?.billed === 63000 && p("101")?.rentTotals?.paid === 42000 && p("101")?.rentTotals?.due === 21000);
+  check("public rent records retain payment date and status", p("101")?.rentMonths?.[0]?.status === "PAID" && !!p("101")?.rentMonths?.[0]?.paidDate);
+  check("vacant plot has no rent history", p("103")?.rentMonths?.length === 0);
   check("public info has no NaN/undefined", noNaN(pub.json));
   const home = await api("/");
   check("home page renders", home.status === 200 && home.text.includes("<html"));
@@ -86,6 +90,7 @@ async function main() {
   check("payment-history 200 with plot 101", hist.status === 200 && !!t101, hist.text.slice(0, 120));
   check("rent paid = 42,000 over 2 paid months", t101?.totals?.rentPaid === 42000, t101?.totals);
   check("electricity billed = 1,380", t101?.totals?.electricityBill === 1380, t101?.totals?.electricityBill);
+  check("public and admin rent totals agree", p("101")?.rentTotals?.paid === t101?.totals?.rentPaid && p("101")?.rentTotals?.due === t101?.totals?.rentBalance);
   check("payment-history has no NaN/undefined", noNaN(hist.json));
   for (const path of ["/api/admin/rent-paid", "/api/admin/electricity/statement", "/api/admin/rental-history", "/api/admin/move-in-proration", `/api/admin/electricity?month=${M}`, "/api/admin/units", "/api/admin/settings"]) {
     const r = await api(path);

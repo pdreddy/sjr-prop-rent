@@ -18,6 +18,7 @@ import {
   computeElectricityUnits,
   hasMeterReading,
 } from "@/lib/electricity";
+import { buildPublicRentHistory } from "@/lib/publicRentHistory";
 import { publicTenantName } from "@/lib/config";
 import { BUILDING_READY_MONTH } from "@/lib/constants";
 import {
@@ -123,6 +124,7 @@ export const GET = withErrorHandling(async (request: NextRequest) => {
       due: cents(electricityMonths.reduce((s, m) => s + m.balance, 0)),
     };
     return {
+      ...buildPublicRentHistory(unit, payments, rate, getCurrentMonth()),
       electricityMonths,
       electricityTotals,
       unpaidElectricityTotal,

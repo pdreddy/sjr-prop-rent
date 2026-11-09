@@ -17,7 +17,7 @@ npm run setup:data
 npm run dev
 ```
 
-`npm run setup:data` removes the old A-101…B-202 demo rows and loads the supplied plots 101–503 with their June 2026 payment figures. The admin dashboard has **Tenant details** and **Update rent** tabs. Click **Edit row** to change values directly in the table. Rent sum, balance, and status recalculate automatically, and paid amounts require a paid date. **Save** writes both the unit and monthly payment to Realtime Database. The public page shows status, amount paid, and paid date while keeping phone numbers, rent charges, and notes private.
+`npm run setup:data` removes the old A-101…B-202 demo rows and loads the supplied plots 101–503 with their June 2026 payment figures. The admin dashboard has **Tenant details** and **Update rent** tabs. Click **Edit row** to change values directly in the table. Rent sum, balance, and status recalculate automatically, and paid amounts require a paid date. **Save** writes both the unit and monthly payment to Realtime Database. The public page shows rent and electricity history, charges, payments, dates, and balances while keeping phone numbers and admin notes private.
 
 If an IDE reports that it cannot resolve `next/package.json` or
 `default-transpiled-packages.json`, run the commands from the repository root
@@ -177,3 +177,15 @@ so the list, plot details and public search receive only the masked value.
 Admin views retain the original name. Existing settings keep their current
 full/hidden behavior until the admin changes it. Name characters are counted
 as Unicode graphemes so accented characters and emoji are not split.
+
+
+### Public payment history
+
+Click anywhere on a plot row (or focus its plot-number button and press Enter)
+to open rent and electricity history together. Rent includes monthly rent plus
+maintenance, paid amounts, payment dates, recorded status, balance due and rent
+paid ahead. Missing rent records show expected charges through the current month.
+Rent calculations share the admin payment-history implementation; electricity
+continues to show recorded units, bills, credits applied, and balances. History
+belongs to the current tenant. Masked/hidden names remain enforced on the server;
+contact details, admin notes and audit fields are never included.

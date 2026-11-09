@@ -1140,3 +1140,63 @@
     width: 100%;
   }
 }
+
+/* One compact, clickable row opens both payment histories. */
+.resident-portal .plot-history-row {
+  cursor: pointer;
+}
+.resident-portal .plot-history-row:hover > *,
+.resident-portal .plot-history-row:focus-within > * {
+  background: #edf3e7;
+}
+.resident-portal .plot-row-trigger {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  min-height: 44px;
+  padding: 4px 0;
+  cursor: pointer;
+  gap: 5px;
+}
+.resident-portal .plot-row-trigger:focus-visible {
+  outline: 2px solid #166a4a;
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+.resident-portal .plot-row-trigger svg {
+  width: 14px;
+  height: 14px;
+}
+.public-rent-ledger {
+  margin: 18px 0 24px;
+}
+.public-rent-ledger h3 {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+@media (max-width: 520px) {
+  .resident-portal .plot-row-trigger {
+    flex-wrap: wrap;
+  }
+}
+
+.electricity-history-dialog .plot-detail-panels {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-block: 10px 16px;
+}
+.electricity-history-dialog .plot-month-detail {
+  padding: 12px;
+}
+.electricity-history-dialog .plot-month-detail h3 {
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+.electricity-history-dialog .plot-month-detail p {
+  margin-top: 8px;
+  font-size: 13px;
+  line-height: 1.5;
+}

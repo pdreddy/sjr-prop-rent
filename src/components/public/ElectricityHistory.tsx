@@ -29,6 +29,8 @@ export default function ElectricityHistory({
   const defaultMonths = months.filter((entry) => entry.isDefault).length;
   // API totals describe the existing credit ledger; no billing rules change here.
   const totals = plot.electricityTotals;
+  const rentMonths = plot.rentMonths ?? [];
+  const rentTotals = plot.rentTotals;
   useEffect(() => {
     const element = dialog.current;
     element?.showModal();
@@ -71,7 +73,7 @@ export default function ElectricityHistory({
             className="plot-month-detail"
             aria-label="Selected month rent"
           >
-            <h3>Rent · {formatMonthLabel(selectedMonth)}</h3>
+            <h3>Rent</h3>
             <StatusBadge status={plot.status} />
             <p>
               {plot.status === "NA"
@@ -80,48 +82,21 @@ export default function ElectricityHistory({
                   ? `Payment recorded on ${formatDate(plot.paidDate)}`
                   : plot.status === "PAID"
                     ? "Marked paid. Payment date not recorded."
-                    : "No paid date recorded for this month."}
+                    : "No paid date recorded."}
             </p>
           </section>
           <section
             className="plot-month-detail"
             aria-label="Selected month electricity"
           >
-            <h3>Electricity · {formatMonthLabel(selectedMonth)}</h3>
+            <h3>Electricity</h3>
             <StatusBadge status={plot.electricityStatus ?? "NA"} />
             {selected ? (
-              <dl>
-                <div>
-                  <dt>Readings</dt>
-                  <dd>
-                    {selected.isDefault
-                      ? "Not recorded"
-                      : `${selected.prevReading} → ${selected.currReading}`}
-                  </dd>
-                </div>
-                <div>
-                  <dt>Units used</dt>
-                  <dd>
-                    {selected.isDefault
-                      ? "Not recorded · default bill"
-                      : selected.units.toLocaleString("en-IN", {
-                          maximumFractionDigits: 2,
-                        })}
-                  </dd>
-                </div>
-                <div>
-                  <dt>Bill</dt>
-                  <dd>{rupee(selected.bill)}</dd>
-                </div>
-                <div>
-                  <dt>Paid / credited</dt>
-                  <dd>{rupee(selected.paid)}</dd>
-                </div>
-                <div>
-                  <dt>Balance due</dt>
-                  <dd>{rupee(selected.balance)}</dd>
-                </div>
-              </dl>
+              <p>
+                {selected.isDefault ? "Default bill · no reading" : `${selected.prevReading} → ${selected.currReading} · ${selected.units.toLocaleString("en-IN", { maximumFractionDigits: 2 })} units`}
+                <br />
+                Bill {rupee(selected.bill)} · Paid {rupee(selected.paid)} · Due {rupee(selected.balance)}
+              </p>
             ) : (
               <p>
                 {!applicable
@@ -131,6 +106,56 @@ export default function ElectricityHistory({
             )}
           </section>
         </div>
+        <section className="public-rent-ledger" aria-labelledby="public-rent-ledger-title">
+          <h3 id="public-rent-ledger-title">Rent history</h3>
+          {rentMonths.length === 0 ? (
+            <p className="no-electricity-history">No rent history available for this tenant yet.</p>
+          ) : (
+            <>
+              {rentTotals && (
+                <dl className="electricity-history-totals" aria-label="Rent history totals">
+                  <div><dt>Total rent + maintenance</dt><dd>{rupee(rentTotals.billed)}</dd></div>
+                  <div><dt>Total rent paid</dt><dd>{rupee(rentTotals.paid)}</dd></div>
+                  <div><dt>Rent balance due</dt><dd>{rupee(rentTotals.due)}</dd></div>
+                  <div><dt>Rent paid ahead</dt><dd>{rupee(rentTotals.advance)}</dd></div>
+                </dl>
+              )}
+              <p className="history-ledger-note">
+                Current tenant, through this month. Rent includes maintenance.
+                Status is the recorded rent status; balances include rent paid ahead.
+                Months without a record show the expected bill and no payment.
+              </p>
+              <div className="history-table-scroll">
+                <table>
+                  <thead><tr>
+                    <th scope="col">Month</th><th scope="col">Rent + maintenance</th>
+                    <th scope="col">Paid</th><th scope="col">Balance due</th>
+                    <th scope="col">Payment date</th><th scope="col">Status</th>
+                  </tr></thead>
+                  <tbody>
+                    {rentMonths.map((entry) => (
+                      <tr key={entry.month} className={entry.month === selectedMonth ? "is-selected-month" : undefined}
+                        aria-current={entry.month === selectedMonth ? "true" : undefined}>
+                        <th scope="row">
+                          {formatMonthLabel(entry.month)}
+                          {entry.month === selectedMonth && <span className="selected-month-label">Selected</span>}
+                          {!entry.recorded && <small className="history-meter-readings">No payment record</small>}
+                          {entry.status === "NA" && <small className="history-meter-readings">Rent not yet applicable</small>}
+                          {entry.advance > 0 && <small className="history-meter-readings">{rupee(entry.advance)} paid ahead</small>}
+                        </th>
+                        <td data-label="Rent + maintenance">{rupee(entry.bill)}</td>
+                        <td data-label="Paid">{rupee(entry.paid)}</td>
+                        <td data-label="Balance due">{rupee(entry.balance)}</td>
+                        <td data-label="Payment date">{formatDate(entry.paidDate)}</td>
+                        <td data-label="Status"><StatusBadge status={entry.status} /></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
+        </section>
         <section
           className="public-electricity-ledger"
           aria-labelledby="public-electricity-ledger-title"

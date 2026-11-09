@@ -261,7 +261,7 @@ test("banner is absent and due, partial and N/A statuses remain distinct", async
   await expect(page.locator("tbody")).toContainText("Partial");
 });
 
-test("electricity history opens from the status without adding a row of controls", async ({
+test("plot number opens electricity history without a separate details control", async ({
   page,
 }) => {
   await page.route("**/api/public/status?*", (route) =>
@@ -292,7 +292,7 @@ test("electricity history opens from the status without adding a row of controls
   );
   await page.goto("/");
   await page
-    .getByRole("button", { name: "Electricity history for plot 101" })
+    .getByRole("button", { name: "View details for plot 101" })
     .click();
   await expect(page.getByRole("dialog")).toBeVisible();
   await expect(page.getByRole("dialog")).toContainText("November 2026");
@@ -575,10 +575,10 @@ test("electricity history highlights the viewing month, including a historical s
   ]) {
     await page.getByLabel("VIEWING MONTH").selectOption(selected);
     await expect(
-      page.getByRole("button", { name: "Electricity history for plot 101" }),
+      page.getByRole("button", { name: "View details for plot 101" }),
     ).toBeVisible();
     await page
-      .getByRole("button", { name: "Electricity history for plot 101" })
+      .getByRole("button", { name: "View details for plot 101" })
       .click();
     const current = page
       .getByRole("dialog")
@@ -795,7 +795,7 @@ test("mobile details are full-screen and history is readable without horizontal 
   const button = page.getByRole("button", {
     name: "View details for plot 101",
   });
-  await expect(button).toHaveText("View details");
+  await expect(button).toHaveText("101");
   expect((await button.boundingBox())!.height).toBeGreaterThanOrEqual(44);
   await button.click();
   const dialog = page.getByRole("dialog");
@@ -815,3 +815,51 @@ test("mobile details are full-screen and history is readable without horizontal 
   await dialog.getByRole("button", { name: "Close plot details" }).click();
   await expect(dialog).toHaveCount(0);
 });
+
+for (const width of [390, 1440]) {
+  test(`whole row opens rent and electricity history at ${width}px; keyboard works too`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 844 });
+    await page.route("**/api/public/status?*", route => route.fulfill({ json: {
+      ...fixture, totalPlots: 1, plots: [{
+        ...fixture.plots[0], tenantName: "Rav***", electricityStatus: "UNPAID",
+        rentMonths: [
+          { month: "2026-08", recorded: true, bill: 11000, paid: 11000, balance: 0, advance: 0, paidDate: "2026-08-05T00:00:00Z", status: "PAID" },
+          { month: "2026-09", recorded: true, bill: 11000, paid: 5000, balance: 6000, advance: 0, paidDate: "2026-09-06T00:00:00Z", status: "PARTIAL" },
+          { month: "2026-10", recorded: false, bill: 11000, paid: 0, balance: 11000, advance: 0, paidDate: null, status: "UNPAID" },
+        ],
+        rentTotals: { billed: 33000, paid: 16000, due: 17000, advance: 0 },
+        electricityMonths: [{ month: "2026-10", prevReading: 100, currReading: 200, units: 100, isDefault: false, bill: 700, paid: 500, balance: 200, status: "PARTIAL" }],
+        electricityTotals: { billed: 700, paid: 500, due: 200 },
+      }],
+    } }));
+    await page.goto("/");
+    const row = page.locator(".resident-table tbody tr");
+    await expect(row.getByRole("button")).toHaveCount(1);
+    await row.locator(".resident-name").click();
+    const dialog = page.getByRole("dialog");
+    const rent = dialog.getByRole("region", { name: "Rent history", exact: true });
+    await expect(rent.locator("tbody tr")).toHaveCount(3);
+    await expect(rent.getByLabel("Rent history totals")).toContainText("₹16,000");
+    await expect(rent.getByLabel("Rent history totals")).toContainText("₹17,000");
+    await expect(rent.locator("tbody")).toContainText("Aug 5, 2026");
+    await expect(rent.locator("tbody")).toContainText("Partial");
+    await expect(rent.locator("tbody")).toContainText("No payment record");
+    await expect(dialog.getByLabel("Electricity history totals")).toContainText("₹500");
+    await expect(dialog.getByLabel("Electricity history totals")).toContainText("₹200");
+    await rent.locator("tbody tr").last().scrollIntoViewIfNeeded();
+    expect(await dialog.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
+    await page.keyboard.press("Escape");
+    await expect(dialog).toHaveCount(0);
+    await row.locator(".plot-payment-status").click();
+    await expect(dialog).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(dialog).toHaveCount(0);
+    const trigger = row.getByRole("button", { name: "View details for plot 101" });
+    await trigger.focus();
+    await page.keyboard.press("Enter");
+    await expect(dialog).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(dialog).toHaveCount(0);
+    await expect(trigger).toBeFocused();
+  });
+}

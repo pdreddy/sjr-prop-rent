@@ -42,7 +42,21 @@ export interface PublicElectricityMonth {
   status: "PAID" | "PARTIAL" | "UNPAID";
 }
 
+export interface PublicRentMonth {
+  month: string;
+  recorded: boolean;
+  bill: number;
+  paid: number;
+  balance: number;
+  paidDate: string | null;
+  status: PaymentStatus | "DUE" | "NA";
+  advance: number;
+}
+
 export interface PublicPlot {
+  rentMonths: PublicRentMonth[];
+  rentTotals: { billed: number; paid: number; due: number; advance: number };
+
   plotNumber: string;
   tenantName: string | null;
   moveInDate: string | null;
