@@ -255,7 +255,30 @@ export interface RentalStay {
   months: RentalHistoryMonth[];
 }
 
+/** How the current tenant of a plot pays, in plain words and numbers (see lib/plotSummary.ts). */
+export interface PlotSummary {
+  rating: "good" | "mixed" | "poor" | "new";
+  /** Short verdict, e.g. "Pays on time". */
+  title: string;
+  /** A few plain sentences describing the payment pattern and what is outstanding. */
+  text: string;
+  months: { billed: number; paidInFull: number; partial: number; overdue: number; dueNow: number };
+  /** Payments with a date, against the 7th of their month. usualDay: typical day of the month rent arrives. */
+  timing: { onTime: number; late: number; usualDay: number | null; avgDaysLate: number | null };
+  rent: { due: number; paid: number; balance: number; advance: number };
+  electricity: { billed: number; paid: number; balance: number };
+  lastPayment: { date: string; amount: number; month: string } | null;
+  /** Months with rent still owed, oldest first. */
+  pendingMonths: { month: string; balance: number }[];
+  /** Late or missed months and other things worth knowing, newest first. */
+  notes: { tone: "good" | "warn" | "bad"; text: string }[];
+}
+
 export interface RentalHistoryPlot {
+  /** Payment summary for the current tenant; null for a vacant plot. */
+  summary: PlotSummary | null;
+  /** The current tenant's phone numbers, for sending a thank-you or a reminder. */
+  phoneNumbers: string[];
   unitId: string;
   plotNumber: string;
   currentTenant: string | null;
@@ -270,6 +293,7 @@ export interface RentalHistoryPlot {
 
 export interface RentalHistoryResponse {
   currentMonth: string;
+  buildingName: string;
   plots: RentalHistoryPlot[];
 }
 

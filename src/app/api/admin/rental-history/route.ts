@@ -1,8 +1,9 @@
 import { withErrorHandling } from "@/lib/apiHandler";
 import { NextResponse } from "next/server";
 import { getAuthedAdmin } from "@/lib/auth";
-import { allPayments, allUnits, getElectricityConfig, unitSnapshots } from "@/lib/store";
+import { allPayments, allUnits, getElectricityConfig, getGeneralSettings, unitSnapshots } from "@/lib/store";
 import { buildPaymentHistory } from "@/lib/paymentHistory";
+import { buildPlotSummary } from "@/lib/plotSummary";
 import { getCurrentMonth } from "@/lib/month";
 import { BUILDING_READY_MONTH } from "@/lib/constants";
 import { expectedForMonth } from "@/lib/proration";
@@ -16,7 +17,7 @@ export const GET = withErrorHandling(async () => {
   if (!admin) return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
   if (admin.role !== "ADMIN") return NextResponse.json({ error: "Not authorized." }, { status: 403 });
 
-  const [units, payments, electricityConfig] = await Promise.all([allUnits(), allPayments(), getElectricityConfig()]);
+  const [units, payments, electricityConfig, general] = await Promise.all([allUnits(), allPayments(), getElectricityConfig(), getGeneralSettings()]);
   const currentMonth = getCurrentMonth();
 
   const plots = await Promise.all(
@@ -78,6 +79,8 @@ export const GET = withErrorHandling(async () => {
         const shown = new Set(builtStays.flatMap((stay) => stay.months.map((m) => m.month)));
 
         return {
+          summary: ledger ? buildPlotSummary(ledger) : null,
+          phoneNumbers: unit.tenantName?.trim() ? unit.phoneNumbers ?? [] : [],
           unitId: unit.id,
           plotNumber: unit.plotNumber,
           currentTenant: unit.tenantName?.trim() || null,
@@ -94,6 +97,6 @@ export const GET = withErrorHandling(async () => {
       })
   );
 
-  const response: RentalHistoryResponse = { currentMonth, plots };
+  const response: RentalHistoryResponse = { currentMonth, buildingName: general.buildingName, plots };
   return NextResponse.json(response);
 });

@@ -4,7 +4,8 @@ import { Toolbar, ToolbarButton } from "./ui";
 import { useEffect, useMemo, useState } from "react";
 import StatusBadge from "@/components/StatusBadge";
 import { formatDate, formatMonthLabel, isRentOverdue } from "@/lib/month";
-import type { RentalHistoryMonth, RentalHistoryResponse, RentalHistoryPlot, RentalStay } from "@/lib/types";
+import { buildPlotMessage, MESSAGE_LABELS, suggestedMessage, whatsappNumber, type MessageKind } from "@/lib/plotMessages";
+import type { RentalHistoryMonth, RentalHistoryResponse, RentalHistoryPlot, RentalStay, PlotSummary } from "@/lib/types";
 import HistoryMonthEditModal from "./HistoryMonthEditModal";
 import HistoryTenantEditModal from "./HistoryTenantEditModal";
 import { IconEdit } from "@/components/icons";
@@ -150,6 +151,7 @@ export default function RentalHistoryView({ onUnauthorized, onChanged }: { onUna
 
       {plots.map((plot) => (
         <PlotHistory
+          buildingName={data?.buildingName ?? "SJR Building"}
           key={plot.unitId}
           plot={plot}
           expanded={open === plot.unitId}
@@ -184,7 +186,7 @@ const CARD_STYLE: Record<RowTone, string> = {
 
 type EditMonthFn = (month: RentalHistoryMonth, moveInDate: string | null, tenantName: string) => void;
 
-function PlotHistory({ plot, expanded, onToggle, onEditMonth, onEditTenant }: { plot: RentalHistoryPlot; expanded: boolean; onToggle: () => void; onEditMonth: EditMonthFn; onEditTenant: () => void }) {
+function PlotHistory({ plot, buildingName, expanded, onToggle, onEditMonth, onEditTenant }: { plot: RentalHistoryPlot; buildingName: string; expanded: boolean; onToggle: () => void; onEditMonth: EditMonthFn; onEditTenant: () => void }) {
   // Summary visible without expanding: every month of every stay, coloured by payment state.
   const months = plot.stays.flatMap((stay) => stay.months).sort((a, b) => a.month.localeCompare(b.month));
   const tones = months.map((m) => ({ m, tone: rowTone(m) }));
@@ -238,6 +240,7 @@ function PlotHistory({ plot, expanded, onToggle, onEditMonth, onEditTenant }: { 
       </button>
       {expanded && (
         <div className="flex flex-col gap-4 border-t border-line p-3.5 sm:p-4">
+          {plot.summary && <PlotSummaryCard summary={plot.summary} plot={plot} buildingName={buildingName} pastTenants={plot.stays.filter((stay) => stay.endMonth !== null)} />}
           {plot.stays.length === 0 && <p className="text-sm text-foreground/60">No tenant history recorded for this plot.</p>}
           {plot.stays.map((stay, i) => (
             <Stay
@@ -251,6 +254,151 @@ function PlotHistory({ plot, expanded, onToggle, onEditMonth, onEditTenant }: { 
         </div>
       )}
     </section>
+  );
+}
+
+const RATING_STYLE: Record<PlotSummary["rating"], string> = {
+  good: "bg-paid-bg text-paid",
+  mixed: "bg-partial-bg text-partial",
+  poor: "bg-unpaid-bg text-unpaid",
+  new: "bg-vacant-bg text-vacant",
+};
+const NOTE_DOT: Record<PlotSummary["notes"][number]["tone"], string> = { good: "bg-paid", warn: "bg-partial", bad: "bg-unpaid" };
+
+// How the current tenant pays, at a glance: a verdict, a few plain sentences, the key numbers and the
+// months worth knowing about. All of it comes from the same ledger as the table below.
+function PlotSummaryCard({ summary, plot, buildingName, pastTenants }: { summary: PlotSummary; plot: RentalHistoryPlot; buildingName: string; pastTenants: RentalStay[] }) {
+  const tenantName = plot.currentTenant ?? "";
+  const { months, timing, rent, electricity, lastPayment } = summary;
+  const tiles: { label: string; value: string; sub?: string; tone?: "bad" | "good" }[] = [
+    { label: "Months paid", value: `${months.paidInFull} / ${months.billed}`, sub: [months.overdue ? `${months.overdue} pending` : "", months.dueNow ? `${months.dueNow} due now` : ""].filter(Boolean).join(" · ") || (months.billed ? "All paid" : undefined) },
+    { label: "On time", value: timing.onTime + timing.late ? `${timing.onTime} / ${timing.onTime + timing.late}` : "—", sub: timing.late ? `${timing.late} late, ~${timing.avgDaysLate} days` : timing.usualDay !== null ? (timing.usualDay < 1 ? "Pays before the month" : `Usually day ${Math.min(timing.usualDay, 31)}`) : undefined },
+    { label: "Rent pending", value: rupees(rent.balance), sub: `${rupees(rent.paid)} of ${rupees(rent.due)} paid${rent.advance > 0 ? ` · ${rupees(rent.advance)} ahead` : ""}`, tone: rent.balance > 0 ? "bad" : "good" },
+    { label: "Electricity due", value: rupees(electricity.balance), sub: `${rupees(electricity.paid)} of ${rupees(electricity.billed)} paid`, tone: electricity.balance > 0 ? "bad" : "good" },
+  ];
+  return (
+    <div className="rounded-control border border-line bg-white p-3 sm:p-3.5">
+      <div className="flex flex-wrap items-center gap-2">
+        <p className="label-caps">Summary{tenantName ? ` · ${tenantName}` : ""}</p>
+        <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${RATING_STYLE[summary.rating]}`}>{summary.title}</span>
+        {lastPayment && (
+          <span className="ml-auto text-xs text-foreground/55">
+            Last payment {rupees(lastPayment.amount)} on {formatDate(lastPayment.date)}
+          </span>
+        )}
+      </div>
+      <p className="mt-1.5 text-sm text-foreground/80">{summary.text}</p>
+      <dl className="mt-2.5 grid grid-cols-2 gap-2 lg:grid-cols-4">
+        {tiles.map((tile) => (
+          <div key={tile.label} className="rounded-lg bg-primary-light px-3 py-2">
+            <dt className="label-caps">{tile.label}</dt>
+            <dd className={`text-lg font-bold leading-tight ${tile.tone === "bad" ? "text-unpaid" : tile.tone === "good" ? "text-paid" : "text-ink"}`}>{tile.value}</dd>
+            {tile.sub && <dd className="text-xs text-foreground/55">{tile.sub}</dd>}
+          </div>
+        ))}
+      </dl>
+      <MessageComposer summary={summary} plot={plot} buildingName={buildingName} />
+      {(summary.notes.length > 0 || pastTenants.length > 0) && (
+        <ul className="mt-2.5 grid gap-x-6 gap-y-1 text-sm text-foreground/75 sm:grid-cols-2">
+          {summary.notes.map((note) => (
+            <li key={note.text} className="flex items-baseline gap-2">
+              <span className={`h-1.5 w-1.5 shrink-0 translate-y-[-2px] rounded-full ${NOTE_DOT[note.tone]}`} aria-hidden="true" />
+              {note.text}
+            </li>
+          ))}
+          {pastTenants.map((stay) => (
+            <li key={`${stay.tenantName}-${stay.startMonth}`} className="flex items-baseline gap-2">
+              <span className="h-1.5 w-1.5 shrink-0 translate-y-[-2px] rounded-full bg-vacant" aria-hidden="true" />
+              Earlier tenant: {stay.tenantName} ({formatDate(stay.moveInDate)} – {formatDate(stay.movedOutDate)}), {stay.monthsPaid} of {stay.months.length} months paid
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+const MESSAGE_KINDS: MessageKind[] = ["thanks", "reminder", "warning"];
+const KIND_STYLE: Record<MessageKind, string> = { thanks: "text-paid", reminder: "text-partial", warning: "text-unpaid" };
+
+// Write a thank-you, reminder or warning from the summary and hand it to WhatsApp or SMS on this device.
+// Nothing is sent by the app itself: the admin sees and edits the text, then sends it from their own phone.
+function MessageComposer({ summary, plot, buildingName }: { summary: PlotSummary; plot: RentalHistoryPlot; buildingName: string }) {
+  const suggested = suggestedMessage(summary);
+  const [kind, setKind] = useState<MessageKind | null>(null);
+  const [text, setText] = useState("");
+  const [phone, setPhone] = useState(plot.phoneNumbers[0] ?? "");
+  const [copied, setCopied] = useState(false);
+
+  function open(next: MessageKind) {
+    if (kind === next) return setKind(null);
+    setKind(next);
+    setCopied(false);
+    setText(buildPlotMessage(next, { tenantName: plot.currentTenant ?? "", plotNumber: plot.plotNumber, buildingName, summary }));
+  }
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+    } catch {
+      setCopied(false);
+    }
+  }
+  const linkClass = "inline-flex min-h-10 items-center justify-center rounded-full px-4 text-sm font-semibold";
+
+  return (
+    <div className="mt-2.5 rounded-lg border border-line p-2.5">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="label-caps">Message tenant</span>
+        {MESSAGE_KINDS.map((k) => (
+          <button
+            key={k}
+            type="button"
+            onClick={() => open(k)}
+            aria-pressed={kind === k}
+            className={`inline-flex min-h-9 items-center gap-1.5 rounded-full border px-3 text-sm font-semibold ${kind === k ? "border-primary bg-primary text-white" : `border-line-strong bg-white hover:bg-primary-light ${KIND_STYLE[k]}`}`}
+          >
+            {MESSAGE_LABELS[k]}
+            {k === suggested && kind !== k && <span className="rounded-full bg-primary-light px-1.5 text-[11px] font-bold text-ink">suggested</span>}
+          </button>
+        ))}
+      </div>
+      {kind && (
+        <div className="mt-2.5 flex flex-col gap-2">
+          <textarea
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            rows={8}
+            aria-label={`${MESSAGE_LABELS[kind]} message for plot ${plot.plotNumber}`}
+            className="w-full rounded-control border border-line-strong bg-white px-3 py-2 text-base focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+          />
+          <div className="flex flex-wrap items-center gap-2">
+            {plot.phoneNumbers.length > 1 ? (
+              <select value={phone} onChange={(e) => setPhone(e.target.value)} aria-label="Send to" className="min-h-10 rounded-control border border-line-strong bg-white px-2 text-base">
+                {plot.phoneNumbers.map((p) => (
+                  <option key={p} value={p}>{p}</option>
+                ))}
+              </select>
+            ) : (
+              <span className="text-sm text-foreground/60">{phone ? `To ${phone}` : "No phone number saved for this tenant - add one under All details, or copy the message."}</span>
+            )}
+            {phone && (
+              <>
+                <a href={`https://wa.me/${whatsappNumber(phone)}?text=${encodeURIComponent(text)}`} target="_blank" rel="noopener noreferrer" className={`${linkClass} bg-primary text-white hover:bg-primary-dark`}>
+                  Send on WhatsApp
+                </a>
+                <a href={`sms:${phone.replace(/[^0-9+]/g, "")}?body=${encodeURIComponent(text)}`} className={`${linkClass} border border-line-strong bg-white text-ink hover:bg-primary-light`}>
+                  Send as SMS
+                </a>
+              </>
+            )}
+            <button type="button" onClick={copy} className={`${linkClass} border border-line-strong bg-white text-ink hover:bg-primary-light`}>
+              {copied ? "Copied" : "Copy text"}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
