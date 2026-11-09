@@ -154,3 +154,21 @@ They cover responsive layouts, filters, search, month changes, retry/empty state
 install guidance, manifest/icons, offline recovery and unauthenticated bill access.
 Unit tests match the supplied receipt, exercise configurable arithmetic and verify
 Firebase credential/namespace/date compatibility with mocked network responses.
+
+
+### When Firebase data does not load
+
+Keep your existing database and credentials. From the repository root, run
+`npm run local` to load the standard Next.js `.env*` files, check the real
+Firebase connection, and then start development. `npm run local -- --check`
+checks the configuration and connection without starting a server. The checker
+prints loaded filenames and missing requirements, never credential values.
+It does not seed, reset, migrate, or write data.
+
+If the server reports missing Firebase credentials, check that your existing
+`.env` or `.env.local` is in the repository root (not `src/`), with either
+`FIREBASE_SERVICE_ACCOUNT_PATH` pointing at your existing JSON file,
+`FIREBASE_SERVICE_ACCOUNT_JSON`, or the individual project/email/private-key
+variables described above. Public `NEXT_PUBLIC_FIREBASE_*` values alone do not
+authorize server reads. Restore your existing private files securely; never paste
+credentials into chat or commit them. Restart the server after restoring settings.

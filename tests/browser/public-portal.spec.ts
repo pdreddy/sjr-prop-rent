@@ -334,3 +334,16 @@ test("native install prompts work and the button disappears after installation",
     0,
   );
 });
+
+test("public API errors explain why data could not load", async ({ page }) => {
+  const message =
+    "Firebase credentials are missing. Configure your service-account file.";
+  await page.route("**/api/public/status?*", (route) =>
+    route.fulfill({ status: 503, json: { error: message } }),
+  );
+  await page.goto("/");
+  await expect(page.locator(".directory-empty[role='alert']")).toContainText(
+    message,
+  );
+  await expect(page.getByRole("button", { name: "Try again" })).toBeEnabled();
+});

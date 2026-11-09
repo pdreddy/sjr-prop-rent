@@ -24,7 +24,7 @@ export default function Home() {
     data: PublicStatusResponse;
   } | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [historyPlot, setHistoryPlot] = useState<PublicPlot | null>(null);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("ALL");
@@ -37,7 +37,7 @@ export default function Home() {
     const timeout = setTimeout(() => controller.abort(), 15_000);
     async function load() {
       setLoading(true);
-      setError(false);
+      setError(null);
       try {
         const response = await fetch(
           `/api/public/status?month=${encodeURIComponent(month)}`,
@@ -46,8 +46,16 @@ export default function Home() {
             signal: controller.signal,
           },
         );
-        if (!response.ok) throw new Error("Unable to load status");
-        const data: PublicStatusResponse = await response.json();
+        const payload = await response.json().catch(() => null);
+        if (!response.ok)
+          throw new Error(
+            payload?.error ?? "Unable to load rent status. Please try again.",
+          );
+        if (!payload || !Array.isArray(payload.plots))
+          throw new Error(
+            "The server returned an unexpected response. Please retry.",
+          );
+        const data: PublicStatusResponse = payload;
         if (controller.signal.aborted) return;
         setResult({ month, data });
         setUpdatedAt(
@@ -56,8 +64,15 @@ export default function Home() {
             minute: "2-digit",
           }),
         );
-      } catch {
-        if (active) setError(true);
+      } catch (cause) {
+        if (active)
+          setError(
+            controller.signal.aborted
+              ? "The connection took too long. Please retry."
+              : cause instanceof Error
+                ? cause.message
+                : "Could not load rent status. Please retry.",
+          );
       } finally {
         clearTimeout(timeout);
         if (active) setLoading(false);
@@ -263,7 +278,7 @@ export default function Home() {
                 <Icon name="cloud" />
               </span>
               <h3>We couldn’t load the latest status.</h3>
-              <p>Check your connection, then give it another try.</p>
+              <p>{error}</p>
               <button
                 className="solid-button"
                 onClick={() => setRefresh((value) => value + 1)}

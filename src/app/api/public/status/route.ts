@@ -181,7 +181,12 @@ export async function GET(request: NextRequest) {
       error instanceof Error ? error.message : "Unknown error",
     );
     return NextResponse.json(
-      { error: "Rent status is temporarily unavailable. Please try again." },
+      {
+        error:
+          process.env.NODE_ENV === "development" && error instanceof Error
+            ? `Could not load Firebase data: ${error.message}`
+            : "Rent status is temporarily unavailable. Please try again.",
+      },
       { status: 503, headers: { "Cache-Control": "no-store" } },
     );
   }
