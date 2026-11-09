@@ -164,7 +164,7 @@ export default function AdminDashboard({ username }: { username: string }) {
               <h1 className="text-base font-bold leading-tight text-ink sm:text-lg">
                 SJR Rent Tracker
               </h1>
-              <p className="truncate text-xs text-foreground/45">Signed in as {username}</p>
+              <p className="truncate text-xs text-foreground/45">Signed in as {username} · <Link href="/admin/building-electricity" className="underline underline-offset-4">Building electricity bill</Link></p>
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -662,4 +662,3 @@ function MobileRowCard({
     </li>
   );
 }
-

@@ -198,6 +198,21 @@ test("manifest and icons are valid; offline fallback never stores records or adm
   await expect(page.locator("tbody tr")).toHaveCount(4);
 });
 
+test("private building electricity records require an admin session", async ({
+  request,
+}) => {
+  expect(
+    (
+      await request.get("/api/admin/building-electricity?month=2026-11")
+    ).status(),
+  ).toBe(401);
+  expect(
+    (
+      await request.put("/api/admin/building-electricity", { data: {} })
+    ).status(),
+  ).toBe(401);
+});
+
 test("banner is absent and due, partial and N/A statuses remain distinct", async ({
   page,
 }) => {

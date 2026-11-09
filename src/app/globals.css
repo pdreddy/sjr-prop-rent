@@ -1249,6 +1249,356 @@ body {
   }
 }
 
+/* Private electricity reconciliation workspace. */
+.electricity-page {
+  padding-bottom: 50px;
+}
+.electricity-page .page-intro {
+  align-items: end;
+}
+.bill-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.bill-field > span {
+  font-size: 12px;
+  font-weight: 600;
+  color: #425b48;
+}
+.bill-field input,
+.bill-field select,
+.bill-field textarea {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid #dce2d5;
+  border-radius: 7px;
+  background: #fffefa;
+  color: #243c35;
+  font: inherit;
+  font-size: 14px;
+}
+.bill-field small {
+  font-size: 11px;
+  line-height: 1.65;
+  color: #6a7964;
+}
+.bill-field textarea {
+  resize: vertical;
+}
+.bill-field-wide {
+  grid-column: 1 / -1;
+}
+.bill-notice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #eef2e7;
+  border: 1px solid #e0e7d8;
+  padding: 16px 20px;
+  border-radius: 9px;
+  font-size: 12px;
+  line-height: 1.8;
+  margin-bottom: 24px;
+}
+.electricity-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 330px;
+  gap: 24px;
+  align-items: start;
+}
+.bill-editor {
+  border: 0;
+  min-width: 0;
+}
+.bill-section {
+  padding: 28px;
+  background: #fffefa;
+  border: 1px solid #e3e6df;
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+.bill-section-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+.bill-section h2,
+.bill-sidebar h2 {
+  font:
+    25px/1.25 Georgia,
+    "Times New Roman",
+    serif;
+  letter-spacing: -0.6px;
+  margin-top: 8px;
+}
+.bill-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 22px 20px;
+}
+.tax-basis {
+  margin-top: 24px;
+  padding-top: 18px;
+  border-top: 1px solid #e3e6df;
+}
+.tax-basis legend {
+  font-size: 12px;
+  font-weight: 600;
+  padding-top: 15px;
+}
+.tax-basis label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin: 10px 15px 5px 0;
+  font-size: 12px;
+  min-height: 30px;
+}
+.tax-basis input {
+  width: 16px;
+  height: 16px;
+  accent-color: #224c3e;
+}
+.tax-basis p {
+  font-size: 11px;
+  color: #6a7964;
+  margin-top: 12px;
+  line-height: 1.7;
+}
+.bill-breakdown,
+.bill-reconciliation {
+  padding: 24px;
+  background: #fffefa;
+  border: 1px solid #e3e6df;
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+.bill-units {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  padding: 20px 0;
+  border-bottom: 1px solid #e3e6df;
+  margin-bottom: 10px;
+  font-size: 12px;
+}
+.bill-units strong {
+  font:
+    27px Georgia,
+    serif;
+}
+.bill-units small {
+  grid-column: 1 / -1;
+  font-size: 11px;
+  color: #6a7964;
+  margin-top: 8px;
+}
+.bill-sidebar dl > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 14px;
+  padding: 10px 0;
+  font-size: 12px;
+}
+.bill-sidebar dt {
+  color: #5c6d56;
+}
+.bill-sidebar dd {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.bill-sidebar dt small {
+  display: block;
+  font-size: 10px;
+  margin-top: 4px;
+  color: #798572;
+}
+.bill-subtotal {
+  border-block: 1px solid #e3e6df;
+  font-weight: 600;
+  margin-block: 5px;
+}
+.bill-total {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 12px -24px -24px;
+  padding: 22px 24px;
+  border-radius: 0 0 12px 12px;
+  background: #224c3e;
+  color: #fffefa;
+}
+.bill-total > span {
+  font-size: 12px;
+}
+.bill-total strong {
+  font:
+    32px Georgia,
+    serif;
+}
+.bill-reconciliation {
+  background: #f0f3e9;
+  border-color: #dfe6d6;
+}
+.bill-reconciliation .eyebrow {
+  font-size: 8px;
+}
+.bill-reconciliation h2 {
+  font-size: 24px;
+  margin-bottom: 18px;
+}
+.collection-balance {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 20px;
+  margin-top: 15px;
+  border-top: 1px solid #d7dfcf;
+}
+.collection-balance span {
+  font-size: 12px;
+}
+.collection-balance strong {
+  font:
+    30px Georgia,
+    serif;
+}
+.collection-balance small {
+  font-size: 10px;
+  color: #6a7964;
+  line-height: 1.7;
+}
+.bill-difference {
+  font-size: 11px;
+  line-height: 1.7;
+  margin-top: 18px;
+  color: #6a7964;
+}
+.bill-save {
+  width: 100%;
+  min-height: 48px;
+}
+.bill-save-note {
+  font-size: 11px;
+  text-align: center;
+  color: #6a7964;
+  margin-block: 12px;
+  line-height: 1.8;
+}
+.bill-message,
+.bill-validation {
+  background: #f8efde;
+  color: #775423;
+  border-radius: 8px;
+  padding: 15px;
+  font-size: 12px;
+  line-height: 1.8;
+}
+@media (max-width: 1000px) {
+  .electricity-layout {
+    grid-template-columns: minmax(0, 1fr) 300px;
+    gap: 18px;
+  }
+  .bill-section {
+    padding: 22px;
+  }
+  .bill-fields {
+    grid-template-columns: 1fr;
+  }
+  .bill-field-wide {
+    grid-column: auto;
+  }
+}
+@media (max-width: 760px) {
+  .electricity-layout {
+    grid-template-columns: 1fr;
+  }
+  .bill-fields {
+    grid-template-columns: 1fr 1fr;
+  }
+  .bill-field-wide {
+    grid-column: 1 / -1;
+  }
+  .electricity-page .page-intro {
+    align-items: start;
+  }
+  .electricity-page .page-intro h1 {
+    font-size: 29px;
+  }
+  .bill-sidebar {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+  }
+  .bill-save,
+  .bill-save-note,
+  .bill-message {
+    grid-column: 1 / -1;
+  }
+  .bill-save-note {
+    margin-top: -10px;
+  }
+  .bill-breakdown {
+    grid-row: span 4;
+    margin: 0;
+  }
+  .bill-reconciliation {
+    margin: 0;
+  }
+  .bill-sidebar .bill-save {
+    grid-column: 2;
+  }
+  .bill-sidebar .bill-save-note {
+    grid-column: 2;
+  }
+  .electricity-page .admin-link {
+    font-size: 11px;
+  }
+}
+@media (max-width: 520px) {
+  .bill-fields,
+  .bill-sidebar {
+    display: block;
+  }
+  .bill-field {
+    margin-bottom: 20px;
+  }
+  .bill-field:last-child {
+    margin: 0;
+  }
+  .bill-section {
+    padding: 22px 18px;
+  }
+  .bill-section h2 {
+    font-size: 23px;
+  }
+  .bill-breakdown,
+  .bill-reconciliation {
+    margin-bottom: 20px;
+  }
+  .electricity-page .page-intro > .bill-field {
+    margin-top: 20px;
+    width: 100%;
+  }
+  .bill-notice {
+    padding: 15px;
+    align-items: start;
+    font-size: 11px;
+  }
+  .bill-save-note {
+    margin-top: 12px;
+  }
+}
+
 .paid-percentage {
   display: inline-block;
   margin-left: 8px;

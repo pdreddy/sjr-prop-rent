@@ -115,6 +115,29 @@ been removed; month selection and totals lead directly into the resident list.
 Due, Partial and N/A remain distinct, and N/A plots do not count toward paid
 percentage. Admin notices and tenant-name visibility settings remain supported.
 
+## Building electricity bill and collection note
+
+Admin → **Building electricity bill** (`/admin/building-electricity`) records the
+original whole-building bill alongside a manually entered total collected from
+all tenants. This is separate from the existing tenant meter/credit ledger.
+It does not split the utility bill among tenants or modify rent payments.
+
+Each month saves its readings, meter constant, billed load, rates, taxable charge
+components, tax percentage, penalties, interest, arrears, credits and rounding.
+An optional original-bill amount/reference/HTTPS link and collection note support
+reconciliation. The amount still to cover uses the original bill amount when
+entered, otherwise the calculated net payable. Historical months retain their
+saved inputs. Monthly bill and audit entry are saved together under the existing
+Firebase namespace. Meter-reader/security accounts cannot access this section.
+
+**Receipt example:** (24,039 − 21,978) × 1 = 2,061 units. Fixed: 17 kW × ₹200 =
+₹3,400. Energy: 2,061 × ₹10.50 = ₹21,640.50. FPPCA: ₹412.20. Surcharge: ₹721.35.
+Tax: 9% of energy only = ₹1,947.65. Interest: ₹79.16. Current demand: ₹28,200.86;
+nearest-rupee payable: ₹28,201. Recorded demand (14.49 kW) and power factor are
+reference fields; penalties are entered explicitly. Each charge is rounded to
+paise before summing. “Load receipt example” fills a preview; save it explicitly
+only if it belongs to the selected billing month.
+
 ## Browser and calculation checks
 
 ```bash
@@ -128,6 +151,6 @@ PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium npm run test:e2e
 
 Browser tests use mocked public API data and do not require or write to Firebase.
 They cover responsive layouts, filters, search, month changes, retry/empty states,
-install guidance, manifest/icons, offline recovery.
-Unit tests verify
+install guidance, manifest/icons, offline recovery and unauthenticated bill access.
+Unit tests match the supplied receipt, exercise configurable arithmetic and verify
 Firebase credential/namespace/date compatibility with mocked network responses.
