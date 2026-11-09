@@ -294,3 +294,36 @@ FIREBASE_PROJECT_ID="demo-sjr-rent-tracker"
 No `FIREBASE_SERVICE_ACCOUNT_JSON`/`_PATH` is needed against the emulator —
 it doesn't check credentials. Data lives only in the emulator's memory and
 is lost when it stops (nothing to clean up).
+
+## Public resident portal and PWA
+
+The public portal supports month selection, resident/plot search, payment filters,
+and manual refresh. Its summary always represents the selected month, regardless
+of the active search or filter. Unpaid includes plots without a payment marked
+paid; vacant plots are still included in the public totals.
+
+The web manifest, branded 192/512 px icons, maskable icon, Apple touch icon and
+production service worker support installation on compatible browsers over
+HTTPS (localhost also works for testing). “Get the app” uses the browser install
+prompt when available and otherwise explains browser-menu installation, including
+Safari’s Share → Add to Home Screen. Installation options vary by browser.
+
+Only the informational offline page and app icons are cached. Resident records,
+API responses and admin pages are never cached by the service worker. Offline
+navigation to the public home page explains how to reconnect rather than showing
+stale payment information. Service workers register only in production builds.
+
+Browser checks use mocked public API responses; they do not require Firebase or
+validate live database integration:
+
+```bash
+npx playwright install chromium  # once, unless using a system Chromium
+npm run build
+npm run test:e2e
+# Optional in environments with an existing browser:
+PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium npm run test:e2e
+```
+
+The suite covers desktop/mobile layouts (320, 390, 768 and 1440 px), keyboard
+search, filters, month changes, retries, empty results, install guidance,
+manifest/icon delivery and offline recovery with a cache privacy check.

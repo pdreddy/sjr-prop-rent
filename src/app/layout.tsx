@@ -4,12 +4,15 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "SJR Rent Tracker",
   description: "Monthly rent payment tracker for SJR Building",
+  applicationName: "SJR Resident Portal",
+  appleWebApp: { capable: true, statusBarStyle: "default", title: "SJR Home" },
+  icons: { icon: "/icons/icon-192.png", apple: "/icons/apple-touch-icon.png" },
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
+  themeColor: "#224c3e",
 };
 
 export default function RootLayout({

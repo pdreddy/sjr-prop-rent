@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#224c3e" />
+    <title>You’re offline · SJR</title>
+    <style>
+      body {
+        margin: 0;
+        min-height: 100dvh;
+        display: grid;
+        place-items: center;
+        background: #f8f9f5;
+        color: #243c35;
+        font:
+          15px/1.8 Arial,
+          sans-serif;
+      }
+      main {
+        max-width: 390px;
+        padding: 40px 26px;
+        text-align: center;
+      }
+      .mark {
+        display: grid;
+        place-items: center;
+        width: 64px;
+        height: 64px;
+        margin: auto;
+        background: #224c3e;
+        color: #e3edbf;
+        border-radius: 16px;
+        font:
+          22px Georgia,
+          serif;
+      }
+      h1 {
+        font:
+          36px Georgia,
+          serif;
+        letter-spacing: -1px;
+      }
+      p {
+        color: #69776e;
+      }
+      a {
+        display: inline-block;
+        margin-top: 15px;
+        padding: 10px 24px;
+        border-radius: 8px;
+        background: #224c3e;
+        color: white;
+        text-decoration: none;
+      }
+      a:focus-visible {
+        outline: 3px solid #729c58;
+        outline-offset: 4px;
+      }
+      small {
+        display: block;
+        margin-top: 30px;
+        color: #69776e;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="mark">SJR</div>
+      <h1>A moment to reconnect.</h1>
+      <p>
+        You’re offline. Connect to the internet to see your building’s latest
+        rent status.
+      </p>
+      <a href="/">Try again</a
+      ><small
+        >Payment records aren’t stored offline, so you always see a fresh status
+        when you reconnect.</small
+      >
+    </main>
+  </body>
+</html>

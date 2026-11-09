@@ -8,12 +8,14 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
+    "test:e2e": "playwright test",
     "db:seed": "tsx scripts/seed.ts",
     "import:tenants": "tsx scripts/import-tenants.ts",
     "admin:set-password": "tsx scripts/set-admin-password.ts"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
+    "decimal.js": "^10.6.0",
     "firebase-admin": "^14.3.0",
     "jose": "^6.2.7",
     "next": "16.2.12",
@@ -23,6 +25,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@playwright/test": "^1.65.0",
     "@tailwindcss/postcss": "^4",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",
