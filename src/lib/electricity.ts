@@ -14,6 +14,8 @@ export function resolveConfig(config: ElectricityConfigInput): ElectricityConfig
 
 export function defaultElectricityAmount(plotNumber: string, config?: ElectricityConfigInput): number {
   const c = resolveConfig(config);
+  const own = c.plotFixed?.[plotNumber.trim()];
+  if (own !== undefined) return own;
   return c.highPlots.includes(plotNumber.trim()) ? c.defaultHigh : c.defaultStandard;
 }
 

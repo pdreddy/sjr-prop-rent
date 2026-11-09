@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getAuthedAdmin } from "@/lib/auth";
 import { getElectricityConfig, getGeneralSettings, setElectricityConfig, setGeneralSettings } from "@/lib/store";
-import { parsePlotList } from "@/lib/config";
+import { parsePlotFixed, parsePlotList } from "@/lib/config";
 import { recordAuditLog } from "@/lib/audit";
 
 // Everything the admin can configure: electricity (rate, no-reading defaults, high plots, excess limit)
@@ -15,6 +15,7 @@ const schema = z.object({
     defaultStandard: amount(1_000_000),
     highPlots: z.union([z.string(), z.array(z.string())]).transform(parsePlotList),
     excessLimit: amount(10_000_000),
+    plotFixed: z.string().max(2000).default("").transform(parsePlotFixed),
   }),
   general: z.object({
     buildingName: z.string().trim().min(1, "Building name is required").max(100),
@@ -45,7 +46,7 @@ export async function PUT(request: NextRequest) {
 
   const round = (n: number) => Math.round(n * 100) / 100;
   const e = parsed.data.electricity;
-  const electricity = { ratePerUnit: round(e.ratePerUnit), defaultHigh: round(e.defaultHigh), defaultStandard: round(e.defaultStandard), highPlots: e.highPlots, excessLimit: round(e.excessLimit) };
+  const electricity = { ratePerUnit: round(e.ratePerUnit), defaultHigh: round(e.defaultHigh), defaultStandard: round(e.defaultStandard), highPlots: e.highPlots, excessLimit: round(e.excessLimit), plotFixed: e.plotFixed };
   const general = parsed.data.general;
 
   const [previousElectricity, previousGeneral] = await Promise.all([getElectricityConfig(), getGeneralSettings()]);

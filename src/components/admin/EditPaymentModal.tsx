@@ -197,6 +197,9 @@ export default function EditPaymentModal({ row, month, ratePerUnit, onClose, onS
             </label>
           </div>
           {readingError && <p className="mt-1.5 text-xs font-medium text-unpaid">Current reading must be ≥ previous reading.</p>}
+          {!readingError && currReadingNumber > 0 && prevReadingNumber === 0 && (
+            <p className="mt-1.5 text-xs font-medium text-partial">Previous reading is 0, so the whole meter value is billed. For a first reading, enter the starting value as Previous.</p>
+          )}
           <div className="mt-3 grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1">
               <span className={labelClass}>Electricity (₹)</span>

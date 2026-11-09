@@ -1,7 +1,7 @@
 import { deleteDocument, getDocument, listDocuments, newDocumentId, setDocument, type FirebaseValue } from "./firebase";
 import { computeElectricityAmount } from "./electricity";
 import { ELECTRICITY_RATE_PER_UNIT } from "./constants";
-import { normalizeElectricityConfig, normalizeGeneralSettings, type ElectricityConfig, type GeneralSettings } from "./config";
+import { formatPlotFixed, normalizeElectricityConfig, normalizeGeneralSettings, type ElectricityConfig, type GeneralSettings } from "./config";
 import type { PaymentDTO, PaymentStatus, UnitDTO } from "./types";
 
 type StoredUnit = Omit<UnitDTO, "id" | "accessCode" | "createdAt" | "updatedAt" | "moveInDate" | "advancePaidDate"> & {
@@ -74,7 +74,7 @@ export async function getElectricityConfig(): Promise<ElectricityConfig> {
 }
 export async function getElectricityRate(): Promise<number> { return (await getElectricityConfig()).ratePerUnit; }
 export async function setElectricityConfig(config: ElectricityConfig, updatedBy: string) {
-  await setDocument("settings/electricity", { ...config, highPlots: config.highPlots.join(", "), updatedBy, updatedAt: new Date() });
+  await setDocument("settings/electricity", { ...config, highPlots: config.highPlots.join(", "), plotFixed: formatPlotFixed(config.plotFixed), updatedBy, updatedAt: new Date() });
 }
 export async function setElectricityRate(ratePerUnit: number, updatedBy: string) {
   await setDocument("settings/electricity", { ratePerUnit, updatedBy, updatedAt: new Date() }, true);

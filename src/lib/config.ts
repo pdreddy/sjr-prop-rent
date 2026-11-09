@@ -13,6 +13,8 @@ export interface ElectricityConfig {
   highPlots: string[];
   /** Money paid above rent counts as electricity only when under this limit; larger is rent paid ahead. */
   excessLimit: number;
+  /** Per-plot fixed bill (₹) used when unread; overrides the high/standard default for that plot. */
+  plotFixed: Record<string, number>;
 }
 
 export interface GeneralSettings {
@@ -29,6 +31,7 @@ export const DEFAULT_ELECTRICITY_CONFIG: ElectricityConfig = {
   defaultStandard: 500,
   highPlots: ["101", "201", "301", "401", "501"],
   excessLimit: 1500,
+  plotFixed: {},
 };
 
 export const DEFAULT_GENERAL_SETTINGS: GeneralSettings = {
@@ -46,6 +49,24 @@ export function parsePlotList(value: unknown): string[] {
   return [...new Set(items.map((v) => String(v).trim()).filter(Boolean))].slice(0, 200);
 }
 
+/** Parses "101=900, 305=650" (or an object) into { plot: amount }; bad entries are ignored. */
+export function parsePlotFixed(value: unknown): Record<string, number> {
+  const out: Record<string, number> = {};
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    for (const [plot, amount] of Object.entries(value)) if (typeof amount === "number" && amount >= 0 && amount <= 1_000_000) out[plot.trim()] = amount;
+    return out;
+  }
+  if (typeof value === "string") {
+    for (const part of value.split(/[,;\n]+/)) {
+      const [plot, amount] = part.split(/[=:]/).map((x) => x.trim());
+      const n = Number(amount);
+      if (plot && amount !== undefined && amount !== "" && Number.isFinite(n) && n >= 0 && n <= 1_000_000) out[plot] = Math.round(n * 100) / 100;
+    }
+  }
+  return out;
+}
+export const formatPlotFixed = (fixed: Record<string, number>) => Object.entries(fixed).map(([p, a]) => `${p}=${a}`).join(", ");
+
 /** Fills any missing or invalid field with its default, so partial or legacy documents still work. */
 export function normalizeElectricityConfig(value: Partial<Record<keyof ElectricityConfig, unknown>> | null | undefined): ElectricityConfig {
   const d = DEFAULT_ELECTRICITY_CONFIG;
@@ -56,6 +77,7 @@ export function normalizeElectricityConfig(value: Partial<Record<keyof Electrici
     // Stored as a comma-separated string because Realtime Database drops empty arrays.
     highPlots: Array.isArray(value?.highPlots) || typeof value?.highPlots === "string" ? parsePlotList(value?.highPlots) : d.highPlots,
     excessLimit: num(value?.excessLimit, d.excessLimit),
+    plotFixed: parsePlotFixed(value?.plotFixed),
   };
 }
 

@@ -259,6 +259,7 @@ function ElectricityRowCard({
   const currReadingNumber = Number(currReading || 0);
   // A current reading of 0 means "not entered yet", so it is not flagged as an error.
   const readingError = currReadingNumber !== 0 && currReadingNumber < prevReadingNumber;
+  const firstReadingWarning = currReadingNumber > 0 && prevReadingNumber === 0;
   const electricityAmount = computeElectricityAmount(prevReadingNumber, currReadingNumber, ratePerUnit, row.plotNumber);
   const electricityUnits = computeElectricityUnits(prevReadingNumber, currReadingNumber);
   const dirty =
@@ -379,6 +380,11 @@ function ElectricityRowCard({
           {saving ? "Saving…" : "Save"}
         </button>
       </div>
+      {!readingError && firstReadingWarning && (
+        <p className="mt-1.5 text-xs font-medium text-partial">
+          Previous reading is 0, so all {currReadingNumber} units will be billed (₹{electricityAmount.toFixed(0)}). If this is the first reading, enter the meter&apos;s starting value as Previous so billing starts from here.
+        </p>
+      )}
       {readingError && (
         <p className="mt-1.5 text-xs font-medium text-unpaid">Current reading must be ≥ previous reading.</p>
       )}

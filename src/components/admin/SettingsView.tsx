@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { formatPlotFixed } from "@/lib/config";
 import type { ElectricityConfig, GeneralSettings, UnitDTO } from "@/lib/types";
 
 const inputClass =
@@ -20,7 +21,7 @@ interface Props {
 export default function SettingsView({ onUnauthorized, onNotify }: Props) {
   const [electricity, setElectricity] = useState<ElectricityConfig | null>(null);
   const [general, setGeneral] = useState<GeneralSettings | null>(null);
-  const [form, setForm] = useState<{ rate: string; high: string; standard: string; plots: string; limit: string } | null>(null);
+  const [form, setForm] = useState<{ rate: string; high: string; standard: string; plots: string; limit: string; fixed: string } | null>(null);
   const [units, setUnits] = useState<UnitDTO[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -40,6 +41,7 @@ export default function SettingsView({ onUnauthorized, onNotify }: Props) {
         standard: String(settings.electricity.defaultStandard),
         plots: settings.electricity.highPlots.join(", "),
         limit: String(settings.electricity.excessLimit),
+        fixed: formatPlotFixed(settings.electricity.plotFixed),
       });
       setUnits(((await u.json()).units as UnitDTO[]).filter((x) => x.active));
     } catch {
@@ -66,7 +68,7 @@ export default function SettingsView({ onUnauthorized, onNotify }: Props) {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          electricity: { ratePerUnit: Number(form.rate), defaultHigh: Number(form.high), defaultStandard: Number(form.standard), highPlots: form.plots, excessLimit: Number(form.limit) },
+          electricity: { ratePerUnit: Number(form.rate), defaultHigh: Number(form.high), defaultStandard: Number(form.standard), highPlots: form.plots, excessLimit: Number(form.limit), plotFixed: form.fixed },
           general,
         }),
       });
@@ -130,12 +132,17 @@ export default function SettingsView({ onUnauthorized, onNotify }: Props) {
             <span className={hintClass}>Money paid above rent counts as electricity only when under this amount; larger is rent paid ahead.</span>
           </label>
           <label className={labelClass}>
-            Default bill, no reading — high plots (₹)
+            Fixed bill while no units are recorded — high plots (₹)
             <input type="number" inputMode="decimal" min={0} step="1" className={inputClass} {...field("high")} />
           </label>
           <label className={labelClass}>
-            Default bill, no reading — other plots (₹)
+            Fixed bill while no units are recorded — other plots (₹)
             <input type="number" inputMode="decimal" min={0} step="1" className={inputClass} {...field("standard")} />
+          </label>
+          <label className={`${labelClass} sm:col-span-2`}>
+            Fixed bill for specific plots (optional)
+            <input className={inputClass} placeholder="101=900, 305=650" {...field("fixed")} />
+            <span className={hintClass}>Plot=amount pairs. These override the high/other default for that plot while its meter has not been read.</span>
           </label>
           <label className={`${labelClass} sm:col-span-2`}>
             High plots
