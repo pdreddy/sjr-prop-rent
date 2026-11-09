@@ -24,7 +24,8 @@
     "auth:check": "tsx --env-file=.env scripts/check-login.ts",
     "db:mock": "tsx scripts/mock-firebase.ts",
     "smoke": "tsx scripts/smoke.ts",
-    "local": "tsx scripts/local.ts"
+    "local": "tsx --env-file=.env scripts/dev.ts",
+    "demo": "tsx scripts/local.ts"
   },
   "dependencies": {
     "next": "16.2.12",

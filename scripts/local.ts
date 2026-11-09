@@ -1,9 +1,9 @@
 import { spawn } from "node:child_process";
 
-// One command to try the whole app locally, with no Firebase and no .env:  npm run local
+// One command to try the whole app locally, with no Firebase and no .env:  npm run demo
 // Starts an in-memory demo database (scripts/mock-firebase.ts), fills it with sample plots, then runs
 // the app. Sign in at /admin/login with  admin / admin123.  Data resets every time you restart.
-// To use your real data instead, run `npm run dev` with your .env.
+// To use your real data instead, run `npm run local` with your .env.
 const DB_PORT = process.env.MOCK_FIREBASE_PORT ?? "9000";
 const APP_PORT = process.env.PORT ?? "3000";
 process.env.MOCK_FIREBASE_PORT = DB_PORT;

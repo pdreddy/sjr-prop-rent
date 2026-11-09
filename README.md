@@ -104,13 +104,15 @@ The site is an installable Progressive Web App: Chrome/Edge/Android show **Insta
 
 If you cannot sign in, run `npm run auth:check` (or `npm run auth:check -- <username> <password>`): it checks `SESSION_SECRET`, the Firebase connection, and the stored admin accounts, and tells you how to reset a password. In development the login form now also shows the underlying server error. Also, if sign-in appears to do nothing: the session cookie is now marked `Secure` only when the request is HTTPS (previously any production build on plain `http://`, such as `next start` on a LAN IP, silently dropped it). When running `npm run dev` from another device, list its address in `DEV_ORIGINS` (see `next.config.ts`).
 
-## Try it locally in one command
+## Run it locally
 
 ```bash
 npm run local
 ```
 
-Starts an in-memory demo database filled with sample plots, then the app. No Firebase, no `.env`, no password setup. Open http://localhost:3000 (public page) and http://localhost:3000/admin/login (sign in with `admin` / `admin123`). Demo data resets on every restart. To run on your real data, use `npm run dev` with your `.env`.
+Runs the app against your **real Firebase** database using `.env`. It checks `SESSION_SECRET` and the Firebase connection first, tells you whether you are on live data or a test copy (`FIREBASE_DB_PREFIX`), and then starts the dev server at http://localhost:3000 (admin at `/admin/login`, using your existing admin login; no password change needed). It never uses the local mock database.
+
+No Firebase handy? `npm run demo` starts the app with an in-memory demo database and sample plots (sign in with `admin` / `admin123`).
 
 ## Checking that data loads
 
