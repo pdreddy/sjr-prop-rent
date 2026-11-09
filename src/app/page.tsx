@@ -447,6 +447,13 @@ export default function Home() {
                             <Icon name="home" />
                             {plot.plotNumber}
                           </span>
+                          <button
+                            className="plot-details-link"
+                            aria-label={`View details for plot ${plot.plotNumber}`}
+                            onClick={() => setHistoryPlot(plot)}
+                          >
+                            Details <Icon name="arrow" />
+                          </button>
                         </th>
                         <td>
                           <div className="resident-name">
@@ -525,6 +532,9 @@ export default function Home() {
                                 )}
                             </span>
                           </div>
+                          {plot.electricityTotals?.due > 0 && (
+                            <span className="plot-total-due">{`₹${plot.electricityTotals.due.toLocaleString("en-IN", { maximumFractionDigits: 2 })} total electricity due`}</span>
+                          )}
                         </td>
                       </tr>
                     ))}

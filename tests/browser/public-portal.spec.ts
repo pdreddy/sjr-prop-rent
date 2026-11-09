@@ -598,3 +598,139 @@ test("electricity history highlights the viewing month, including a historical s
     await page.keyboard.press("Escape");
   }
 });
+
+test("public plot details show rent and the complete electricity ledger from the example", async ({
+  page,
+}) => {
+  await page.clock.install({ time: new Date("2026-11-09T12:00:00Z") });
+  const electricityMonths = [
+    {
+      month: "2026-07",
+      prevReading: 0,
+      currReading: 0,
+      units: 0,
+      isDefault: true,
+      bill: 500,
+      paid: 0,
+      balance: 500,
+      status: "UNPAID",
+    },
+    {
+      month: "2026-08",
+      prevReading: 0,
+      currReading: 0,
+      units: 0,
+      isDefault: true,
+      bill: 500,
+      paid: 500,
+      balance: 0,
+      status: "PAID",
+    },
+    {
+      month: "2026-09",
+      prevReading: 0,
+      currReading: 53,
+      units: 53,
+      isDefault: false,
+      bill: 371,
+      paid: 0,
+      balance: 371,
+      status: "UNPAID",
+    },
+    {
+      month: "2026-10",
+      prevReading: 53,
+      currReading: 148.8,
+      units: 95.8,
+      isDefault: false,
+      bill: 670.6,
+      paid: 0,
+      balance: 670.6,
+      status: "UNPAID",
+    },
+  ];
+  await page.route("**/api/public/status?*", (route) =>
+    route.fulfill({
+      json: {
+        ...fixture,
+        totalPlots: 1,
+        paidCount: 0,
+        plots: [
+          {
+            ...fixture.plots[0],
+            status: "UNPAID",
+            paidDate: null,
+            electricityStatus: "UNPAID",
+            electricityMonths,
+            electricityTotals: { billed: 2041.6, paid: 500, due: 1541.6 },
+          },
+        ],
+      },
+    }),
+  );
+  await page.goto("/");
+  await expect(page.locator("tbody tr")).toHaveCount(1);
+  await expect(page.locator(".plot-total-due")).toContainText("1,541.6");
+  await page.getByLabel("VIEWING MONTH").selectOption("2026-10");
+  await page.getByRole("button", { name: "View details for plot 101" }).click();
+  const details = page.getByRole("dialog");
+  await expect(
+    details.getByRole("heading", { name: "Plot 101 details" }),
+  ).toBeVisible();
+  await expect(
+    details.getByRole("region", { name: "Selected month rent" }),
+  ).toContainText("Unpaid");
+  await expect(
+    details.getByRole("region", { name: "Selected month electricity" }),
+  ).toContainText("53 → 148.8");
+  await expect(
+    details.getByRole("region", { name: "Selected month electricity" }),
+  ).toContainText("95.8");
+  await expect(details.locator("tbody tr")).toHaveCount(4);
+  await expect(details.locator("tfoot")).toContainText("148.8");
+  await expect(details.locator("tfoot")).toContainText("₹2,041.6");
+  await expect(details.locator("tfoot")).toContainText("₹500");
+  await expect(details.locator("tfoot")).toContainText("₹1,541.6");
+  await expect(details.locator(".history-ledger-note")).toContainText(
+    "2 default-bill months",
+  );
+  await expect(details.locator('tr[aria-current="true"]')).toContainText(
+    "October 2026",
+  );
+});
+
+test("plot details are available without electricity history and show rent paid date", async ({
+  page,
+}) => {
+  await page.route("**/api/public/status?*", (route) =>
+    route.fulfill({
+      json: {
+        ...fixture,
+        totalPlots: 1,
+        paidCount: 1,
+        plots: [
+          {
+            ...fixture.plots[0],
+            paidDate: "2026-11-05T00:00:00Z",
+            electricityStatus: "UNPAID",
+            electricityAmount: 500,
+            electricityMonths: [],
+            electricityTotals: { billed: 0, paid: 0, due: 0 },
+          },
+        ],
+      },
+    }),
+  );
+  await page.goto("/");
+  await page.getByRole("button", { name: "View details for plot 101" }).click();
+  const details = page.getByRole("dialog");
+  await expect(
+    details.getByRole("region", { name: "Selected month rent" }),
+  ).toContainText("Paid");
+  await expect(
+    details.getByRole("region", { name: "Selected month rent" }),
+  ).toContainText("Nov 5, 2026");
+  await expect(details).toContainText("No electricity records yet");
+  await expect(details).toContainText("Estimated bill: ₹500");
+  await expect(details.locator("tfoot")).toHaveCount(0);
+});

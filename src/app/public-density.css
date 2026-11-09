@@ -701,3 +701,115 @@
     font-size: 8px;
   }
 }
+
+.resident-portal .plot-details-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 44px;
+  color: #476c38;
+  font-size: 10px;
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.plot-details-link svg {
+  width: 12px;
+  height: 12px;
+}
+.plot-total-due {
+  display: block;
+  font-size: 9px;
+  color: #9b3d2e;
+  margin-top: 6px;
+  line-height: 1.5;
+}
+.plot-detail-panels {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 24px;
+}
+.plot-month-detail {
+  border: 1px solid #e1e7d9;
+  border-radius: 9px;
+  padding: 16px;
+  background: #f6f8f1;
+}
+.plot-month-detail h3 {
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+.plot-month-detail p {
+  color: #69776e;
+  font-size: 12px;
+  line-height: 1.8;
+  margin-top: 12px;
+}
+.plot-month-detail dl {
+  margin-top: 12px;
+}
+.plot-month-detail dl > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding-block: 5px;
+  font-size: 12px;
+}
+.plot-month-detail dt {
+  color: #69776e;
+}
+.plot-month-detail dd {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.public-electricity-ledger > h3 {
+  font:
+    23px Georgia,
+    serif;
+  margin-bottom: 15px;
+}
+.electricity-history-totals {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.electricity-history-totals dt {
+  font-size: 10px;
+  color: #69776e;
+  line-height: 1.7;
+}
+.electricity-history-totals dd {
+  font-size: 18px;
+  color: #304a35;
+  font-variant-numeric: tabular-nums;
+  margin-top: 5px;
+}
+.history-ledger-note,
+.no-electricity-history {
+  font-size: 11px;
+  color: #69776e;
+  line-height: 1.8;
+  margin-bottom: 16px;
+}
+@media (max-width: 520px) {
+  .plot-detail-panels {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .electricity-history-totals {
+    grid-template-columns: 1fr 1fr;
+  }
+  .resident-portal .plot-details-link {
+    font-size: 9px;
+  }
+  .plot-details-link svg {
+    display: none;
+  }
+  .plot-total-due {
+    font-size: 8px;
+    text-align: right;
+  }
+}
