@@ -3,7 +3,7 @@ import { computeElectricityAmount } from "./electricity";
 import { monthsBetween } from "./electricityLedger";
 import { getCurrentMonth, firstRentMonth, isBeforeBuildingOpened } from "./month";
 import { expectedForMonth } from "./proration";
-import { allPayments, allUnits, getElectricityRate, paymentStatus, savePayment } from "./store";
+import { allPayments, allUnits, getElectricityConfig, paymentStatus, savePayment } from "./store";
 import { deleteDocument } from "./firebase";
 
 export interface BackfillResult {
@@ -25,7 +25,7 @@ export interface BackfillResult {
 // from before the first rent month. Nothing that has a payment or a meter reading is ever changed or
 // deleted. dryRun only counts.
 export async function backfillMonths(opts: { dryRun: boolean; removeEmpty?: boolean; moveEarly?: boolean; updatedBy: string; unitId?: string }): Promise<BackfillResult> {
-  const [units, payments, rate] = await Promise.all([allUnits(), allPayments(), getElectricityRate()]);
+  const [units, payments, rate] = await Promise.all([allUnits(), allPayments(), getElectricityConfig()]);
   const currentMonth = getCurrentMonth();
   const result: BackfillResult = { created: 0, adjusted: 0, needsReview: 0, removed: 0, moved: 0, notes: [] };
 

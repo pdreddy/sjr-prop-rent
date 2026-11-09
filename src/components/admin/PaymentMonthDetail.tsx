@@ -1,6 +1,7 @@
 "use client";
 
 import { formatDate, formatMonthLabel } from "@/lib/month";
+import { resolveConfig, type ElectricityConfigInput } from "@/lib/electricity";
 import type { PaymentHistoryMonth } from "@/lib/types";
 
 const rupees = (n: number) => `₹${n.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
@@ -13,7 +14,7 @@ export interface TenantContext {
 }
 
 // Everything recorded for one tenant-month: rent, payment, electricity, credit and notes.
-export default function PaymentMonthDetail({ tenant, month, ratePerUnit, monthLabel }: { tenant: TenantContext; month: PaymentHistoryMonth | null; ratePerUnit: number; monthLabel: string }) {
+export default function PaymentMonthDetail({ tenant, month, ratePerUnit, monthLabel }: { tenant: TenantContext; month: PaymentHistoryMonth | null; ratePerUnit: ElectricityConfigInput; monthLabel: string }) {
   return (
     <div className="sticky left-0 w-[min(calc(100vw-3rem),64rem)] max-w-full bg-background px-3 py-3.5 sm:px-4">
       <p className="mb-2.5 text-sm font-bold text-primary-dark">
@@ -56,7 +57,7 @@ export default function PaymentMonthDetail({ tenant, month, ratePerUnit, monthLa
             ) : (
               <>
                 <Line label="Units used" value={String(month.electricityUnits)} />
-                <Line label="Rate" value={`₹${ratePerUnit} / unit`} />
+                <Line label="Rate" value={`₹${resolveConfig(ratePerUnit).ratePerUnit} / unit`} />
               </>
             )}
             <Line label="Electricity bill" value={rupees(month.electricityBill)} strong />

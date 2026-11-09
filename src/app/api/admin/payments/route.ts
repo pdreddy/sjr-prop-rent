@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { deletePayment, getElectricityRate, paymentDTO, paymentFor, savePayment, unitById } from "@/lib/store";
+import { deletePayment, getElectricityConfig, paymentDTO, paymentFor, savePayment, unitById } from "@/lib/store";
 import { formatMonthLabel, isValidMonth } from "@/lib/month";
 import { getAuthedAdmin } from "@/lib/auth";
 import { upsertPaymentSchema } from "@/lib/validation";
@@ -24,7 +24,7 @@ export async function PUT(request: NextRequest) {
     );
   }
 
-  const rate = await getElectricityRate();
+  const rate = await getElectricityConfig();
   const unit = await unitById(parsed.data.unitId);
   if (!unit) {
     return NextResponse.json({ error: "Plot not found." }, { status: 404 });
@@ -92,7 +92,7 @@ export async function DELETE(request: NextRequest) {
   const existing = await paymentFor(unitId, month);
   if (!existing) return NextResponse.json({ error: "No record for that month." }, { status: 404 });
 
-  const rate = await getElectricityRate();
+  const rate = await getElectricityConfig();
   await deletePayment(unitId, month);
   await recordAuditLog({
     adminId: admin.id,

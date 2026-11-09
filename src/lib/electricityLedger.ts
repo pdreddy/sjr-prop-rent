@@ -1,4 +1,4 @@
-import { computeElectricityAmount, electricityPortionOfExcess } from "./electricity";
+import { computeElectricityAmount, electricityPortionOfExcess, type ElectricityConfigInput } from "./electricity";
 
 export interface LedgerPayment {
   month: string;
@@ -24,11 +24,11 @@ export interface LedgerEntry {
 // oldest-first, so e.g. a ₹500 overpayment in an earlier month covers that month's bill
 // and whatever is left carries forward to the next. A bill marked paid by hand is
 // settled as-is and does not draw on the credit.
-export function buildElectricityLedger(payments: LedgerPayment[], rate: number, plotNumber?: string): LedgerEntry[] {
+export function buildElectricityLedger(payments: LedgerPayment[], rate: ElectricityConfigInput, plotNumber?: string): LedgerEntry[] {
   const sorted = [...payments].sort((a, b) => a.month.localeCompare(b.month));
   let credit = 0;
   return sorted.map((p) => {
-    credit += electricityPortionOfExcess(p.amountPaid - (p.rentAmount + p.maintenanceAmount));
+    credit += electricityPortionOfExcess(p.amountPaid - (p.rentAmount + p.maintenanceAmount), rate);
     const bill = computeElectricityAmount(p.prevReading ?? 0, p.currReading ?? 0, rate, plotNumber);
     if (p.electricityPaid) return { month: p.month, bill, paid: bill, balance: 0 };
     const paid = Math.min(credit, bill);
@@ -85,7 +85,7 @@ export function monthsBetween(start: string, end: string): string[] {
 // with no payment record (shown as NONE), each with the numbers that produced its status.
 export function buildElectricityStatement(
   payments: StatementPayment[],
-  rate: number,
+  rate: ElectricityConfigInput,
   startMonth: string,
   currentMonth: string,
   plotNumber?: string
@@ -101,7 +101,7 @@ export function buildElectricityStatement(
       };
     }
     const baseline = p.rentAmount + p.maintenanceAmount;
-    const excess = electricityPortionOfExcess(p.amountPaid - baseline);
+    const excess = electricityPortionOfExcess(p.amountPaid - baseline, rate);
     credit += excess;
     const bill = computeElectricityAmount(p.prevReading ?? 0, p.currReading ?? 0, rate, plotNumber);
     const markedPaid = !!p.electricityPaid;

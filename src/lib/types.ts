@@ -1,3 +1,6 @@
+import type { ElectricityConfig, GeneralSettings } from "./config";
+export type { ElectricityConfig, GeneralSettings };
+
 export type PaymentStatus = "PAID" | "UNPAID" | "PARTIAL";
 export type AdminRole = "ADMIN" | "SECURITY";
 
@@ -21,6 +24,7 @@ export interface ElectricityRow {
 export interface ElectricityListResponse {
   month: string;
   ratePerUnit: number;
+  config: ElectricityConfig;
   rows: ElectricityRow[];
 }
 
@@ -38,34 +42,38 @@ export interface PublicElectricityMonth {
   status: "PAID" | "PARTIAL" | "UNPAID";
 }
 
-export interface PublicPlot {
+/** What anyone can see without signing in: no plot, tenant, rent or payment data. */
+export interface PublicInfoResponse {
+  buildingName: string;
+  ratePerUnit: number;
+  portalEnabled: boolean;
+  notice: string;
+}
+
+export interface TenantRentMonth {
+  month: string;
+  /** DUE: unpaid, but the payment window for that month has not passed yet. */
+  status: PaymentStatus | "DUE" | "NA";
+  rentDue: number;
+  paid: number;
+  balance: number;
+  paidDate: string | null;
+}
+
+/** One tenant's own account. Only ever built for the plot that signed in. */
+export interface TenantAccountResponse {
+  buildingName: string;
+  notice: string;
+  ratePerUnit: number;
   plotNumber: string;
   tenantName: string | null;
   moveInDate: string | null;
-  /** DUE: unpaid, but the first-week-of-next-month payment window hasn't passed yet. */
-  status: PaymentStatus | "DUE" | "NA";
-  paidDate: string | null;
-  electricityStatus: "PAID" | "UNPAID" | "NA";
-  electricityAmount: number;
-  electricityCovered: number;
-  electricityBalance: number;
-  prevReading: number;
-  currReading: number;
-  /** Sum of electricity bills across all months that are still unpaid. */
-  unpaidElectricityTotal: number;
-  unpaidElectricityMonths: { month: string; bill: number; paid: number; amount: number }[];
-  /** Every month's electricity for the plot: units, bill, paid and what is still due. */
+  monthlyRent: number;
+  maintenanceAmount: number;
+  rentMonths: TenantRentMonth[];
+  rentTotals: { due: number; paid: number; balance: number };
   electricityMonths: PublicElectricityMonth[];
   electricityTotals: { billed: number; paid: number; due: number };
-}
-
-export interface PublicStatusResponse {
-  buildingName: string;
-  ratePerUnit: number;
-  month: string;
-  totalPlots: number;
-  paidCount: number;
-  plots: PublicPlot[];
 }
 
 export interface UnitDTO {
@@ -74,6 +82,8 @@ export interface UnitDTO {
   tenantName: string | null;
   moveInDate: string | null;
   phoneNumbers: string[];
+  /** Tenant sign-in code for the public page; admin-only. */
+  accessCode: string | null;
   advanceAmount: number;
   advancePaid: number;
   advancePaidDate: string | null;
@@ -130,6 +140,7 @@ export interface DashboardTotals {
 export interface DashboardResponse {
   month: string;
   electricityRatePerUnit: number;
+  electricityConfig: ElectricityConfig;
   rows: DashboardRow[];
   totals: DashboardTotals;
 }
@@ -163,6 +174,7 @@ export interface ElectricityStatementTenant {
 
 export interface ElectricityStatementResponse {
   ratePerUnit: number;
+  config: ElectricityConfig;
   currentMonth: string;
   tenants: ElectricityStatementTenant[];
 }
@@ -250,6 +262,7 @@ export interface RentPaidTenant {
 
 export interface RentPaidResponse {
   currentMonth: string;
+  config: ElectricityConfig;
   tenants: RentPaidTenant[];
 }
 
@@ -322,5 +335,6 @@ export interface PaymentHistoryTenant {
 export interface PaymentHistoryResponse {
   currentMonth: string;
   ratePerUnit: number;
+  config: ElectricityConfig;
   tenants: PaymentHistoryTenant[];
 }

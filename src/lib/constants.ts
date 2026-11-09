@@ -20,4 +20,7 @@ export const LOCKOUT_DURATION_MINUTES = 15;
 export const PAYMENT_STATUSES = ["PAID", "UNPAID", "PARTIAL"] as const;
 export type PaymentStatusValue = (typeof PAYMENT_STATUSES)[number];
 
-export const ELECTRICITY_RATE_PER_UNIT = 7;
+export const ELECTRICITY_RATE_PER_UNIT = 7; // fallback only; the live rate is set in admin Settings
+
+export const MAX_FAILED_TENANT_CODE_ATTEMPTS = 5;
+export const TENANT_LOCKOUT_MINUTES = 15;

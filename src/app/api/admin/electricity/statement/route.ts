@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAuthedAdmin } from "@/lib/auth";
-import { allPayments, allUnits, getElectricityRate } from "@/lib/store";
+import { allPayments, allUnits, getElectricityConfig } from "@/lib/store";
 import { getCurrentMonth } from "@/lib/month";
 import { BUILDING_READY_MONTH } from "@/lib/constants";
 import { buildElectricityStatement } from "@/lib/electricityLedger";
@@ -14,7 +14,7 @@ export async function GET() {
   if (!admin) return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
   if (admin.role !== "ADMIN") return NextResponse.json({ error: "Not authorized." }, { status: 403 });
 
-  const [units, payments, rate] = await Promise.all([allUnits(), allPayments(), getElectricityRate()]);
+  const [units, payments, rate] = await Promise.all([allUnits(), allPayments(), getElectricityConfig()]);
   const currentMonth = getCurrentMonth();
 
   const tenants = units
@@ -42,6 +42,6 @@ export async function GET() {
       };
     });
 
-  const response: ElectricityStatementResponse = { ratePerUnit: rate, currentMonth, tenants };
+  const response: ElectricityStatementResponse = { ratePerUnit: rate.ratePerUnit, config: rate, currentMonth, tenants };
   return NextResponse.json(response);
 }

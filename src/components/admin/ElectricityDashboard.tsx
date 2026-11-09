@@ -8,7 +8,7 @@ import ChangePasswordModal from "./ChangePasswordModal";
 import { formatMonthLabel, getCurrentMonth, getMonthOptions } from "@/lib/month";
 import { ELECTRICITY_RATE_PER_UNIT } from "@/lib/constants";
 import { parseReadings } from "@/lib/readings";
-import { computeElectricityAmount, computeElectricityUnits } from "@/lib/electricity";
+import { computeElectricityAmount, computeElectricityUnits, type ElectricityConfigInput } from "@/lib/electricity";
 import type { AdminRole, ElectricityListResponse, ElectricityRow } from "@/lib/types";
 import { IconBuilding, IconLock, IconLogout, IconSearch } from "@/components/icons";
 
@@ -149,7 +149,7 @@ export default function ElectricityDashboard({ username, role }: { username: str
           <BulkEntry
             month={month}
             rows={data.rows}
-            ratePerUnit={data.ratePerUnit ?? ELECTRICITY_RATE_PER_UNIT}
+            ratePerUnit={data.config ?? data.ratePerUnit ?? ELECTRICITY_RATE_PER_UNIT}
             onDone={(msg) => {
               setMessage(msg);
               load();
@@ -220,7 +220,7 @@ export default function ElectricityDashboard({ username, role }: { username: str
                 key={row.unitId}
                 row={row}
                 month={month}
-                ratePerUnit={data.ratePerUnit ?? ELECTRICITY_RATE_PER_UNIT}
+                ratePerUnit={data.config ?? data.ratePerUnit ?? ELECTRICITY_RATE_PER_UNIT}
                 onSaved={(msg) => {
                   setMessage(msg);
                   load();
@@ -246,7 +246,7 @@ function ElectricityRowCard({
 }: {
   row: ElectricityRow;
   month: string;
-  ratePerUnit: number;
+  ratePerUnit: ElectricityConfigInput;
   onSaved: (message: string) => void;
   onError: (message: string | null) => void;
 }) {
@@ -472,7 +472,7 @@ function BulkEntry({
 }: {
   month: string;
   rows: ElectricityRow[];
-  ratePerUnit: number;
+  ratePerUnit: ElectricityConfigInput;
   onDone: (message: string) => void;
   onError: (message: string | null) => void;
 }) {

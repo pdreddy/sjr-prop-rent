@@ -1,21 +1,26 @@
-import { ELECTRICITY_RATE_PER_UNIT } from "./constants";
+import { DEFAULT_ELECTRICITY_CONFIG, type ElectricityConfig } from "./config";
 
 // Electricity is billed from meter readings - (current − previous) × rate - and never typed in
-// directly. When a month has no current reading yet, a flat default is billed instead: ₹750 for
-// the plots in DEFAULT_HIGH_PLOTS (the first plot on each floor) and ₹500 for every other plot.
-// The rate is admin-configurable (see getElectricityRate in store.ts); the constant is the fallback.
-export const DEFAULT_HIGH_PLOTS = ["101", "201", "301", "401", "501"];
-export const DEFAULT_ELECTRICITY_HIGH = 750;
-export const DEFAULT_ELECTRICITY_STANDARD = 500;
+// directly. When a month has no current reading yet, a flat default is billed instead: the "high"
+// amount for the plots in config.highPlots and the standard amount for every other plot.
+// Everything here is admin-configurable (Settings tab); DEFAULT_ELECTRICITY_CONFIG is the fallback.
+// Functions accept either a full config or, for older callers, just the rate per unit.
+export type ElectricityConfigInput = ElectricityConfig | number | undefined;
 
-export function defaultElectricityAmount(plotNumber: string): number {
-  return DEFAULT_HIGH_PLOTS.includes(plotNumber.trim()) ? DEFAULT_ELECTRICITY_HIGH : DEFAULT_ELECTRICITY_STANDARD;
+export function resolveConfig(config: ElectricityConfigInput): ElectricityConfig {
+  if (config === undefined) return DEFAULT_ELECTRICITY_CONFIG;
+  return typeof config === "number" ? { ...DEFAULT_ELECTRICITY_CONFIG, ratePerUnit: config } : config;
+}
+
+export function defaultElectricityAmount(plotNumber: string, config?: ElectricityConfigInput): number {
+  const c = resolveConfig(config);
+  return c.highPlots.includes(plotNumber.trim()) ? c.defaultHigh : c.defaultStandard;
 }
 
 // Money paid above a month's rent is an electricity payment only when it is a small amount (₹500,
-// ₹1,000, anything under this limit). A larger excess is rent paid ahead, not electricity.
-export const ELECTRICITY_EXCESS_LIMIT = 1500;
-export const electricityPortionOfExcess = (excess: number): number => (excess > 0 && excess < ELECTRICITY_EXCESS_LIMIT ? excess : 0);
+// ₹1,000, anything under the limit). A larger excess is rent paid ahead, not electricity.
+export const electricityPortionOfExcess = (excess: number, config?: ElectricityConfigInput): number =>
+  excess > 0 && excess < resolveConfig(config).excessLimit ? excess : 0;
 
 /** A current reading of 0 (or none) means the meter has not been read for the month yet. */
 export const hasMeterReading = (currReading: number | null | undefined): boolean => (currReading ?? 0) > 0;
@@ -24,11 +29,12 @@ export const hasMeterReading = (currReading: number | null | undefined): boolean
 export function computeElectricityAmount(
   prevReading: number,
   currReading: number,
-  rate: number = ELECTRICITY_RATE_PER_UNIT,
+  config?: ElectricityConfigInput,
   plotNumber?: string
 ): number {
-  if (plotNumber !== undefined && !hasMeterReading(currReading)) return defaultElectricityAmount(plotNumber);
-  return Math.max(0, currReading - prevReading) * rate;
+  const c = resolveConfig(config);
+  if (plotNumber !== undefined && !hasMeterReading(currReading)) return defaultElectricityAmount(plotNumber, c);
+  return Math.max(0, currReading - prevReading) * c.ratePerUnit;
 }
 
 export function computeElectricityUnits(prevReading: number, currReading: number): number {

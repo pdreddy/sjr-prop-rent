@@ -14,6 +14,7 @@ import MoveInProrationView from "./MoveInProrationView";
 import RentPaidView from "./RentPaidView";
 import PaymentHistoryView from "./PaymentHistoryView";
 import AllDetailsView from "./AllDetailsView";
+import SettingsView from "./SettingsView";
 import {
   getCurrentMonth,
   getMonthOptions,
@@ -39,9 +40,9 @@ import {
 const monthOptions = getMonthOptions();
 const STATUS_FILTERS = ["ALL", "PAID", "UNPAID", "PARTIAL", "VACANT"] as const;
 type StatusFilter = (typeof STATUS_FILTERS)[number];
-const TABS = ["overview", "all-details", "electricity", "history", "proration", "rent-paid", "payment-history"] as const;
+const TABS = ["overview", "all-details", "electricity", "history", "proration", "rent-paid", "payment-history", "settings"] as const;
 type Tab = (typeof TABS)[number];
-const TAB_LABELS: Record<Tab, string> = { overview: "Overview", "all-details": "All details", electricity: "Electricity bills", history: "Rental history", proration: "Move-in Proration", "rent-paid": "Rent paid", "payment-history": "Payment history" };
+const TAB_LABELS: Record<Tab, string> = { overview: "Overview", "all-details": "All details", electricity: "Electricity bills", history: "Rental history", proration: "Move-in Proration", "rent-paid": "Rent paid", "payment-history": "Payment history", settings: "Settings" };
 
 export default function AdminDashboard({ username }: { username: string }) {
   const router = useRouter();
@@ -136,7 +137,7 @@ export default function AdminDashboard({ username }: { username: string }) {
 
   const totals = data?.totals;
   // These tabs load their own data and ignore the month/search/filter bar.
-  const standaloneTab = tab === "electricity" || tab === "history" || tab === "proration" || tab === "rent-paid" || tab === "payment-history";
+  const standaloneTab = tab === "electricity" || tab === "history" || tab === "proration" || tab === "rent-paid" || tab === "payment-history" || tab === "settings";
 
   return (
     <div className="flex flex-1 flex-col bg-background">
@@ -212,6 +213,7 @@ export default function AdminDashboard({ username }: { username: string }) {
         {tab === "proration" && <MoveInProrationView onUnauthorized={handleUnauthorized} />}
         {tab === "rent-paid" && <RentPaidView onUnauthorized={handleUnauthorized} />}
         {tab === "payment-history" && <PaymentHistoryView onUnauthorized={handleUnauthorized} />}
+        {tab === "settings" && <SettingsView onUnauthorized={handleUnauthorized} onNotify={(msg) => { setMessage(msg); load(); }} />}
 
         <div className={`mb-4 flex flex-wrap items-end gap-3 rounded-2xl border border-primary/10 bg-white p-3 shadow-sm sm:p-4 ${standaloneTab ? "hidden" : ""}`}>
           <MonthYearSelector month={month} options={monthOptions} onChange={setMonth} />
@@ -356,7 +358,7 @@ export default function AdminDashboard({ username }: { username: string }) {
         <EditPaymentModal
           row={editingRow}
           month={month}
-          ratePerUnit={data?.electricityRatePerUnit ?? ELECTRICITY_RATE_PER_UNIT}
+          ratePerUnit={data?.electricityConfig ?? data?.electricityRatePerUnit ?? ELECTRICITY_RATE_PER_UNIT}
           onClose={() => setEditingRow(null)}
           onSaved={(msg) => {
             setEditingRow(null);

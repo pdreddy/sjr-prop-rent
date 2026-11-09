@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthedAdmin } from "@/lib/auth";
 import { isValidMonth, getCurrentMonth, getPreviousMonth, isBeforeMoveInMonth, isBeforeFirstRentMonth } from "@/lib/month";
-import { allPayments, allUnits, getElectricityRate, paymentDTO, paymentFor, savePayment, unitById } from "@/lib/store";
+import { allPayments, allUnits, getElectricityConfig, paymentDTO, paymentFor, savePayment, unitById } from "@/lib/store";
 import { expectedForMonth } from "@/lib/proration";
 import { computeElectricityAmount } from "@/lib/electricity";
 import { buildElectricityLedger } from "@/lib/electricityLedger";
@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
   const search = params.get("search")?.trim().toLowerCase();
   const previousMonth = getPreviousMonth(month);
 
-  const [units, payments, rate] = await Promise.all([allUnits(), allPayments(), getElectricityRate()]);
+  const [units, payments, rate] = await Promise.all([allUnits(), allPayments(), getElectricityConfig()]);
   const rows = units
     .filter((unit) => unit.active && (!search || [unit.plotNumber, unit.tenantName].some((v) => v?.toLowerCase().includes(search))))
     .map((unit) => {
@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
       };
     });
 
-  const response: ElectricityListResponse = { month, ratePerUnit: rate, rows };
+  const response: ElectricityListResponse = { month, ratePerUnit: rate.ratePerUnit, config: rate, rows };
   return NextResponse.json(response);
 }
 
@@ -70,7 +70,7 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Invalid input." }, { status: 400 });
   }
 
-  const rate = await getElectricityRate();
+  const rate = await getElectricityConfig();
   const unit = await unitById(parsed.data.unitId);
   if (!unit) return NextResponse.json({ error: "Plot not found." }, { status: 404 });
 

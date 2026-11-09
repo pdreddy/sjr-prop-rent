@@ -1,15 +1,20 @@
 import { deleteDocument, getDocument, listDocuments, newDocumentId, setDocument, type FirebaseValue } from "./firebase";
 import { computeElectricityAmount } from "./electricity";
 import { ELECTRICITY_RATE_PER_UNIT } from "./constants";
+import { normalizeElectricityConfig, normalizeGeneralSettings, type ElectricityConfig, type GeneralSettings } from "./config";
 import type { PaymentDTO, PaymentStatus, UnitDTO } from "./types";
 
-type StoredUnit = Omit<UnitDTO, "id" | "createdAt" | "updatedAt" | "moveInDate" | "advancePaidDate"> & {
+type StoredUnit = Omit<UnitDTO, "id" | "accessCode" | "createdAt" | "updatedAt" | "moveInDate" | "advancePaidDate"> & {
   moveInDate: Date | null;
   advancePaidDate: Date | null;
   /** Rent received by the 10th after move-in, recorded on the Move-in Proration tab. Only valid while
    *  moveInPaidFor still equals the unit's current move-in date (YYYY-MM-DD). */
   moveInPaid?: number | null;
   moveInPaidFor?: string | null;
+  /** Private code the tenant uses with the plot number to see their own account on the public page. */
+  accessCode?: string | null;
+  accessFailedAttempts?: number;
+  accessLockedUntil?: Date | null;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -19,10 +24,13 @@ export interface AuditRecord { id: string; adminId: string; adminUsername: strin
 const iso = (date: Date | null) => date?.toISOString() ?? null;
 // Legacy records stored a single `phone: string | null` before phoneNumbers existed.
 export const unitDTO = (unit: StoredUnit & { id: string } & { phone?: string | null }): UnitDTO => {
-  const { phone, ...rest } = unit;
+  // Lockout counters are internal; the access code is only ever sent to the signed-in admin.
+  const { phone, accessFailedAttempts: _attempts, accessLockedUntil: _locked, ...rest } = unit;
+  void _attempts; void _locked;
   return {
     ...rest,
     phoneNumbers: unit.phoneNumbers ?? (phone ? [phone] : []),
+    accessCode: unit.accessCode ?? null,
     advanceAmount: unit.advanceAmount ?? 0,
     advancePaid: unit.advancePaid ?? 0,
     advancePaidDate: iso(unit.advancePaidDate),
@@ -32,7 +40,7 @@ export const unitDTO = (unit: StoredUnit & { id: string } & { phone?: string | n
     updatedAt: unit.updatedAt.toISOString(),
   };
 };
-export const paymentDTO = (payment: StoredPayment & { id: string }, rate: number = ELECTRICITY_RATE_PER_UNIT, plotNumber?: string): PaymentDTO => {
+export const paymentDTO = (payment: StoredPayment & { id: string }, rate: ElectricityConfig | number = ELECTRICITY_RATE_PER_UNIT, plotNumber?: string): PaymentDTO => {
   const prevReading = payment.prevReading ?? 0;
   const currReading = payment.currReading ?? 0;
   return {
@@ -60,13 +68,23 @@ export async function updateUnit(id: string, data: Partial<Omit<StoredUnit, "cre
   return (await unitById(id))!;
 }
 
-export async function getElectricityRate(): Promise<number> {
-  const doc = await getDocument<{ ratePerUnit?: number }>("settings/electricity");
-  const rate = doc?.ratePerUnit;
-  return typeof rate === "number" && Number.isFinite(rate) && rate >= 0 ? rate : ELECTRICITY_RATE_PER_UNIT;
+// Electricity settings (rate, no-reading defaults, high plots, excess limit). Missing fields fall back to defaults.
+export async function getElectricityConfig(): Promise<ElectricityConfig> {
+  return normalizeElectricityConfig(await getDocument<Partial<Record<keyof ElectricityConfig, unknown>>>("settings/electricity"));
+}
+export async function getElectricityRate(): Promise<number> { return (await getElectricityConfig()).ratePerUnit; }
+export async function setElectricityConfig(config: ElectricityConfig, updatedBy: string) {
+  await setDocument("settings/electricity", { ...config, highPlots: config.highPlots.join(", "), updatedBy, updatedAt: new Date() });
 }
 export async function setElectricityRate(ratePerUnit: number, updatedBy: string) {
-  await setDocument("settings/electricity", { ratePerUnit, updatedBy, updatedAt: new Date() });
+  await setDocument("settings/electricity", { ratePerUnit, updatedBy, updatedAt: new Date() }, true);
+}
+
+export async function getGeneralSettings(): Promise<GeneralSettings> {
+  return normalizeGeneralSettings(await getDocument<Partial<Record<keyof GeneralSettings, unknown>>>("settings/general"));
+}
+export async function setGeneralSettings(settings: GeneralSettings, updatedBy: string) {
+  await setDocument("settings/general", { ...settings, updatedBy, updatedAt: new Date() });
 }
 
 export async function allPayments() { return listDocuments<StoredPayment>("payments"); }

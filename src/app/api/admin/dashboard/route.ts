@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuthedAdmin } from "@/lib/auth";
 import { isValidMonth, getCurrentMonth, isBeforeFirstRentMonth } from "@/lib/month";
 import { expectedForMonth } from "@/lib/proration";
-import { allPayments, allUnits, getElectricityRate, paymentDTO, unitDTO } from "@/lib/store";
+import { allPayments, allUnits, getElectricityConfig, paymentDTO, unitDTO } from "@/lib/store";
 
 export async function GET(request: NextRequest) {
   const admin = await getAuthedAdmin();
@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
   const month = monthParam && isValidMonth(monthParam) ? monthParam : getCurrentMonth();
   const search = params.get("search")?.trim().toLowerCase();
   const statusFilter = params.get("status");
-  const [unitRecords, paymentRecords, rate] = await Promise.all([allUnits(), allPayments(), getElectricityRate()]);
+  const [unitRecords, paymentRecords, rate] = await Promise.all([allUnits(), allPayments(), getElectricityConfig()]);
   let rows = unitRecords
     .filter(
       (unit) =>
@@ -43,5 +43,5 @@ export async function GET(request: NextRequest) {
     if (row.effectiveStatus === "PAID") acc.numPaid++; else if (row.effectiveStatus === "PARTIAL") acc.numPartial++; else acc.numUnpaid++;
     return acc;
   }, { totalExpected: 0, totalCollected: 0, numPaid: 0, numPartial: 0, numUnpaid: 0 });
-  return NextResponse.json({ month, electricityRatePerUnit: rate, rows, totals: { ...totals, outstandingBalance: totals.totalExpected - totals.totalCollected, totalUnits: rows.length } });
+  return NextResponse.json({ month, electricityRatePerUnit: rate.ratePerUnit, electricityConfig: rate, rows, totals: { ...totals, outstandingBalance: totals.totalExpected - totals.totalCollected, totalUnits: rows.length } });
 }

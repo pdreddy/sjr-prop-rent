@@ -88,3 +88,15 @@ npm run import:tenants
 ```
 
 `import:tenants` loads the bundled building register into Realtime Database and is safe to rerun. Top-level nodes are created automatically as `admins`, `units`, `payments`, and `auditLogs`; payment keys combine unit ID and month to prevent duplicate monthly records.
+
+## Tenant portal and admin settings
+
+The public home page no longer lists plots, rents or payments. A tenant signs in with their **plot number and a private 6-digit access code** and sees only their own rent and electricity, so tenants cannot see each other's amounts. Anonymous visitors see only the building name and an optional notice (`/api/public/info`). Wrong codes are rate-limited and lock a plot for 15 minutes after 5 failures.
+
+In **Admin → Settings** you can configure:
+
+- **Electricity**: rate per unit, the flat default bill used when a meter has not been read (for "high" plots and for all other plots), which plots are "high", and the over-payment limit below which extra rent money counts as electricity.
+- **Building & portal**: building name, a notice shown to tenants, and a switch to turn the tenant portal off.
+- **Tenant access codes**: generate, regenerate, set or remove each plot's code. Plots without a code cannot sign in; use **Generate missing** after upgrading.
+
+Settings are stored in Realtime Database under `settings/electricity` and `settings/general`; existing rates carry over and missing values fall back to the previous defaults (₹7/unit, ₹750/₹500, ₹1,500). `PUBLIC_SHOW_TENANT_NAME` is no longer used.

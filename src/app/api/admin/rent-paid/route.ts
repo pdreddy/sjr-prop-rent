@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAuthedAdmin } from "@/lib/auth";
-import { allPayments, allUnits } from "@/lib/store";
+import { allPayments, allUnits, getElectricityConfig } from "@/lib/store";
 import { firstRentMonth, getCurrentMonth, isBeforeBuildingOpened } from "@/lib/month";
 import { BUILDING_READY_MONTH } from "@/lib/constants";
 import { monthsBetween } from "@/lib/electricityLedger";
@@ -15,11 +15,12 @@ export async function GET() {
   if (!admin) return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
   if (admin.role !== "ADMIN") return NextResponse.json({ error: "Not authorized." }, { status: 403 });
 
-  const [units, payments] = await Promise.all([allUnits(), allPayments()]);
+  const [units, payments, electricityConfig] = await Promise.all([allUnits(), allPayments(), getElectricityConfig()]);
   const currentMonth = getCurrentMonth();
 
   const response: RentPaidResponse = {
     currentMonth,
+    config: electricityConfig,
     tenants: units
       .filter((unit) => unit.active && unit.tenantName?.trim())
       .map((unit) => {
@@ -42,9 +43,9 @@ export async function GET() {
           // No record yet: what the tenant owes for that month (prorated in the first one), paid 0.
           const due = record ? record.rentAmount + record.maintenanceAmount : expected.rent + expected.maintenance;
           const received = record?.amountPaid ?? 0;
-          // A small excess over the month's rent (under ₹1,500) is an electricity payment; anything larger
+          // A small excess over the month's rent (under the configured limit) is an electricity payment; anything larger
           // stays rent (paid ahead).
-          const toElectricity = electricityPortionOfExcess(received - due);
+          const toElectricity = electricityPortionOfExcess(received - due, electricityConfig);
           const paid = received - toElectricity;
           const net = paid + advance - due;
           totalDue += due;

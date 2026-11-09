@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthedAdmin } from "@/lib/auth";
 import { copyMonthSchema } from "@/lib/validation";
-import { allPayments, allUnits, getElectricityRate, savePayment } from "@/lib/store";
+import { allPayments, allUnits, getElectricityConfig, savePayment } from "@/lib/store";
 import { recordAuditLog } from "@/lib/audit";
 import { expectedForMonth } from "@/lib/proration";
 import { computeElectricityAmount } from "@/lib/electricity";
@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
   if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Invalid input." }, { status: 400 });
   const { sourceMonth, targetMonth } = parsed.data;
   if (sourceMonth === targetMonth) return NextResponse.json({ error: "Source and target month must be different." }, { status: 400 });
-  const [units, payments, rate] = await Promise.all([allUnits(), allPayments(), getElectricityRate()]);
+  const [units, payments, rate] = await Promise.all([allUnits(), allPayments(), getElectricityConfig()]);
   // A tenant has no rent record before the month after they move in.
   const active = units.filter((unit) => unit.active && !isBeforeFirstRentMonth(unit.moveInDate, targetMonth));
   let createdCount = 0;

@@ -7,12 +7,13 @@ import { isBeforeFirstRentMonth } from "@/lib/month";
 import { stripElectricityNote, withElectricityNote } from "@/lib/notes";
 import { moveInProration, prorate } from "@/lib/proration";
 import { computeElectricityAmount, computeElectricityUnits } from "@/lib/electricity";
+import type { ElectricityConfigInput } from "@/lib/electricity";
 import type { DashboardRow, PaymentStatus } from "@/lib/types";
 
 interface Props {
   row: DashboardRow;
   month: string;
-  ratePerUnit: number;
+  ratePerUnit: ElectricityConfigInput;
   onClose: () => void;
   onSaved: (message: string) => void;
 }
