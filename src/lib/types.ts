@@ -49,8 +49,18 @@ export interface ElectricityRow {
   outstandingTotal: number;
 }
 
+/** The building's own power bill for a month next to what was billed to tenants from their meters. */
+export interface BuildingElectricity {
+  /** What the electricity company charged for the whole building; null until the admin enters it. */
+  actualBill: number | null;
+  /** Sum of every tenant's electricity bill for the month. */
+  billedToTenants: number;
+}
+
 export interface ElectricityListResponse {
   month: string;
+  /** Admin only: the building's power bill entered for this month. */
+  building?: BuildingElectricity;
   ratePerUnit: number;
   config: ElectricityConfig;
   rows: ElectricityRow[];
@@ -106,6 +116,7 @@ export interface PublicStatusResponse {
   month: string;
   totalPlots: number;
   paidCount: number;
+  buildingElectricity?: BuildingElectricity;
   plots: PublicPlot[];
 }
 

@@ -95,6 +95,12 @@ export const copyMonthSchema = z.object({
   targetMonth: monthSchema,
 });
 
+export const buildingBillSchema = z.object({
+  month: monthSchema,
+  /** null clears the month's bill. */
+  amount: z.coerce.number().min(0).max(100_000_000).nullable(),
+});
+
 export const moveInPaymentSchema = z.object({
   unitId: z.string().min(1),
   paidByTenth: z.coerce.number().min(0).max(10_000_000).nullable(),

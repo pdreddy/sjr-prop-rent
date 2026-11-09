@@ -110,6 +110,18 @@ async function main() {
   const rp = await api("/api/admin/rent-paid");
   check("rent-paid: 101 balance reflects unpaid current month", rp.json?.tenants?.find((t: any) => t.plotNumber === "101")?.totalPaid === 42000, rp.json?.tenants?.[0]);
 
+  console.log("\nBuilding's power bill");
+  check("public page shows no building bill until one is entered", pub.json?.buildingElectricity?.actualBill === null && pub.json?.buildingElectricity?.billedToTenants === 750, pub.json?.buildingElectricity);
+  check("billed to tenants matches the Summary tab", pub.json?.buildingElectricity?.billedToTenants === sum.json?.electricity?.billed, [pub.json?.buildingElectricity, sum.json?.electricity?.billed]);
+  const billSaved = await api("/api/admin/building-bill", { method: "PUT", body: JSON.stringify({ month: M, amount: 1200.5 }) });
+  check("admin saves the building's bill", billSaved.status === 200 && billSaved.json?.amount === 1200.5, billSaved.json ?? billSaved.text.slice(0, 120));
+  check("public page then shows it", (await api(`/api/public/status?month=${M}`)).json?.buildingElectricity?.actualBill === 1200.5);
+  check("it is kept per month", (await api(`/api/public/status?month=${M1}`)).json?.buildingElectricity?.actualBill === null);
+  check("meter readings page shows it to the admin", (await api(`/api/admin/electricity?month=${M}`)).json?.building?.actualBill === 1200.5);
+  check("a negative bill is rejected", (await api("/api/admin/building-bill", { method: "PUT", body: JSON.stringify({ month: M, amount: -1 }) })).status === 400);
+  check("saving needs a login", (await fetch(`${BASE}/api/admin/building-bill`, { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ month: M, amount: 5 }) })).status === 401);
+  check("clearing removes it", (await api("/api/admin/building-bill", { method: "PUT", body: JSON.stringify({ month: M, amount: null }) })).status === 200 && (await api(`/api/public/status?month=${M}`)).json?.buildingElectricity?.actualBill === null);
+
   console.log("\nEvery tab shows the same figures");
   await crossCheck(api, check);
 

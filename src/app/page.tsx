@@ -14,7 +14,7 @@ import {
   formatMonthLabel,
 } from "@/lib/month";
 import { rupee, shortMonth } from "@/lib/format";
-import type { PublicPlot } from "@/lib/types";
+import type { BuildingElectricity, PublicPlot } from "@/lib/types";
 
 type Filter = "ALL" | "PENDING" | PublicPlot["status"];
 type ElectricityFilter = "ALL" | PublicPlot["electricityStatus"];
@@ -41,6 +41,75 @@ const initials = (name: string) =>
 
 const percent = (part: number, whole: number) =>
   whole > 0 ? Math.round((part / whole) * 100) : 0;
+
+/** The building's own power bill next to the total billed to tenants, and the gap between them. */
+function BuildingElectricityBand({
+  building,
+  month,
+}: {
+  building: BuildingElectricity;
+  month: string;
+}) {
+  const { actualBill, billedToTenants } = building;
+  const difference =
+    actualBill === null
+      ? null
+      : Math.round((actualBill - billedToTenants) * 100) / 100;
+  const share =
+    actualBill && actualBill > 0
+      ? Math.min(100, Math.round((billedToTenants / actualBill) * 100))
+      : 0;
+  return (
+    <section
+      className="building-electricity"
+      aria-labelledby="building-electricity-title"
+    >
+      <div className="building-electricity-title">
+        <h2 id="building-electricity-title">
+          <Icon name="bolt" /> Building electricity
+        </h2>
+        <p>{formatMonthLabel(month)}</p>
+      </div>
+      <dl>
+        <div>
+          <dt>Building&rsquo;s power bill</dt>
+          <dd className={actualBill === null ? "is-pending" : ""}>
+            {actualBill === null ? "Not entered yet" : rupee(actualBill)}
+          </dd>
+        </div>
+        <div>
+          <dt>Billed to tenants</dt>
+          <dd>{rupee(billedToTenants)}</dd>
+        </div>
+        <div className={difference ? "is-difference" : ""}>
+          <dt>Difference</dt>
+          <dd>
+            {difference === null ? "—" : rupee(Math.abs(difference))}
+            {difference !== null && (
+              <small>
+                {difference > 0
+                  ? "not billed to tenants"
+                  : difference < 0
+                    ? "billed above the building’s bill"
+                    : "bills match"}
+              </small>
+            )}
+          </dd>
+        </div>
+      </dl>
+      {actualBill !== null && actualBill > 0 && (
+        <p className="building-electricity-share">
+          <span className="kpi-bar" aria-hidden="true">
+            <i className="good" style={{ width: `${share}%` }} />
+          </span>
+          <span>
+            Tenant bills cover {Math.round((billedToTenants / actualBill) * 100)}% of the building&rsquo;s bill
+          </span>
+        </p>
+      )}
+    </section>
+  );
+}
 
 export default function Home() {
   const [month, setMonth] = useState(getCurrentMonth());
@@ -289,6 +358,13 @@ export default function Home() {
             </span>
           </button>
         </section>
+
+        {ready && data.buildingElectricity && (
+          <BuildingElectricityBand
+            building={data.buildingElectricity}
+            month={month}
+          />
+        )}
 
         <section
           id="resident-list"

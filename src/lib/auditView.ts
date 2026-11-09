@@ -25,6 +25,7 @@ const LABELS: Record<string, string> = {
   currReading: "Current reading",
   electricityPaid: "Electricity marked paid",
   month: "Month",
+  amount: "Building's power bill",
   tenantName: "Tenant",
   plotNumber: "Plot",
   monthlyRent: "Monthly rent",
@@ -115,4 +116,4 @@ export function parsePaymentRecordId(recordId: string | null): { unitId: string;
 export const AUDIT_GROUPS = ["Payment", "Electricity", "Unit", "Settings", "Other"] as const;
 export type AuditGroup = (typeof AUDIT_GROUPS)[number];
 export const auditGroupOf = (recordType: string): AuditGroup =>
-  recordType === "Payment" || recordType === "MoveInPayment" ? "Payment" : recordType === "Electricity" ? "Electricity" : recordType === "Unit" ? "Unit" : recordType === "Settings" ? "Settings" : "Other";
+  recordType === "Payment" || recordType === "MoveInPayment" ? "Payment" : recordType === "Electricity" || recordType === "BuildingBill" ? "Electricity" : recordType === "Unit" ? "Unit" : recordType === "Settings" ? "Settings" : "Other";

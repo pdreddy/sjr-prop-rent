@@ -338,6 +338,92 @@
   transition: width 0.3s;
 }
 
+/* ---- Building's own power bill vs. what was billed to tenants ---- */
+.building-electricity {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px 28px;
+  padding: 14px 16px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-card);
+  background: var(--card);
+  box-shadow: var(--shadow-card);
+}
+.building-electricity h2 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-ink);
+  font-size: 16px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.building-electricity h2 svg {
+  width: 18px;
+  height: 18px;
+  color: var(--color-primary);
+}
+.building-electricity-title p {
+  color: var(--color-muted);
+  font-size: 13px;
+}
+.building-electricity dl {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.building-electricity dl > div {
+  padding: 8px 12px;
+  border-radius: var(--radius-control);
+  background: var(--tint);
+}
+.building-electricity dt {
+  color: var(--color-muted);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.building-electricity dd {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 8px;
+  color: var(--color-ink);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.building-electricity dd.is-pending {
+  color: var(--color-muted);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 30px;
+}
+.building-electricity dd small {
+  color: var(--color-muted);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+.building-electricity .is-difference {
+  background: var(--color-partial-bg);
+}
+.building-electricity .is-difference :is(dt, dd, small) {
+  color: #7a4a06;
+}
+.building-electricity-share {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  color: var(--color-muted);
+  font-size: 13px;
+}
+
 /* ---- Directory card ---- */
 .directory {
   border: 1px solid var(--color-line);
@@ -1208,6 +1294,37 @@
   }
   .kpi-sub {
     font-size: 12px;
+  }
+  .building-electricity {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 10px 12px;
+  }
+  .building-electricity-title {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .building-electricity dl {
+    gap: 6px;
+  }
+  .building-electricity dl > div {
+    padding: 6px 8px;
+  }
+  .building-electricity dt {
+    font-size: 11px;
+    letter-spacing: 0.02em;
+  }
+  .building-electricity dd {
+    font-size: 16px;
+  }
+  .building-electricity dd.is-pending {
+    font-size: 13px;
+    line-height: 24px;
+  }
+  .building-electricity-share {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 4px;
   }
   .directory-toolbar {
     grid-template-columns: minmax(0, 1fr);

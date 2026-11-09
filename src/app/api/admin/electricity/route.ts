@@ -2,7 +2,7 @@ import { withErrorHandling } from "@/lib/apiHandler";
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthedAdmin } from "@/lib/auth";
 import { isValidMonth, getCurrentMonth, getPreviousMonth, isBeforeMoveInMonth, isBeforeFirstRentMonth } from "@/lib/month";
-import { allPayments, allUnits, getElectricityConfig, paymentDTO, paymentFor, savePayment, unitById } from "@/lib/store";
+import { getBuildingBill, allPayments, allUnits, getElectricityConfig, paymentDTO, paymentFor, savePayment, unitById } from "@/lib/store";
 import { expectedForMonth } from "@/lib/proration";
 import { computeElectricityAmount, profileForMonth } from "@/lib/electricity";
 import { buildLedgers, buildUnitMonthView } from "@/lib/monthView";
@@ -52,7 +52,11 @@ export const GET = withErrorHandling(async (request: NextRequest) => {
       };
     });
 
-  const response: ElectricityListResponse = { month, ratePerUnit: profileForMonth(rate, month).profile.ratePerUnit, config: rate, rows };
+  // The building's own bill is money information: the security login never receives it.
+  const building = admin.role === "ADMIN"
+    ? { actualBill: await getBuildingBill(month), billedToTenants: Math.round(units.filter((u) => u.active).reduce((sum, u) => sum + buildUnitMonthView(u, ledgers.get(u.id), payments.find((p) => p.unitId === u.id && p.month === month), month).electricity.bill, 0) * 100) / 100 }
+    : undefined;
+  const response: ElectricityListResponse = { month, building, ratePerUnit: profileForMonth(rate, month).profile.ratePerUnit, config: rate, rows };
   return NextResponse.json(response);
 });
 

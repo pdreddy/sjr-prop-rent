@@ -5,6 +5,7 @@ import {
   allUnits,
   getElectricityConfig,
   getGeneralSettings,
+  getBuildingBill,
 } from "@/lib/store";
 import { isValidMonth, getCurrentMonth } from "@/lib/month";
 import { describeFormula, profileForMonth } from "@/lib/electricity";
@@ -20,11 +21,12 @@ export const GET = withErrorHandling(async (request: NextRequest) => {
   const month =
     monthParam && isValidMonth(monthParam) ? monthParam : getCurrentMonth();
 
-  const [allUnitRecords, payments, rate, general] = await Promise.all([
+  const [allUnitRecords, payments, rate, general, actualBill] = await Promise.all([
     allUnits(),
     allPayments(),
     getElectricityConfig(),
     getGeneralSettings(),
+    getBuildingBill(month),
   ]);
   const units = allUnitRecords.filter((unit) => unit.active);
 
@@ -95,6 +97,12 @@ export const GET = withErrorHandling(async (request: NextRequest) => {
     // Plots in the list (including N/A ones); the progress totals only count plots that apply that month.
     totalPlots: plots.length,
     paidCount,
+    // The building's own power bill next to the total billed to tenants, so residents can see the difference.
+    buildingElectricity: {
+      actualBill,
+      billedToTenants:
+        Math.round(plots.reduce((sum, p) => sum + p.electricityAmount, 0) * 100) / 100,
+    },
     plots,
   });
 });

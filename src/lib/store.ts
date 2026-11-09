@@ -78,6 +78,16 @@ export async function setGeneralSettings(settings: GeneralSettings, updatedBy: s
   await setDocument("settings/general", { ...settings, updatedBy, updatedAt: new Date() });
 }
 
+// The building's actual power bill per month (from the electricity company), entered by the admin.
+export async function getBuildingBill(month: string): Promise<number | null> {
+  const doc = await getDocument<{ amount?: number }>(`buildingBills/${month}`);
+  return typeof doc?.amount === "number" && Number.isFinite(doc.amount) ? doc.amount : null;
+}
+export async function setBuildingBill(month: string, amount: number | null, updatedBy: string) {
+  if (amount === null) await deleteDocument(`buildingBills/${month}`);
+  else await setDocument(`buildingBills/${month}`, { month, amount, updatedBy, updatedAt: new Date() });
+}
+
 export async function allPayments() { return listDocuments<StoredPayment>("payments"); }
 export async function paymentFor(unitId: string, month: string) { return getDocument<StoredPayment>(`payments/${unitId}_${month}`); }
 export async function savePayment(unitId: string, month: string, data: Omit<StoredPayment, "unitId" | "month" | "createdAt" | "updatedAt">) {

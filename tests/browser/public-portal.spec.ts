@@ -891,3 +891,23 @@ for (const width of [320, 1440]) {
     await expect(page.locator(".plot-history-expansion")).toHaveCount(0);
   });
 }
+
+test("building electricity shows the actual bill, the total billed to tenants and the difference", async ({ page }) => {
+  let building: { actualBill: number | null; billedToTenants: number } = { actualBill: 12400, billedToTenants: 11250.5 };
+  await page.route("**/api/public/status?*", (route) =>
+    route.fulfill({ json: { ...fixture, buildingElectricity: building } }),
+  );
+  await page.goto("/");
+  const band = page.getByRole("region", { name: "Building electricity" });
+  await expect(band).toContainText("₹12,400");
+  await expect(band).toContainText("₹11,250.5");
+  await expect(band).toContainText("₹1,149.5");
+  await expect(band).toContainText("not billed to tenants");
+  await expect(band).toContainText("Tenant bills cover 91%");
+  building = { actualBill: null, billedToTenants: 11250.5 };
+  await page.getByRole("button", { name: "Refresh", exact: true }).click();
+  await expect(band).toContainText("Not entered yet");
+  await expect(band).not.toContainText("Tenant bills cover");
+  await page.setViewportSize({ width: 320, height: 800 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});

@@ -9,7 +9,8 @@ import { formatMonthLabel, getCurrentMonth, getMonthOptions } from "@/lib/month"
 import { ELECTRICITY_RATE_PER_UNIT } from "@/lib/constants";
 import { parseReadings } from "@/lib/readings";
 import { computeElectricityAmount, computeElectricityUnits, describeFormula, type ElectricityConfigInput } from "@/lib/electricity";
-import type { AdminRole, ElectricityListResponse, ElectricityRow } from "@/lib/types";
+import type { AdminRole, BuildingElectricity, ElectricityListResponse, ElectricityRow } from "@/lib/types";
+import { rupee } from "@/lib/format";
 import { IconBuilding, IconLock, IconLogout, IconSearch } from "@/components/icons";
 
 const monthOptions = getMonthOptions();
@@ -135,6 +136,19 @@ export default function ElectricityDashboard({ username, role }: { username: str
       <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-3 py-5 sm:px-6">
         {role === "ADMIN" && data && (
           <FormulaNotice config={data.config ?? data.ratePerUnit} month={month} />
+        )}
+
+        {role === "ADMIN" && data?.building && (
+          <BuildingBillCard
+            key={`${month}:${data.building.actualBill ?? ""}`}
+            month={month}
+            building={data.building}
+            onSaved={(msg) => {
+              setMessage(msg);
+              load();
+            }}
+            onError={setError}
+          />
         )}
 
         {data && (
@@ -396,6 +410,87 @@ function ElectricityRowCard({
         </p>
       )}
     </li>
+  );
+}
+
+// The building's actual power bill for the month. Residents see it on the public page next to the
+// total billed to tenants, so the difference is out in the open.
+function BuildingBillCard({
+  month,
+  building,
+  onSaved,
+  onError,
+}: {
+  month: string;
+  building: BuildingElectricity;
+  onSaved: (message: string) => void;
+  onError: (message: string | null) => void;
+}) {
+  const [amount, setAmount] = useState(building.actualBill === null ? "" : String(building.actualBill));
+  const [saving, setSaving] = useState(false);
+  const value = amount.trim() === "" ? null : Number(amount);
+  const invalid = value !== null && (!Number.isFinite(value) || value < 0);
+  const dirty = value !== building.actualBill;
+  const difference = value === null || invalid ? null : Math.round((value - building.billedToTenants) * 100) / 100;
+
+  async function save() {
+    setSaving(true);
+    onError(null);
+    try {
+      const res = await fetch("/api/admin/building-bill", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ month, amount: value }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.error ?? "Failed to save the building's bill.");
+      onSaved(value === null ? `Building's bill for ${formatMonthLabel(month)} cleared.` : `Building's bill for ${formatMonthLabel(month)} saved.`);
+    } catch (error) {
+      onError(error instanceof Error ? error.message : "Could not save the building's bill.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="mb-4 rounded-card border border-line bg-white p-3.5 shadow-card sm:p-4">
+      <p className="text-sm font-semibold text-ink">Building&apos;s power bill for {formatMonthLabel(month)}</p>
+      <p className="mt-0.5 text-xs text-foreground/55">
+        The actual bill from the electricity company for the whole building. Residents see it on the public page next to the total billed to tenants.
+      </p>
+      <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4 sm:items-end">
+        <label className="flex flex-col gap-1">
+          <span className="text-xs font-semibold uppercase tracking-wide text-foreground/45">Actual bill (₹)</span>
+          <input
+            type="number"
+            min="0"
+            inputMode="decimal"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            placeholder="Not entered"
+            className="min-h-10 w-full rounded-lg border border-line-strong bg-white px-2.5 py-1.5 text-base focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+          />
+        </label>
+        <div className="flex flex-col gap-1">
+          <span className="text-xs font-semibold uppercase tracking-wide text-foreground/45">Billed to tenants</span>
+          <div className="flex min-h-10 items-center rounded-lg bg-primary-light px-2.5 text-sm font-semibold text-ink">{rupee(building.billedToTenants)}</div>
+        </div>
+        <div className="flex flex-col gap-1">
+          <span className="text-xs font-semibold uppercase tracking-wide text-foreground/45">Difference</span>
+          <div className="flex min-h-10 items-center rounded-lg bg-primary-light px-2.5 text-sm font-semibold text-ink">
+            {difference === null ? "—" : `${rupee(Math.abs(difference))} ${difference > 0 ? "not billed" : difference < 0 ? "billed above" : "· matches"}`}
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={save}
+          disabled={saving || invalid || !dirty}
+          className="min-h-10 rounded-lg bg-primary px-4 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-50"
+        >
+          {saving ? "Saving…" : "Save"}
+        </button>
+      </div>
+    </div>
   );
 }
 
