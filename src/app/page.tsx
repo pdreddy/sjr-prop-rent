@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { Icon } from "@/components/public/Icon";
 import StatusBadge from "@/components/StatusBadge";
 import ElectricityHistory from "@/components/public/ElectricityHistory";
+import { usePublicStatus } from "@/components/public/usePublicStatus";
 import InstallApp from "@/components/InstallApp";
 import {
   getCurrentMonth,
@@ -12,16 +13,15 @@ import {
   formatDate,
   formatMonthLabel,
 } from "@/lib/month";
-import type { PublicPlot, PublicStatusResponse } from "@/lib/types";
+import type { PublicPlot } from "@/lib/types";
 
-type Filter = "ALL" | PublicPlot["status"];
+type Filter = "ALL" | "PENDING" | PublicPlot["status"];
 const monthOptions = getMonthOptions();
 
 export default function Home() {
   const [month, setMonth] = useState(getCurrentMonth());
-  const [data, setData] = useState<PublicStatusResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data, loading, refreshing, error, online, updatedAt, refresh } =
+    usePublicStatus(month);
   const [historyPlot, setHistoryPlot] = useState<PublicPlot | null>(null);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("ALL");
@@ -29,38 +29,6 @@ export default function Home() {
     "ALL" | "PAID" | "UNPAID" | "NA"
   >("ALL");
   const [attentionOnly, setAttentionOnly] = useState(false);
-  const [refresh, setRefresh] = useState(0);
-  const [updatedAt, setUpdatedAt] = useState<string | null>(null);
-
-  // Keep the working branch's public API and Firebase loading path.
-  const load = useCallback(async (selectedMonth: string) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await fetch(
-        `/api/public/status?month=${encodeURIComponent(selectedMonth)}`,
-        { cache: "no-store" },
-      );
-      if (!response.ok) throw new Error("Failed to load status");
-      const json: PublicStatusResponse = await response.json();
-      setData(json);
-      setUpdatedAt(
-        new Date().toLocaleTimeString([], {
-          hour: "numeric",
-          minute: "2-digit",
-        }),
-      );
-    } catch {
-      setError("Could not load rent status. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch on mount or month/refresh change
-    void load(month);
-  }, [month, refresh, load]);
-
   const needsAttention = (plot: PublicPlot) =>
     plot.status === "UNPAID" ||
     plot.status === "PARTIAL" ||
@@ -72,7 +40,7 @@ export default function Home() {
     ).length ?? 0;
   const electricityPaid =
     data?.plots.filter((plot) => plot.electricityStatus === "PAID").length ?? 0;
-  const ready = !loading && !error && data !== null;
+  const ready = !loading && data !== null;
   const eligiblePlots =
     data?.plots.filter((plot) => plot.status !== "NA").length ?? 0;
   const percentage =
@@ -82,7 +50,10 @@ export default function Home() {
   const plots =
     data?.plots.filter(
       (plot) =>
-        (filter === "ALL" || plot.status === filter) &&
+        (filter === "ALL" ||
+          (filter === "PENDING"
+            ? plot.status !== "PAID" && plot.status !== "NA"
+            : plot.status === filter)) &&
         (electricityFilter === "ALL" ||
           plot.electricityStatus === electricityFilter) &&
         (!attentionOnly || needsAttention(plot)) &&
@@ -148,7 +119,24 @@ export default function Home() {
               <Icon name="chevron" />
             </div>
           </div>
-          <div className="summary-item">
+          <button
+            type="button"
+            className="summary-item summary-action"
+            aria-label="Show all plots"
+            aria-pressed={
+              filter === "ALL" &&
+              electricityFilter === "ALL" &&
+              !attentionOnly &&
+              !query
+            }
+            onClick={() => {
+              setFilter("ALL");
+              setElectricityFilter("ALL");
+              setAttentionOnly(false);
+              setQuery("");
+            }}
+            disabled={!ready}
+          >
             <span className="metric-icon neutral">
               <Icon name="building" />
             </span>
@@ -158,8 +146,15 @@ export default function Home() {
                 {ready ? data.totalPlots.toString().padStart(2, "0") : "—"}
               </strong>
             </div>
-          </div>
-          <div className="summary-item">
+          </button>
+          <button
+            type="button"
+            className="summary-item summary-action"
+            aria-label="Show paid rent"
+            aria-pressed={filter === "PAID"}
+            onClick={() => setFilter(filter === "PAID" ? "ALL" : "PAID")}
+            disabled={!ready}
+          >
             <span className="metric-icon green">
               <Icon name="check" />
             </span>
@@ -172,8 +167,15 @@ export default function Home() {
                 )}
               </strong>
             </div>
-          </div>
-          <div className="summary-item">
+          </button>
+          <button
+            type="button"
+            className="summary-item summary-action"
+            aria-label="Show pending rent"
+            aria-pressed={filter === "PENDING"}
+            onClick={() => setFilter(filter === "PENDING" ? "ALL" : "PENDING")}
+            disabled={!ready}
+          >
             <span className="metric-icon amber">
               <Icon name="clock" />
             </span>
@@ -185,8 +187,19 @@ export default function Home() {
                   : "—"}
               </strong>
             </div>
-          </div>
-          <div className="summary-item">
+          </button>
+          <button
+            type="button"
+            className="summary-item summary-action"
+            aria-label="Show paid electricity"
+            aria-pressed={electricityFilter === "PAID"}
+            onClick={() =>
+              setElectricityFilter(
+                electricityFilter === "PAID" ? "ALL" : "PAID",
+              )
+            }
+            disabled={!ready}
+          >
             <span className="metric-icon green">
               <Icon name="check" />
             </span>
@@ -196,13 +209,13 @@ export default function Home() {
                 {ready ? `${electricityPaid}/${electricityEligible}` : "—"}
               </strong>
             </div>
-          </div>
+          </button>
         </section>
         <section
           id="resident-list"
           className="directory"
           aria-labelledby="directory-title"
-          aria-busy={loading}
+          aria-busy={loading || refreshing}
         >
           <div className="directory-heading">
             <div>
@@ -214,12 +227,12 @@ export default function Home() {
               </h2>
             </div>
             <button
-              className="refresh-button"
-              onClick={() => setRefresh((value) => value + 1)}
-              disabled={loading}
+              className={`refresh-button ${refreshing ? "is-refreshing" : ""}`}
+              onClick={refresh}
+              disabled={loading || refreshing || !online}
             >
               <Icon name="refresh" />
-              <span>Refresh</span>
+              <span>{refreshing ? "Refreshing" : "Refresh"}</span>
             </button>
           </div>
           <div className="directory-toolbar">
@@ -289,6 +302,23 @@ export default function Home() {
               Needs attention <span>{attentionCount}</span>
             </label>
           </div>
+          {data && (!online || error) && (
+            <div className="connection-note" role="status">
+              <Icon name={online ? "refresh" : "cloud"} />
+              <span>
+                {!online
+                  ? data
+                    ? "You’re offline. Showing the last loaded status."
+                    : "You’re offline. Reconnect to load rent status."
+                  : "Couldn’t refresh. Showing the last loaded status."}
+              </span>
+              {online && (
+                <button onClick={refresh} disabled={refreshing}>
+                  Try again
+                </button>
+              )}
+            </div>
+          )}
           {loading ? (
             <div className="directory-loading" role="status">
               <span className="sr-only">Loading rent status</span>
@@ -300,17 +330,22 @@ export default function Home() {
                 </div>
               ))}
             </div>
-          ) : error ? (
+          ) : (error || !online) && !data ? (
             <div className="directory-empty" role="alert">
               <span className="empty-icon">
                 <Icon name="cloud" />
               </span>
-              <h3>We couldn’t load the latest status.</h3>
-              <p>Check your connection, then give it another try.</p>
-              <button
-                className="solid-button"
-                onClick={() => setRefresh((value) => value + 1)}
-              >
+              <h3>
+                {online
+                  ? "We couldn’t load the latest status."
+                  : "A moment to reconnect."}
+              </h3>
+              <p>
+                {online
+                  ? "Check your connection, then give it another try."
+                  : "Your building’s status will refresh when you’re back online."}
+              </p>
+              <button className="solid-button" onClick={refresh}>
                 Try again <Icon name="refresh" />
               </button>
             </div>
@@ -457,7 +492,7 @@ export default function Home() {
             </span>
             <span>
               {ready && updatedAt
-                ? `Checked at ${updatedAt}`
+                ? `Updated ${updatedAt} · ${online ? "Auto refresh" : "Offline"}`
                 : formatMonthLabel(month)}
             </span>
           </div>
@@ -480,7 +515,11 @@ export default function Home() {
       </main>
       {historyPlot && (
         <ElectricityHistory
-          plot={historyPlot}
+          plot={
+            data?.plots.find(
+              (plot) => plot.plotNumber === historyPlot.plotNumber,
+            ) ?? historyPlot
+          }
           onClose={() => setHistoryPlot(null)}
         />
       )}

@@ -11,10 +11,10 @@ const PRODUCTION_WORKER = `/* SJR Rent Tracker service worker.
  * - Caches ONLY public static files (build assets, icons, offline page) as an offline fallback.
  * - Never caches /api/* or any HTML page, so rent data and admin screens are not stored on the device.
  * Bump VERSION to force clients to drop old caches. */
-const VERSION = "v2";
+const VERSION = "v3";
 const STATIC_CACHE = \`sjr-static-\${VERSION}\`;
 const OFFLINE_URL = "/offline.html";
-const PRECACHE = [OFFLINE_URL, "/icons/icon-192.png", "/icons/icon-512.png"];
+const PRECACHE = [OFFLINE_URL, "/icons/icon-192.png", "/icons/icon-512.png", "/icons/icon-maskable-512.png", "/icons/apple-touch-icon.png"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(STATIC_CACHE).then((cache) => cache.addAll(PRECACHE)).then(() => self.skipWaiting()));
@@ -38,7 +38,7 @@ self.addEventListener("fetch", (event) => {
 
   // Page loads: network only; show the offline page if the network is down.
   if (request.mode === "navigate") {
-    event.respondWith(fetch(request).catch(() => caches.match(OFFLINE_URL)));
+    event.respondWith(fetch(request).catch(() => caches.match(OFFLINE_URL).then((page) => page || Response.error())));
     return;
   }
 
@@ -54,7 +54,7 @@ self.addEventListener("fetch", (event) => {
           }
           return response;
         })
-        .catch(() => caches.match(request))
+        .catch(() => caches.match(request).then((asset) => asset || Response.error()))
     );
   }
 });
@@ -74,8 +74,13 @@ self.addEventListener("activate", (event) => {
 `;
 
 export function GET() {
-  const body = process.env.NODE_ENV === "production" ? PRODUCTION_WORKER : KILL_SWITCH;
+  const body =
+    process.env.NODE_ENV === "production" ? PRODUCTION_WORKER : KILL_SWITCH;
   return new NextResponse(body, {
-    headers: { "Content-Type": "application/javascript; charset=utf-8", "Cache-Control": "no-cache, no-store, must-revalidate", "Service-Worker-Allowed": "/" },
+    headers: {
+      "Content-Type": "application/javascript; charset=utf-8",
+      "Cache-Control": "no-cache, no-store, must-revalidate",
+      "Service-Worker-Allowed": "/",
+    },
   });
 }

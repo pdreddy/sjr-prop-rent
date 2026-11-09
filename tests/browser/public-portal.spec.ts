@@ -80,10 +80,10 @@ test("month changes fetch fresh data; refresh and error retry recover", async ({
   await expect(page.locator("tbody tr")).toHaveCount(4);
   fail = true;
   await page.getByRole("button", { name: "Refresh", exact: true }).click();
-  await expect(page.locator(".directory-empty[role='alert']")).toContainText(
-    "couldn’t load",
+  await expect(page.locator(".connection-note")).toContainText(
+    "Couldn’t refresh",
   );
-  await expect(page.locator("tbody tr")).toHaveCount(0);
+  await expect(page.locator("tbody tr")).toHaveCount(4);
   fail = false;
   await page.getByRole("button", { name: "Try again" }).click();
   await expect(page.locator("tbody tr")).toHaveCount(4);
@@ -143,7 +143,7 @@ test("install guidance works without a native install prompt", async ({
 }) => {
   await mockStatus(page);
   await page.goto("/");
-  await page.getByRole("button", { name: "Get the app" }).click();
+  await page.getByRole("button", { name: /Get the app|Install app/ }).click();
   await expect(
     page.getByRole("dialog", { name: "Install instructions" }),
   ).toContainText("Safari");
@@ -316,15 +316,15 @@ test("native install prompts work and the button disappears after installation",
     });
     window.dispatchEvent(event);
   });
-  await page.getByRole("button", { name: "Get the app" }).click();
+  await page.getByRole("button", { name: /Get the app|Install app/ }).click();
   await expect(page.locator("html")).toHaveAttribute(
     "data-install-prompted",
     "yes",
   );
   await page.evaluate(() => window.dispatchEvent(new Event("appinstalled")));
-  await expect(page.getByRole("button", { name: "Get the app" })).toHaveCount(
-    0,
-  );
+  await expect(
+    page.getByRole("button", { name: /Get the app|Install app/ }),
+  ).toHaveCount(0);
 });
 
 test("electricity and attention filters from the working branch remain available", async ({
@@ -351,4 +351,112 @@ test("electricity and attention filters from the working branch remain available
   await page.getByLabel("Filter electricity status").selectOption("ALL");
   await page.getByRole("checkbox", { name: /Needs attention/ }).check();
   await expect(page.locator("tbody tr")).toHaveCount(1);
+});
+
+test("summary cards filter the list and the total resets filters", async ({
+  page,
+}) => {
+  await mockStatus(page);
+  await page.goto("/");
+  await expect(page.locator("tbody tr")).toHaveCount(4);
+  await page.getByRole("button", { name: "Show paid rent" }).click();
+  await expect(page.locator("tbody tr")).toHaveCount(2);
+  await expect(
+    page.getByRole("button", { name: "Show paid rent" }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await page.getByRole("button", { name: "Show pending rent" }).click();
+  await expect(page.locator("tbody tr")).toHaveCount(2);
+  await expect(page.locator("tbody")).toContainText("Priya Sharma");
+  await page.getByRole("button", { name: "Show all plots" }).click();
+  await expect(page.locator("tbody tr")).toHaveCount(4);
+});
+
+test("automatic refresh fetches fresh data without clearing the list", async ({
+  page,
+}) => {
+  await page.clock.install();
+  let calls = 0;
+  await page.route("**/api/public/status?*", (route) => {
+    calls++;
+    return route.fulfill({
+      json: {
+        ...fixture,
+        buildingName: calls > 1 ? "SJR Updated" : "SJR Building",
+      },
+    });
+  });
+  await page.goto("/");
+  await expect(page.locator("tbody tr")).toHaveCount(4);
+  await page.clock.fastForward(60_001);
+  await expect(page.getByText("SJR Updated", { exact: true })).toBeVisible();
+  await expect(page.locator("tbody tr")).toHaveCount(4);
+  expect(calls).toBe(2);
+});
+
+test("offline feedback preserves loaded records and reconnect refreshes them", async ({
+  page,
+  context,
+}) => {
+  let calls = 0;
+  await page.route("**/api/public/status?*", (route) => {
+    calls++;
+    return route.fulfill({ json: fixture });
+  });
+  await page.goto("/");
+  await expect(page.locator("tbody tr")).toHaveCount(4);
+  const initialCalls = calls;
+  await context.setOffline(true);
+  await page.evaluate(() => window.dispatchEvent(new Event("offline")));
+  await expect(page.locator(".connection-note")).toContainText(
+    "You’re offline",
+  );
+  await expect(page.locator("tbody tr")).toHaveCount(4);
+  await expect(
+    page.getByRole("button", { name: "Refresh", exact: true }),
+  ).toBeDisabled();
+  await context.setOffline(false);
+  await page.evaluate(() => window.dispatchEvent(new Event("online")));
+  await expect.poll(() => calls).toBeGreaterThan(initialCalls);
+  await expect(page.locator(".connection-note")).toHaveCount(0);
+});
+
+test("Safari standalone mode hides installation controls", async ({ page }) => {
+  await page.addInitScript(() =>
+    Object.defineProperty(navigator, "standalone", {
+      value: true,
+      configurable: true,
+    }),
+  );
+  await mockStatus(page);
+  await page.goto("/");
+  await expect(page.locator("tbody tr")).toHaveCount(4);
+  await expect(
+    page.getByRole("button", { name: /Get the app|Install app/ }),
+  ).toHaveCount(0);
+});
+
+test("worker updates offer a refresh without automatically reloading the page", async ({
+  page,
+}) => {
+  await mockStatus(page);
+  await page.goto("/");
+  await expect(page.locator("tbody tr")).toHaveCount(4);
+  await page.evaluate(async () => {
+    await navigator.serviceWorker.ready;
+    if (!navigator.serviceWorker.controller)
+      await new Promise<void>((resolve) =>
+        navigator.serviceWorker.addEventListener(
+          "controllerchange",
+          () => resolve(),
+          { once: true },
+        ),
+      );
+    navigator.serviceWorker.dispatchEvent(new Event("controllerchange"));
+  });
+  await expect(page.locator(".app-update-notice")).toContainText(
+    "A new app version is ready",
+  );
+  await expect(page.locator("tbody tr")).toHaveCount(4);
+  await page.getByRole("button", { name: "Dismiss app update" }).click();
+  await expect(page.locator(".app-update-notice")).toHaveCount(0);
 });

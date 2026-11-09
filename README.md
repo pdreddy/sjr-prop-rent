@@ -145,3 +145,24 @@ For an existing system Chromium, set
 responses; the repository's separate `npm run smoke` command exercises the
 server and data layer using its isolated mock database. Never run smoke tests
 against the live database.
+
+
+### Live public updates and app installation
+
+The public view refreshes every minute while visible and online, and refreshes
+when you return to the tab or reconnect. Background refresh keeps the existing
+list and filters in place. Offline or failed refreshes clearly label any
+previously loaded records; payment data stays in memory and is not saved for
+offline use. A fresh offline launch still shows the informational offline page.
+All reads use the existing public API and Firebase configuration.
+
+Summary cards act as quick filters; Total plots clears the search and filters.
+Install instructions use a keyboard-accessible dialog. Supporting browsers show
+a native Install app action; Safari users can use Share → Add to Home Screen.
+Installation controls hide when the app is already running standalone.
+
+The production service worker checks for updates when the app is revisited or
+reconnects. A worker update offers Refresh app rather than reloading an admin
+form automatically. Bump its VERSION when changing worker/precache behavior.
+Use HTTPS (or localhost) and `npm run build && npm start` to test PWA behavior;
+development deliberately removes production workers and their caches.

@@ -459,3 +459,169 @@
     overflow-wrap: anywhere;
   }
 }
+
+/* Live public reads and progressive web-app controls. */
+.resident-portal .summary-action {
+  text-align: left;
+  min-height: 48px;
+  border-radius: 6px;
+  transition:
+    background-color 0.16s ease,
+    box-shadow 0.16s ease;
+}
+.resident-portal .summary-action:hover {
+  background: #eef4e7;
+}
+.resident-portal .summary-action[aria-pressed="true"] {
+  background: #f0f5e9;
+  box-shadow: inset 0 -2px #7e9d63;
+}
+.resident-portal .summary-action:disabled {
+  cursor: default;
+}
+.connection-note {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 18px;
+  border-top: 1px solid #e5e8dc;
+  background: #faf3e2;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #735b2d;
+}
+.connection-note svg {
+  height: 16px;
+  width: 16px;
+}
+.connection-note button {
+  min-height: 44px;
+  padding-inline: 8px;
+  margin-left: auto;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.is-refreshing > svg {
+  animation: refresh-spin 1s linear infinite;
+}
+@keyframes refresh-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.install-dialog {
+  width: min(380px, calc(100% - 32px));
+  max-height: 85dvh;
+  margin: auto;
+  padding: 0;
+  border: 1px solid #dce2d5;
+  border-radius: 16px;
+  background: #fffefa;
+  color: #243c35;
+  box-shadow: 0 24px 70px #193c3430;
+}
+.install-dialog::backdrop {
+  background: #132b2270;
+  backdrop-filter: blur(3px);
+}
+.install-dialog-content {
+  padding: 26px;
+}
+.install-dialog h2 {
+  font:
+    29px/1.2 Georgia,
+    serif;
+  margin-block: 12px;
+  letter-spacing: -0.6px;
+}
+.install-dialog p:not(.eyebrow) {
+  font-size: 13px;
+  line-height: 1.8;
+  color: #66765d;
+}
+.install-dialog ol {
+  list-style: none;
+  padding: 0;
+  margin-block: 20px;
+}
+.install-dialog li {
+  padding-block: 12px;
+  border-top: 1px solid #e3e6df;
+}
+.install-dialog li strong,
+.install-dialog li span {
+  display: block;
+  font-size: 13px;
+  line-height: 1.8;
+}
+.install-dialog li span {
+  margin-top: 4px;
+  color: #66765d;
+}
+.install-dialog .install-small {
+  font-size: 11px !important;
+}
+.install-dialog .solid-button {
+  width: 100%;
+  margin-top: 20px;
+  min-height: 44px;
+  cursor: pointer;
+}
+.install-dialog :focus-visible {
+  outline: 3px solid #729c58;
+  outline-offset: 3px;
+}
+.app-update-notice {
+  position: fixed;
+  bottom: max(16px, env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: max-content;
+  max-width: calc(100% - 24px);
+  padding: 8px 12px 8px 16px;
+  border: 1px solid #46644e;
+  border-radius: 12px;
+  background: #224c3e;
+  color: #fffefa;
+  box-shadow: 0 8px 25px #193c3430;
+  font:
+    12px/1.5 Arial,
+    sans-serif;
+}
+.app-update-notice button {
+  min-height: 44px;
+  padding: 8px;
+  color: #e0efbf;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.app-update-notice .dismiss-update {
+  font-size: 22px;
+  min-width: 36px;
+}
+@media (max-width: 520px) {
+  .connection-note {
+    padding-inline: 12px;
+    font-size: 11px;
+  }
+  .app-update-notice {
+    gap: 5px;
+    font-size: 11px;
+  }
+  .install-dialog-content {
+    padding: 23px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .is-refreshing > svg {
+    animation: none;
+  }
+  .resident-portal .summary-action {
+    transition: none;
+  }
+}
