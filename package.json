@@ -25,7 +25,8 @@
     "db:mock": "tsx scripts/mock-firebase.ts",
     "smoke": "tsx scripts/smoke.ts",
     "local": "tsx --env-file=.env scripts/dev.ts",
-    "demo": "tsx scripts/local.ts"
+    "demo": "tsx scripts/local.ts",
+    "setup:env": "tsx scripts/setup-env.ts"
   },
   "dependencies": {
     "next": "16.2.12",

@@ -117,3 +117,7 @@ No Firebase handy? `npm run demo` starts the app with an in-memory demo database
 ## Checking that data loads
 
 `npm run db:mock` starts an in-memory stand-in for Realtime Database, so the whole app can be tested without credentials. With the mock running and the app started against it (`FIREBASE_DATABASE_EMULATOR_HOST=127.0.0.1:9000`), `npm run smoke` seeds plots, signs in as the admin, loads every public and admin endpoint and asserts the numbers (rent, electricity units and fixed bills, N/A rules, settings round-trip, no private data on the public page). See the comments at the top of `scripts/smoke.ts` for the exact commands. API routes are wrapped so a database failure returns a JSON error instead of a broken response, and the server logs a clear message at startup when settings are missing.
+
+## First-time / lost Firebase setup
+
+`npm run setup:env` finds your downloaded Firebase service-account key (or take one explicitly: `npm run setup:env -- ~/Downloads/<key>.json`), copies it to `firebase-service-account.json`, creates or completes `.env` (existing values are kept, `SESSION_SECRET` is generated) and checks the connection. Then run `npm run local`.
