@@ -26,6 +26,7 @@ import {
 import type { DashboardResponse, DashboardRow, DashboardTotals } from "@/lib/types";
 import { BUILDING_READY_MONTH, ELECTRICITY_RATE_PER_UNIT } from "@/lib/constants";
 import { computeElectricityUnits } from "@/lib/electricity";
+import { rupee } from "@/lib/format";
 import {
   IconBuilding,
   IconCopy,
@@ -192,12 +193,12 @@ export default function AdminDashboard({ username }: { username: string }) {
           </div>
         )}
 
-        <div className="mb-4 flex max-w-full gap-1.5 overflow-x-auto rounded-full border border-primary/10 bg-white p-1 shadow-sm w-fit">
+        <div className="mb-4 flex max-w-full gap-1.5 overflow-x-auto rounded-full border border-primary/10 bg-white p-1 shadow-sm w-fit [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {TABS.map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
-              className={`min-h-9 rounded-full px-4 text-sm font-semibold transition-colors ${
+              className={`min-h-9 shrink-0 whitespace-nowrap rounded-full px-4 text-sm font-semibold transition-colors ${
                 tab === t ? "bg-primary text-white" : "text-foreground/60 hover:bg-primary-light"
               }`}
             >
@@ -384,8 +385,8 @@ function StatsPanel({ totals, month }: { totals: DashboardTotals; month: string 
         <div>
           <p className="text-sm font-medium text-foreground/60">Collections for {formatMonthLabel(month)}</p>
           <p className="mt-1 text-2xl font-bold text-primary-dark">
-            ₹{totals.totalCollected.toFixed(0)}
-            <span className="text-base font-medium text-foreground/40"> / ₹{totals.totalExpected.toFixed(0)} expected</span>
+            {rupee(totals.totalCollected)}
+            <span className="text-base font-medium text-foreground/40"> / {rupee(totals.totalExpected)} expected</span>
           </p>
         </div>
         <div className="flex items-center gap-2 rounded-full bg-primary-light px-3.5 py-1.5 text-sm font-bold text-primary-dark">
@@ -400,7 +401,7 @@ function StatsPanel({ totals, month }: { totals: DashboardTotals; month: string 
         <StatCard label="Paid" value={totals.numPaid} colorClass="bg-paid-bg text-paid" />
         <StatCard label="Partial" value={totals.numPartial} colorClass="bg-partial-bg text-partial" />
         <StatCard label="Unpaid" value={totals.numUnpaid} colorClass="bg-unpaid-bg text-unpaid" />
-        <StatCard label="Outstanding" value={`₹${totals.outstandingBalance.toFixed(0)}`} colorClass="bg-vacant-bg text-vacant" />
+        <StatCard label="Outstanding" value={rupee(totals.outstandingBalance)} colorClass="bg-vacant-bg text-vacant col-span-2 sm:col-span-1" />
       </div>
     </div>
   );
@@ -444,9 +445,9 @@ function ReadRow({
         <p className="font-bold text-foreground">{row.unit.tenantName || "Vacant"}</p>
       </td>
       <td className="px-3 py-3">
-        <p className="font-semibold text-foreground">₹{rentSum.toFixed(0)} due</p>
+        <p className="font-semibold text-foreground">{rupee(rentSum)} due</p>
         <p className="text-foreground/60">
-          ₹{(row.payment?.amountPaid ?? 0).toFixed(0)} paid
+          {rupee((row.payment?.amountPaid ?? 0))} paid
           {row.payment?.paidDate ? ` · ${formatDate(row.payment.paidDate)}` : ""}
         </p>
       </td>
@@ -455,16 +456,18 @@ function ReadRow({
       </td>
       <td className="px-3 py-3">
         <span className={`font-semibold ${balanceDue > 0 ? "text-unpaid" : "text-foreground/50"}`}>
-          ₹{balanceDue.toFixed(0)}
+          {row.isVacant ? "—" : rupee(balanceDue)}
         </span>
       </td>
       <td className="px-3 py-3">
         {row.isBeforeMoveIn ? (
           <StatusBadge status="NA" />
+        ) : row.isVacant ? (
+          <span className="text-foreground/35">—</span>
         ) : (
           <>
             <div className="flex items-center gap-1.5">
-              <span className="font-semibold text-foreground">₹{electricityAmount.toFixed(0)}</span>
+              <span className="font-semibold text-foreground">{rupee(electricityAmount)}</span>
               <StatusBadge status={electricityStatus} />
             </div>
             <p className="text-foreground/60">
@@ -479,7 +482,7 @@ function ReadRow({
           Joined {formatDate(row.unit.moveInDate)}
           {isBeforeBuildingOpened(row.unit.moveInDate) && <span className="block text-xs font-semibold text-unpaid">before building opened - check year</span>}
         </p>
-        <p>Total rent ₹{rentSum.toFixed(0)}</p>
+        <p>Total rent {rupee(rentSum)}</p>
       </td>
       <td className={`sticky right-0 z-10 px-3 py-3 ${rowBg}`}>
         <div className="flex justify-end gap-1.5">
@@ -534,14 +537,18 @@ function MobileRowCard({
         <StatusBadge status={status} />
       </div>
 
+      {row.isVacant ? (
+        <p className="mt-2.5 text-sm text-foreground/50">No tenant. Nothing due.</p>
+      ) : (
+      <>
       <div className="mt-2.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-sm text-foreground/70">
-        <span className="font-semibold text-foreground">₹{rentSum.toFixed(0)} due</span>
+        <span className="font-semibold text-foreground">{rupee(rentSum)} due</span>
         <span>
-          ₹{(row.payment?.amountPaid ?? 0).toFixed(0)} paid
+          {rupee((row.payment?.amountPaid ?? 0))} paid
           {row.payment?.paidDate ? ` · ${formatDate(row.payment.paidDate)}` : ""}
         </span>
         <span className={`font-semibold ${balanceDue > 0 ? "text-unpaid" : "text-foreground/50"}`}>
-          ₹{balanceDue.toFixed(0)} balance
+          {rupee(balanceDue)} balance
         </span>
       </div>
 
@@ -551,7 +558,7 @@ function MobileRowCard({
             <span className="text-foreground/50">Electricity N/A</span>
           ) : (
             <>
-              <span className="font-semibold text-foreground">₹{electricityAmount.toFixed(0)}</span>
+              <span className="font-semibold text-foreground">{rupee(electricityAmount)}</span>
               <span className="ml-1.5 text-foreground/50">
                 ({prevReading} → {currReading})
               </span>
@@ -560,6 +567,8 @@ function MobileRowCard({
         </div>
         {!row.isBeforeMoveIn && <StatusBadge status={electricityStatus} />}
       </div>
+      </>
+      )}
 
       {row.payment?.notes && (
         <p className="mt-2.5 whitespace-pre-line text-sm text-foreground/60">{row.payment.notes}</p>

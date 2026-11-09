@@ -42,38 +42,35 @@ export interface PublicElectricityMonth {
   status: "PAID" | "PARTIAL" | "UNPAID";
 }
 
-/** What anyone can see without signing in: no plot, tenant, rent or payment data. */
-export interface PublicInfoResponse {
-  buildingName: string;
-  ratePerUnit: number;
-  portalEnabled: boolean;
-  notice: string;
-}
-
-export interface TenantRentMonth {
-  month: string;
-  /** DUE: unpaid, but the payment window for that month has not passed yet. */
-  status: PaymentStatus | "DUE" | "NA";
-  rentDue: number;
-  paid: number;
-  balance: number;
-  paidDate: string | null;
-}
-
-/** One tenant's own account. Only ever built for the plot that signed in. */
-export interface TenantAccountResponse {
-  buildingName: string;
-  notice: string;
-  ratePerUnit: number;
+export interface PublicPlot {
   plotNumber: string;
   tenantName: string | null;
   moveInDate: string | null;
-  monthlyRent: number;
-  maintenanceAmount: number;
-  rentMonths: TenantRentMonth[];
-  rentTotals: { due: number; paid: number; balance: number };
+  /** DUE: unpaid, but the first-week-of-next-month payment window hasn't passed yet. */
+  status: PaymentStatus | "DUE" | "NA";
+  paidDate: string | null;
+  electricityStatus: "PAID" | "UNPAID" | "NA";
+  electricityAmount: number;
+  electricityCovered: number;
+  electricityBalance: number;
+  prevReading: number;
+  currReading: number;
+  /** Sum of electricity bills across all months that are still unpaid. */
+  unpaidElectricityTotal: number;
+  unpaidElectricityMonths: { month: string; bill: number; paid: number; amount: number }[];
+  /** Every month's electricity for the plot: units, bill, paid and what is still due. */
   electricityMonths: PublicElectricityMonth[];
   electricityTotals: { billed: number; paid: number; due: number };
+}
+
+export interface PublicStatusResponse {
+  buildingName: string;
+  notice: string;
+  ratePerUnit: number;
+  month: string;
+  totalPlots: number;
+  paidCount: number;
+  plots: PublicPlot[];
 }
 
 export interface UnitDTO {
@@ -82,8 +79,6 @@ export interface UnitDTO {
   tenantName: string | null;
   moveInDate: string | null;
   phoneNumbers: string[];
-  /** Tenant sign-in code for the public page; admin-only. */
-  accessCode: string | null;
   advanceAmount: number;
   advancePaid: number;
   advancePaidDate: string | null;

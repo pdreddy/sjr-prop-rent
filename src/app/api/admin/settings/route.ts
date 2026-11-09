@@ -6,7 +6,7 @@ import { parsePlotFixed, parsePlotList } from "@/lib/config";
 import { recordAuditLog } from "@/lib/audit";
 
 // Everything the admin can configure: electricity (rate, no-reading defaults, high plots, excess limit)
-// and general / tenant-portal settings. ADMIN only; SECURITY logins just enter meter readings.
+// and general (building name, public notice) settings. ADMIN only; SECURITY logins just enter meter readings.
 const amount = (max: number) => z.coerce.number().min(0).max(max);
 const schema = z.object({
   electricity: z.object({
@@ -19,7 +19,6 @@ const schema = z.object({
   }),
   general: z.object({
     buildingName: z.string().trim().min(1, "Building name is required").max(100),
-    portalEnabled: z.boolean(),
     notice: z.string().trim().max(500),
   }),
 });

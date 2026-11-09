@@ -19,9 +19,7 @@ export interface ElectricityConfig {
 
 export interface GeneralSettings {
   buildingName: string;
-  /** Tenants can sign in on the public page to see their own account. */
-  portalEnabled: boolean;
-  /** Optional message shown to tenants on the public page (e.g. "Rent is due by the 5th"). */
+  /** Optional message shown at the top of the public page (e.g. "Rent is due by the 5th"). */
   notice: string;
 }
 
@@ -36,7 +34,6 @@ export const DEFAULT_ELECTRICITY_CONFIG: ElectricityConfig = {
 
 export const DEFAULT_GENERAL_SETTINGS: GeneralSettings = {
   buildingName: process.env.BUILDING_NAME || "SJR Building",
-  portalEnabled: true,
   notice: "",
 };
 
@@ -86,7 +83,6 @@ export function normalizeGeneralSettings(value: Partial<Record<keyof GeneralSett
   const name = typeof value?.buildingName === "string" ? value.buildingName.trim().slice(0, 100) : "";
   return {
     buildingName: name || d.buildingName,
-    portalEnabled: typeof value?.portalEnabled === "boolean" ? value.portalEnabled : d.portalEnabled,
     notice: typeof value?.notice === "string" ? value.notice.trim().slice(0, 500) : d.notice,
   };
 }

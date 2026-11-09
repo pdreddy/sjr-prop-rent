@@ -4,17 +4,13 @@ import { ELECTRICITY_RATE_PER_UNIT } from "./constants";
 import { formatPlotFixed, normalizeElectricityConfig, normalizeGeneralSettings, type ElectricityConfig, type GeneralSettings } from "./config";
 import type { PaymentDTO, PaymentStatus, UnitDTO } from "./types";
 
-type StoredUnit = Omit<UnitDTO, "id" | "accessCode" | "createdAt" | "updatedAt" | "moveInDate" | "advancePaidDate"> & {
+type StoredUnit = Omit<UnitDTO, "id" | "createdAt" | "updatedAt" | "moveInDate" | "advancePaidDate"> & {
   moveInDate: Date | null;
   advancePaidDate: Date | null;
   /** Rent received by the 10th after move-in, recorded on the Move-in Proration tab. Only valid while
    *  moveInPaidFor still equals the unit's current move-in date (YYYY-MM-DD). */
   moveInPaid?: number | null;
   moveInPaidFor?: string | null;
-  /** Private code the tenant uses with the plot number to see their own account on the public page. */
-  accessCode?: string | null;
-  accessFailedAttempts?: number;
-  accessLockedUntil?: Date | null;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -24,13 +20,10 @@ export interface AuditRecord { id: string; adminId: string; adminUsername: strin
 const iso = (date: Date | null) => date?.toISOString() ?? null;
 // Legacy records stored a single `phone: string | null` before phoneNumbers existed.
 export const unitDTO = (unit: StoredUnit & { id: string } & { phone?: string | null }): UnitDTO => {
-  // Lockout counters are internal; the access code is only ever sent to the signed-in admin.
-  const { phone, accessFailedAttempts: _attempts, accessLockedUntil: _locked, ...rest } = unit;
-  void _attempts; void _locked;
+  const { phone, ...rest } = unit;
   return {
     ...rest,
     phoneNumbers: unit.phoneNumbers ?? (phone ? [phone] : []),
-    accessCode: unit.accessCode ?? null,
     advanceAmount: unit.advanceAmount ?? 0,
     advancePaid: unit.advancePaid ?? 0,
     advancePaidDate: iso(unit.advancePaidDate),
