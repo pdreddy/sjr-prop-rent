@@ -8,7 +8,7 @@ import ChangePasswordModal from "./ChangePasswordModal";
 import { formatMonthLabel, getCurrentMonth, getMonthOptions } from "@/lib/month";
 import { ELECTRICITY_RATE_PER_UNIT } from "@/lib/constants";
 import { parseReadings } from "@/lib/readings";
-import { computeElectricityAmount, computeElectricityUnits, type ElectricityConfigInput } from "@/lib/electricity";
+import { computeElectricityAmount, computeElectricityUnits, describeFormula, type ElectricityConfigInput } from "@/lib/electricity";
 import type { AdminRole, ElectricityListResponse, ElectricityRow } from "@/lib/types";
 import { IconBuilding, IconLock, IconLogout, IconSearch } from "@/components/icons";
 
@@ -134,15 +134,7 @@ export default function ElectricityDashboard({ username, role }: { username: str
 
       <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-3 py-5 sm:px-6">
         {role === "ADMIN" && data && (
-          <RateEditor
-            key={data.ratePerUnit}
-            ratePerUnit={data.ratePerUnit}
-            onSaved={(msg) => {
-              setMessage(msg);
-              load();
-            }}
-            onError={setError}
-          />
+          <FormulaNotice config={data.config ?? data.ratePerUnit} month={month} />
         )}
 
         {data && (
@@ -260,7 +252,7 @@ function ElectricityRowCard({
   // A current reading of 0 means "not entered yet", so it is not flagged as an error.
   const readingError = currReadingNumber !== 0 && currReadingNumber < prevReadingNumber;
   const firstReadingWarning = currReadingNumber > 0 && prevReadingNumber === 0;
-  const electricityAmount = computeElectricityAmount(prevReadingNumber, currReadingNumber, ratePerUnit, row.plotNumber);
+  const electricityAmount = computeElectricityAmount(prevReadingNumber, currReadingNumber, ratePerUnit, row.plotNumber, month);
   const electricityUnits = computeElectricityUnits(prevReadingNumber, currReadingNumber);
   const dirty =
     prevReadingNumber !== row.prevReading || currReadingNumber !== row.currReading || electricityPaid !== row.electricityPaid;
@@ -407,63 +399,13 @@ function ElectricityRowCard({
   );
 }
 
-function RateEditor({
-  ratePerUnit,
-  onSaved,
-  onError,
-}: {
-  ratePerUnit: number;
-  onSaved: (message: string) => void;
-  onError: (message: string | null) => void;
-}) {
-  const [value, setValue] = useState(String(ratePerUnit));
-  const [saving, setSaving] = useState(false);
-  const rate = Number(value);
-  const invalid = value.trim() === "" || !Number.isFinite(rate) || rate < 0;
-
-  async function save() {
-    setSaving(true);
-    onError(null);
-    try {
-      const res = await fetch("/api/admin/settings/electricity-rate", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ratePerUnit: rate }),
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? "Failed to save rate.");
-      onSaved(`Electricity rate set to ₹${json.ratePerUnit} per unit.`);
-    } catch (err) {
-      onError(err instanceof Error ? err.message : "Failed to save rate.");
-    } finally {
-      setSaving(false);
-    }
-  }
-
+function FormulaNotice({ config, month }: { config: ElectricityConfigInput; month: string }) {
   return (
-    <div className="mb-4 flex flex-wrap items-end gap-3 rounded-card border border-line bg-white p-3.5 shadow-card sm:p-4">
-      <label className="flex flex-col gap-1">
-        <span className="text-sm font-medium text-ink">Rate per unit (₹)</span>
-        <input
-          type="number"
-          inputMode="decimal"
-          min={0}
-          step="0.01"
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          className="min-h-11 w-32 rounded-control border border-line-strong bg-white px-3 py-2 text-base focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
-        />
-      </label>
-      <button
-        type="button"
-        onClick={save}
-        disabled={saving || invalid || rate === ratePerUnit}
-        className="min-h-11 rounded-control bg-primary px-4 text-sm font-semibold text-white disabled:opacity-50"
-      >
-        {saving ? "Saving…" : "Save rate"}
-      </button>
-      <p className="basis-full text-xs text-foreground/50">
-        Applies to all months, including past ones.
+    <div className="mb-4 rounded-card border border-line bg-white p-3.5 text-sm shadow-card sm:p-4">
+      <span className="font-medium text-ink">Billing formula for {formatMonthLabel(month)}: </span>
+      {describeFormula(config, month)}
+      <p className="mt-1 text-xs text-foreground/50">
+        Which formula applies from which month is set in Settings (admin only). Earlier months keep their own formula.
       </p>
     </div>
   );
@@ -576,7 +518,7 @@ function BulkEntry({
                   <span className="font-medium">Plot {row.plotNumber}</span>
                   <span className="text-foreground/60">
                     {prev} → {curr} · {computeElectricityUnits(prev, curr)} units · ₹
-                    {computeElectricityAmount(prev, curr, ratePerUnit, row.plotNumber).toFixed(0)}
+                    {computeElectricityAmount(prev, curr, ratePerUnit, row.plotNumber, month).toFixed(0)}
                   </span>
                 </li>
               ))}

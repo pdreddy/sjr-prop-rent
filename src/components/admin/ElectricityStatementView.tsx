@@ -3,6 +3,7 @@
 import { Toolbar } from "./ui";
 import { useEffect, useMemo, useState } from "react";
 import { formatMonthLabel, formatDate } from "@/lib/month";
+import { describeFormula } from "@/lib/electricity";
 import type {
   ElectricityMonthStatus,
   ElectricityStatementResponse,
@@ -102,7 +103,7 @@ export default function ElectricityStatementView({ onUnauthorized }: { onUnautho
         search={{ value: search, onChange: setSearch }}
         help={
           <>
-            Rate ₹{data.ratePerUnit}/unit. Each month&apos;s baseline is rent + maintenance; a small amount paid above it (under ₹{data.config.excessLimit.toLocaleString("en-IN")})
+            Billing formula ({formatMonthLabel(data.currentMonth)}): {describeFormula(data.config, data.currentMonth)}; earlier months keep the formula scheduled for them. Each month&apos;s baseline is rent + maintenance; a small amount paid above it (under ₹{data.config.excessLimit.toLocaleString("en-IN")})
             is credited to electricity, oldest bill first, and unused credit carries forward. A larger excess is rent paid ahead. Months run from the tenant&apos;s joining month
             to {formatMonthLabel(data.currentMonth)}.
           </>

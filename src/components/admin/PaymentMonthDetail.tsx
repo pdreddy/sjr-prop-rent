@@ -1,7 +1,7 @@
 "use client";
 
 import { formatDate, formatMonthLabel } from "@/lib/month";
-import { resolveConfig, type ElectricityConfigInput } from "@/lib/electricity";
+import { describeFormula, type ElectricityConfigInput } from "@/lib/electricity";
 import type { PaymentHistoryMonth } from "@/lib/types";
 
 const rupees = (n: number) => `₹${n.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
@@ -57,7 +57,7 @@ export default function PaymentMonthDetail({ tenant, month, ratePerUnit, monthLa
             ) : (
               <>
                 <Line label="Units used" value={String(month.electricityUnits)} />
-                <Line label="Rate" value={`₹${resolveConfig(ratePerUnit).ratePerUnit} / unit`} />
+                <Line label="Rate" value={describeFormula(ratePerUnit, month.month)} />
               </>
             )}
             <Line label="Electricity bill" value={rupees(month.electricityBill)} strong />

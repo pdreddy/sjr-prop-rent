@@ -59,7 +59,7 @@ export default function EditPaymentModal({ row, month, ratePerUnit, onClose, onS
   const currReadingNumber = Number(currReading || 0);
   const readingError = currReadingNumber < prevReadingNumber;
   const electricityUnits = computeElectricityUnits(prevReadingNumber, currReadingNumber);
-  const electricityAmount = computeElectricityAmount(prevReadingNumber, currReadingNumber, ratePerUnit, plotNumber);
+  const electricityAmount = computeElectricityAmount(prevReadingNumber, currReadingNumber, ratePerUnit, plotNumber, month);
 
   async function save() {
     if (paidNumber > 0 && !paidDate) {

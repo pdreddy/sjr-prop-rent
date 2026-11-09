@@ -4,6 +4,7 @@ import { Toolbar, ToolbarButton, Tile, TileGroup, EmptyState } from "./ui";
 import { useEffect, useMemo, useState } from "react";
 import { formatDate, formatMonthLabel, isBeforeBuildingOpened } from "@/lib/month";
 import type { PaymentHistoryResponse, PaymentHistoryTenant } from "@/lib/types";
+import { describeFormula } from "@/lib/electricity";
 import PaymentMonthDetail from "./PaymentMonthDetail";
 
 const rupees = (n: number) => `₹${n.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
@@ -79,7 +80,7 @@ export default function PaymentHistoryView({ onUnauthorized }: { onUnauthorized:
             Rent starts the month after move-in and runs to {formatMonthLabel(data.currentMonth)}. Everything paid counts as rent. Only a small
             amount over the month&apos;s rent (under ₹{data.config.excessLimit.toLocaleString("en-IN")}, e.g. ₹500 or ₹1,000 on ₹20,000 rent) is moved to electricity as paid; a larger
             excess (e.g. ₹20,000 paid on a ₹10,667 part-month) is rent paid ahead and covers later months. Electricity is billed
-            from meter readings at ₹{data.ratePerUnit}/unit and any unused electricity payment carries forward to the next bill. With no meter reading, the bill defaults to ₹{data.config.defaultHigh} (plots {data.config.highPlots.join(", ") || "none"}) or ₹{data.config.defaultStandard} (all other plots). A payment shown
+            from meter readings ({describeFormula(data.config, data.currentMonth)} this month; earlier months keep their own formula) and any unused electricity payment carries forward to the next bill. With no meter reading, the bill defaults to ₹{data.config.defaultHigh} (plots {data.config.highPlots.join(", ") || "none"}) or ₹{data.config.defaultStandard} (all other plots). A payment shown
             as &ldquo;before rent start&rdquo; is filed under a month earlier than the tenant&apos;s first rent month. Click any month for
             every detail: rent, payment, electricity, credit and notes.
           </>
