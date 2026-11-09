@@ -734,3 +734,84 @@ test("plot details are available without electricity history and show rent paid 
   await expect(details).toContainText("Estimated bill: ₹500");
   await expect(details.locator("tfoot")).toHaveCount(0);
 });
+
+test("masked public names stay masked in the list and details", async ({
+  page,
+}) => {
+  await page.route("**/api/public/status?*", (route) =>
+    route.fulfill({
+      json: {
+        ...fixture,
+        totalPlots: 1,
+        paidCount: 1,
+        plots: [
+          { ...fixture.plots[0], tenantName: "Dee***", electricityMonths: [] },
+        ],
+      },
+    }),
+  );
+  await page.goto("/");
+  await expect(page.locator("tbody")).toContainText("Dee***");
+  await page.getByRole("button", { name: "View details for plot 101" }).click();
+  await expect(page.getByRole("dialog")).toContainText("Dee***");
+  await expect(page.getByText("Deepika Kumari", { exact: true })).toHaveCount(
+    0,
+  );
+});
+
+test("mobile details are full-screen and history is readable without horizontal scrolling", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.route("**/api/public/status?*", (route) =>
+    route.fulfill({
+      json: {
+        ...fixture,
+        totalPlots: 1,
+        plots: [
+          {
+            ...fixture.plots[0],
+            electricityStatus: "UNPAID",
+            electricityMonths: [
+              {
+                month: "2026-10",
+                prevReading: 53,
+                currReading: 148.8,
+                units: 95.8,
+                bill: 670.6,
+                paid: 0,
+                balance: 670.6,
+                isDefault: false,
+                status: "UNPAID",
+              },
+            ],
+            electricityTotals: { billed: 670.6, paid: 0, due: 670.6 },
+          },
+        ],
+      },
+    }),
+  );
+  await page.goto("/");
+  const button = page.getByRole("button", {
+    name: "View details for plot 101",
+  });
+  await expect(button).toHaveText("View details");
+  expect((await button.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+  await button.click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog).toBeVisible();
+  expect((await dialog.boundingBox())!.width).toBe(390);
+  expect(
+    await dialog.evaluate(
+      (element) => element.scrollWidth <= element.clientWidth,
+    ),
+  ).toBe(true);
+  expect(
+    await dialog
+      .locator("tbody td")
+      .first()
+      .evaluate((cell) => parseFloat(getComputedStyle(cell).fontSize)),
+  ).toBeGreaterThanOrEqual(14);
+  await dialog.getByRole("button", { name: "Close plot details" }).click();
+  await expect(dialog).toHaveCount(0);
+});

@@ -166,3 +166,14 @@ reconnects. A worker update offers Refresh app rather than reloading an admin
 form automatically. Bump its VERSION when changing worker/precache behavior.
 Use HTTPS (or localhost) and `npm run build && npm start` to test PWA behavior;
 development deliberately removes production workers and their caches.
+
+
+### Public tenant-name privacy
+
+Admin → Settings → Building & public page → Public tenant names now supports
+full names, masked names (first three characters, e.g. Deepika → Dee***), or
+hidden names. Masking happens on the server before the public API sends data,
+so the list, plot details and public search receive only the masked value.
+Admin views retain the original name. Existing settings keep their current
+full/hidden behavior until the admin changes it. Name characters are counted
+as Unicode graphemes so accented characters and emoji are not split.

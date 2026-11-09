@@ -813,3 +813,330 @@
     text-align: right;
   }
 }
+
+/* Readable public details with less space spent on repeated chrome. */
+.resident-portal .header-inner {
+  min-height: 58px;
+}
+.resident-portal .public-main {
+  padding-top: 12px;
+}
+.resident-portal .page-intro {
+  margin-bottom: 8px;
+}
+.resident-portal .directory {
+  margin-top: 10px;
+}
+.resident-portal .directory-heading {
+  padding-block: 6px;
+}
+.resident-portal .directory-toolbar {
+  padding-bottom: 8px;
+}
+.resident-portal .secondary-filters {
+  padding-bottom: 6px;
+}
+.resident-portal .resident-table tbody :is(th, td) {
+  font-size: 14px;
+  padding-block: 8px;
+}
+.resident-portal .plot-details-link {
+  min-height: 44px;
+  font-size: 12px;
+  font-weight: 600;
+  padding-inline: 9px;
+  margin-top: 5px;
+  border: 1px solid #d3dfc9;
+  border-radius: 6px;
+  background: #f2f6eb;
+  text-decoration: none;
+}
+.resident-portal .plot-details-link:hover {
+  background: #e7efdc;
+}
+.resident-portal .plot-payment-status small {
+  font-size: 11px;
+}
+.resident-portal .plot-payment-status > span > span,
+.resident-portal .payment-history-button > span {
+  font-size: 12px;
+}
+.resident-portal .plot-total-due {
+  font-size: 11px;
+}
+.resident-portal .directory-footer {
+  font-size: 11px;
+}
+.resident-portal .status-filters button {
+  font-size: 12px;
+}
+.resident-portal .status-count {
+  font-size: 10px;
+}
+.resident-portal .summary-item > div > span {
+  font-size: 12px;
+}
+.resident-portal .secondary-filters {
+  font-size: 12px;
+}
+.attention-copy .attention-breakdown {
+  font-size: 11px;
+}
+.electricity-history-dialog {
+  width: min(820px, calc(100% - 32px));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.history-dialog-heading {
+  position: sticky;
+  top: -25px;
+  z-index: 3;
+  background: #fffefa;
+  padding-block: 15px;
+}
+.history-dialog-heading h2 {
+  font-size: 29px;
+}
+.history-dialog-note {
+  font-size: 14px;
+  margin-block: 8px 16px;
+}
+.plot-month-detail h3,
+.plot-month-detail p,
+.plot-month-detail dl > div {
+  font-size: 14px;
+}
+.plot-month-detail > span {
+  font-size: 14px;
+}
+.electricity-history-totals dt {
+  font-size: 12px;
+}
+.electricity-history-totals dd {
+  font-size: 23px;
+}
+.history-ledger-note,
+.no-electricity-history {
+  font-size: 13px;
+}
+.history-table-scroll table {
+  font-size: 14px;
+}
+.history-table-scroll span {
+  font-size: 12px;
+}
+.history-meter-readings {
+  font-size: 12px;
+}
+@media (max-width: 760px) {
+  .resident-portal .resident-table th:first-child {
+    width: 15%;
+  }
+  .resident-portal .resident-table th:nth-child(2) {
+    width: 48%;
+  }
+  .resident-portal .resident-table th:last-child {
+    width: 37%;
+  }
+  .resident-portal .mobile-date {
+    font-size: 12px;
+  }
+}
+@media (max-width: 520px) {
+  .resident-portal .header-inner {
+    min-height: 56px;
+  }
+  .resident-portal .public-main {
+    padding-top: 8px;
+  }
+  .resident-portal .month-summary {
+    padding-block: 8px;
+  }
+  .resident-portal .summary-item > div > span {
+    font-size: 10px;
+    white-space: normal;
+  }
+  .resident-portal .secondary-filters {
+    font-size: 11px !important;
+  }
+  .attention-copy .attention-breakdown {
+    font-size: 10px;
+  }
+  .resident-portal .status-filters button {
+    font-size: 12px;
+  }
+  .resident-portal .status-count {
+    font-size: 10px;
+  }
+  .resident-portal .resident-table tbody :is(th, td) {
+    padding-inline: 8px;
+    font-size: 13px;
+  }
+  .resident-portal .mobile-date {
+    font-size: 11px;
+  }
+  .resident-portal .plot-payment-status small {
+    font-size: 10px;
+  }
+  .resident-portal .plot-payment-status > span > span,
+  .resident-portal .payment-history-button > span {
+    font-size: 11px;
+  }
+  .resident-portal .plot-payment-status > span {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 4px;
+  }
+  .resident-portal .plot-payment-status > span > small:first-child {
+    max-width: none;
+    width: 100%;
+    text-align: right;
+  }
+  .resident-portal .plot-payment-status > span > .payment-detail {
+    font-size: 10px;
+  }
+  .resident-portal .plot-total-due {
+    font-size: 10px;
+  }
+  .resident-portal .plot-details-link {
+    font-size: 12px;
+    margin-top: 5px;
+    padding-inline: 7px;
+  }
+  .resident-portal .directory-footer {
+    font-size: 10px;
+  }
+  .electricity-history-dialog {
+    width: 100%;
+    max-width: 100%;
+    height: 100dvh;
+    max-height: 100dvh;
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+  }
+  .history-dialog-inner {
+    padding: 0 16px max(24px, env(safe-area-inset-bottom));
+  }
+  .history-dialog-heading {
+    top: 0;
+    padding-block: max(16px, env(safe-area-inset-top)) 14px;
+    border-bottom: 1px solid #e2e8da;
+  }
+  .history-dialog-heading button {
+    width: 48px;
+    height: 48px;
+    background: #f0f4e8;
+    flex-shrink: 0;
+  }
+  .history-dialog-heading h2 {
+    font-size: 27px;
+  }
+  .plot-month-detail {
+    padding: 16px;
+  }
+  .history-table-scroll {
+    overflow: visible;
+  }
+  .history-table-scroll table {
+    display: block;
+    min-width: 0;
+    width: 100%;
+  }
+  .history-table-scroll thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .history-table-scroll tbody {
+    display: grid;
+    gap: 12px;
+  }
+  .history-table-scroll :is(tbody, tfoot) tr {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    border: 1px solid #dce5d3;
+    border-radius: 9px;
+    overflow: hidden;
+  }
+  .history-table-scroll :is(tbody, tfoot) th {
+    grid-column: 1/-1;
+    padding: 14px;
+    background: #f3f6ed;
+    font-size: 15px;
+  }
+  .history-table-scroll :is(tbody, tfoot) td {
+    padding: 12px 14px;
+    font-size: 15px;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .history-table-scroll :is(tbody, tfoot) td::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #69776e;
+    margin-bottom: 4px;
+    font-weight: 400;
+  }
+  .history-table-scroll tbody td:last-child {
+    grid-column: 1/-1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .history-table-scroll span {
+    font-size: 12px;
+  }
+  .history-table-scroll tfoot {
+    display: block;
+    margin-top: 12px;
+  }
+  .history-table-scroll tfoot td:empty {
+    display: none;
+  }
+  .history-table-scroll .is-selected-month {
+    border-color: #7e9d63;
+  }
+  .history-table-scroll .is-selected-month > th {
+    background: #e5efd9;
+  }
+}
+
+.resident-portal .directory-toolbar {
+  flex-wrap: wrap;
+  gap: 8px 14px;
+}
+.resident-portal .directory-toolbar .secondary-filters {
+  padding: 0;
+  margin: 0;
+  flex: 1 1 290px;
+  gap: 8px;
+}
+.resident-portal .directory-toolbar .resident-search {
+  flex: 1 1 240px;
+  max-width: 320px;
+}
+@media (max-width: 520px) {
+  .resident-portal .directory-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .resident-portal .directory-toolbar .resident-search {
+    order: 0;
+    flex: none;
+    max-width: none;
+  }
+  .resident-portal .directory-toolbar .status-filters {
+    order: 1;
+  }
+  .resident-portal .directory-toolbar .secondary-filters {
+    order: 2;
+    flex: none;
+    width: 100%;
+  }
+}

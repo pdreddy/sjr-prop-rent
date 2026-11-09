@@ -21,6 +21,8 @@ export interface GeneralSettings {
   buildingName: string;
   /** Show each plot's tenant name on the public page. */
   showTenantNames: boolean;
+  /** Optional for legacy settings; expose only the first three characters publicly. */
+  maskTenantNames?: boolean;
   /** Optional message shown at the top of the public page (e.g. "Rent is due by the 5th"). */
   notice: string;
 }
@@ -37,56 +39,121 @@ export const DEFAULT_ELECTRICITY_CONFIG: ElectricityConfig = {
 export const DEFAULT_GENERAL_SETTINGS: GeneralSettings = {
   buildingName: process.env.BUILDING_NAME || "SJR Building",
   showTenantNames: true,
+  maskTenantNames: false,
   notice: "",
 };
 
 const num = (value: unknown, fallback: number, min = 0, max = 10_000_000) =>
-  typeof value === "number" && Number.isFinite(value) && value >= min && value <= max ? Math.round(value * 100) / 100 : fallback;
+  typeof value === "number" &&
+  Number.isFinite(value) &&
+  value >= min &&
+  value <= max
+    ? Math.round(value * 100) / 100
+    : fallback;
 
 /** Parses "101, 201 301" or an array into a clean list of unique plot numbers. */
 export function parsePlotList(value: unknown): string[] {
-  const items = Array.isArray(value) ? value : typeof value === "string" ? value.split(/[\s,;]+/) : [];
-  return [...new Set(items.map((v) => String(v).trim()).filter(Boolean))].slice(0, 200);
+  const items = Array.isArray(value)
+    ? value
+    : typeof value === "string"
+      ? value.split(/[\s,;]+/)
+      : [];
+  return [...new Set(items.map((v) => String(v).trim()).filter(Boolean))].slice(
+    0,
+    200,
+  );
 }
 
 /** Parses "101=900, 305=650" (or an object) into { plot: amount }; bad entries are ignored. */
 export function parsePlotFixed(value: unknown): Record<string, number> {
   const out: Record<string, number> = {};
   if (value && typeof value === "object" && !Array.isArray(value)) {
-    for (const [plot, amount] of Object.entries(value)) if (typeof amount === "number" && amount >= 0 && amount <= 1_000_000) out[plot.trim()] = amount;
+    for (const [plot, amount] of Object.entries(value))
+      if (typeof amount === "number" && amount >= 0 && amount <= 1_000_000)
+        out[plot.trim()] = amount;
     return out;
   }
   if (typeof value === "string") {
     for (const part of value.split(/[,;\n]+/)) {
       const [plot, amount] = part.split(/[=:]/).map((x) => x.trim());
       const n = Number(amount);
-      if (plot && amount !== undefined && amount !== "" && Number.isFinite(n) && n >= 0 && n <= 1_000_000) out[plot] = Math.round(n * 100) / 100;
+      if (
+        plot &&
+        amount !== undefined &&
+        amount !== "" &&
+        Number.isFinite(n) &&
+        n >= 0 &&
+        n <= 1_000_000
+      )
+        out[plot] = Math.round(n * 100) / 100;
     }
   }
   return out;
 }
-export const formatPlotFixed = (fixed: Record<string, number>) => Object.entries(fixed).map(([p, a]) => `${p}=${a}`).join(", ");
+export const formatPlotFixed = (fixed: Record<string, number>) =>
+  Object.entries(fixed)
+    .map(([p, a]) => `${p}=${a}`)
+    .join(", ");
 
 /** Fills any missing or invalid field with its default, so partial or legacy documents still work. */
-export function normalizeElectricityConfig(value: Partial<Record<keyof ElectricityConfig, unknown>> | null | undefined): ElectricityConfig {
+export function normalizeElectricityConfig(
+  value: Partial<Record<keyof ElectricityConfig, unknown>> | null | undefined,
+): ElectricityConfig {
   const d = DEFAULT_ELECTRICITY_CONFIG;
   return {
     ratePerUnit: num(value?.ratePerUnit, d.ratePerUnit, 0, 1000),
     defaultHigh: num(value?.defaultHigh, d.defaultHigh),
     defaultStandard: num(value?.defaultStandard, d.defaultStandard),
     // Stored as a comma-separated string because Realtime Database drops empty arrays.
-    highPlots: Array.isArray(value?.highPlots) || typeof value?.highPlots === "string" ? parsePlotList(value?.highPlots) : d.highPlots,
+    highPlots:
+      Array.isArray(value?.highPlots) || typeof value?.highPlots === "string"
+        ? parsePlotList(value?.highPlots)
+        : d.highPlots,
     excessLimit: num(value?.excessLimit, d.excessLimit),
     plotFixed: parsePlotFixed(value?.plotFixed),
   };
 }
 
-export function normalizeGeneralSettings(value: Partial<Record<keyof GeneralSettings, unknown>> | null | undefined): GeneralSettings {
+export function normalizeGeneralSettings(
+  value: Partial<Record<keyof GeneralSettings, unknown>> | null | undefined,
+): GeneralSettings {
   const d = DEFAULT_GENERAL_SETTINGS;
-  const name = typeof value?.buildingName === "string" ? value.buildingName.trim().slice(0, 100) : "";
+  const name =
+    typeof value?.buildingName === "string"
+      ? value.buildingName.trim().slice(0, 100)
+      : "";
   return {
     buildingName: name || d.buildingName,
-    showTenantNames: typeof value?.showTenantNames === "boolean" ? value.showTenantNames : d.showTenantNames,
-    notice: typeof value?.notice === "string" ? value.notice.trim().slice(0, 500) : d.notice,
+    showTenantNames:
+      typeof value?.showTenantNames === "boolean"
+        ? value.showTenantNames
+        : d.showTenantNames,
+    maskTenantNames:
+      typeof value?.maskTenantNames === "boolean"
+        ? value.maskTenantNames
+        : false,
+    notice:
+      typeof value?.notice === "string"
+        ? value.notice.trim().slice(0, 500)
+        : d.notice,
   };
+}
+
+/** Public names are transformed before JSON serialization, including all detail views. */
+export function publicTenantName(
+  name: string | null,
+  settings: Pick<GeneralSettings, "showTenantNames" | "maskTenantNames">,
+): string | null {
+  if (!settings.showTenantNames || !name?.trim()) return null;
+  if (!settings.maskTenantNames) return name;
+  const graphemes = new Intl.Segmenter(undefined, {
+    granularity: "grapheme",
+  }).segment(name.trim());
+  let prefix = "";
+  let count = 0;
+  for (const grapheme of graphemes) {
+    if (count++ === 3) break;
+    prefix += grapheme.segment;
+  }
+  return `${prefix}***`;
 }

@@ -107,6 +107,21 @@ async function main() {
   check("building name from settings", pub2.json?.buildingName === "Test Building");
   check("tenant names hidden when switched off", p2?.tenantName === null);
 
+  const maskedSettings = { electricity: { ...after.electricity, highPlots: after.electricity.highPlots.join(", "), plotFixed: "101=900" }, general: { ...after.general, showTenantNames: true, maskTenantNames: true } };
+  check("masking setting saved", (await api("/api/admin/settings", { method: "PUT", body: JSON.stringify(maskedSettings) })).status === 200);
+  const masked = (await api(`/api/public/status?month=${M}`)).json;
+  check("public API returns first 3 characters only", masked?.plots?.find((x: any) => x.plotNumber === "101")?.tenantName === "Rav***");
+  check("public JSON contains no full tenant name", !JSON.stringify(masked).includes("Ravi Kumar"));
+  const adminUnits = (await api("/api/admin/units")).json;
+  check("admin still sees original full name", adminUnits?.units?.find((x: any) => x.plotNumber === "101")?.tenantName === "Ravi Kumar");
+  check("masking setting persists", (await api("/api/admin/settings")).json?.general?.maskTenantNames === true);
+  const { maskTenantNames: omittedMask, ...legacyGeneral } = maskedSettings.general;
+  void omittedMask;
+  await api("/api/admin/settings", { method: "PUT", body: JSON.stringify({ ...maskedSettings, general: legacyGeneral }) });
+  check("legacy settings updates preserve active masking", (await api("/api/admin/settings")).json?.general?.maskTenantNames === true);
+  await api("/api/admin/settings", { method: "PUT", body: JSON.stringify({ ...maskedSettings, general: { ...maskedSettings.general, showTenantNames: false } }) });
+  check("hidden mode wins over masking", (await api(`/api/public/status?month=${M}`)).json?.plots?.find((x: any) => x.plotNumber === "101")?.tenantName === null);
+
   await api("/api/admin/settings", { method: "PUT", body: JSON.stringify({ electricity: { ...settings.electricity, highPlots: settings.electricity.highPlots.join(", "), plotFixed: "" }, general: settings.general }) }); // restore
 
   console.log(failures ? `\n${failures} check(s) FAILED` : "\nAll checks passed");

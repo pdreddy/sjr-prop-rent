@@ -215,17 +215,19 @@ export default function ElectricityHistory({
                               : `${entry.prevReading} → ${entry.currReading}`}
                           </small>
                         </th>
-                        <td>
+                        <td data-label="Units used">
                           {entry.isDefault
                             ? "—"
                             : entry.units.toLocaleString("en-IN", {
                                 maximumFractionDigits: 2,
                               })}
                         </td>
-                        <td>{rupee(entry.bill)}</td>
-                        <td>{rupee(entry.paid)}</td>
-                        <td>{rupee(entry.balance)}</td>
-                        <td>
+                        <td data-label="Bill">{rupee(entry.bill)}</td>
+                        <td data-label="Paid / credited">
+                          {rupee(entry.paid)}
+                        </td>
+                        <td data-label="Balance due">{rupee(entry.balance)}</td>
+                        <td data-label="Status">
                           <StatusBadge status={entry.status} />
                         </td>
                       </tr>
@@ -235,7 +237,7 @@ export default function ElectricityHistory({
                     <tfoot>
                       <tr>
                         <th scope="row">Total</th>
-                        <td>
+                        <td data-label="Recorded units">
                           {totalUnits.toLocaleString("en-IN", {
                             maximumFractionDigits: 2,
                           })}
@@ -243,9 +245,13 @@ export default function ElectricityHistory({
                             Recorded only
                           </small>
                         </td>
-                        <td>{rupee(totals.billed)}</td>
-                        <td>{rupee(totals.paid)}</td>
-                        <td>{rupee(totals.due)}</td>
+                        <td data-label="Total billed">
+                          {rupee(totals.billed)}
+                        </td>
+                        <td data-label="Total paid / credited">
+                          {rupee(totals.paid)}
+                        </td>
+                        <td data-label="Total due">{rupee(totals.due)}</td>
                         <td />
                       </tr>
                     </tfoot>

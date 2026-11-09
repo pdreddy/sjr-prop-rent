@@ -303,53 +303,53 @@ export default function Home() {
                 placeholder="Search plot or resident…"
               />
             </label>
-          </div>
-          <div className="secondary-filters">
-            <label>
-              Electricity{" "}
-              <select
-                aria-label="Filter electricity status"
-                value={electricityFilter}
-                onChange={(event) =>
-                  setElectricityFilter(
-                    event.target.value as typeof electricityFilter,
-                  )
-                }
-              >
-                <option value="ALL">
-                  All ({ready ? electricityCounts.ALL : "—"})
-                </option>
-                <option value="PAID">
-                  Paid ({ready ? electricityCounts.PAID : "—"})
-                </option>
-                <option value="UNPAID">
-                  Unpaid ({ready ? electricityCounts.UNPAID : "—"})
-                </option>
-                <option value="NA">
-                  N/A ({ready ? electricityCounts.NA : "—"})
-                </option>
-              </select>
-            </label>
-            <label className="attention-toggle">
-              <input
-                type="checkbox"
-                checked={attentionOnly}
-                onChange={(event) => setAttentionOnly(event.target.checked)}
-              />
-              <span className="attention-copy">
-                <span>
-                  Needs attention <b>{ready ? attentionCount : "—"}</b>
-                </span>
-                <span
-                  className="attention-breakdown"
-                  title="A plot can need attention for both rent and electricity."
+            <div className="secondary-filters">
+              <label>
+                Electricity{" "}
+                <select
+                  aria-label="Filter electricity status"
+                  value={electricityFilter}
+                  onChange={(event) =>
+                    setElectricityFilter(
+                      event.target.value as typeof electricityFilter,
+                    )
+                  }
                 >
-                  Rent <strong>{ready ? rentAttentionCount : "—"}</strong> ·
-                  Electricity{" "}
-                  <strong>{ready ? electricityCounts.UNPAID : "—"}</strong>
+                  <option value="ALL">
+                    All ({ready ? electricityCounts.ALL : "—"})
+                  </option>
+                  <option value="PAID">
+                    Paid ({ready ? electricityCounts.PAID : "—"})
+                  </option>
+                  <option value="UNPAID">
+                    Unpaid ({ready ? electricityCounts.UNPAID : "—"})
+                  </option>
+                  <option value="NA">
+                    N/A ({ready ? electricityCounts.NA : "—"})
+                  </option>
+                </select>
+              </label>
+              <label className="attention-toggle">
+                <input
+                  type="checkbox"
+                  checked={attentionOnly}
+                  onChange={(event) => setAttentionOnly(event.target.checked)}
+                />
+                <span className="attention-copy">
+                  <span>
+                    Needs attention <b>{ready ? attentionCount : "—"}</b>
+                  </span>
+                  <span
+                    className="attention-breakdown"
+                    title="A plot can need attention for both rent and electricity."
+                  >
+                    Rent <strong>{ready ? rentAttentionCount : "—"}</strong> ·
+                    Electricity{" "}
+                    <strong>{ready ? electricityCounts.UNPAID : "—"}</strong>
+                  </span>
                 </span>
-              </span>
-            </label>
+              </label>
+            </div>
           </div>
           {data && (!online || error) && (
             <div className="connection-note" role="status">
@@ -447,13 +447,6 @@ export default function Home() {
                             <Icon name="home" />
                             {plot.plotNumber}
                           </span>
-                          <button
-                            className="plot-details-link"
-                            aria-label={`View details for plot ${plot.plotNumber}`}
-                            onClick={() => setHistoryPlot(plot)}
-                          >
-                            Details <Icon name="arrow" />
-                          </button>
                         </th>
                         <td>
                           <div className="resident-name">
@@ -479,6 +472,13 @@ export default function Home() {
                                   ? `Joined ${formatDate(plot.moveInDate)}`
                                   : "Move-in date unavailable"}
                               </span>
+                              <button
+                                className="plot-details-link"
+                                aria-label={`View details for plot ${plot.plotNumber}`}
+                                onClick={() => setHistoryPlot(plot)}
+                              >
+                                View details <Icon name="arrow" />
+                              </button>
                             </span>
                           </div>
                         </td>
