@@ -30,6 +30,14 @@ const time = (doc: Doc | undefined) => {
 };
 const meaningful = (doc: Doc) => JSON.stringify(Object.fromEntries(Object.entries(doc).filter(([k]) => !BOOKKEEPING.has(k)).sort(([a], [b]) => a.localeCompare(b))));
 
+// What a record that exists on one side only actually holds, so it is clear what keeping or deleting it means.
+const contents = (doc: Doc) => {
+  const parts = SHOWN.filter((k) => doc[k] !== undefined && doc[k] !== null && doc[k] !== 0 && doc[k] !== false && doc[k] !== "" && k !== "active")
+    .map((k) => `${k} ${JSON.stringify(plain(doc[k]))}`);
+  const money = Number(doc.amountPaid ?? 0) > 0 || Number(doc.currReading ?? 0) > 0 || doc.electricityPaid === true;
+  return `  [${parts.join(", ") || "empty"}]${"amountPaid" in doc || "currReading" in doc ? (money ? "  <- HAS A PAYMENT OR READING" : "  (no payment, no reading)") : ""}`;
+};
+
 async function main() {
   const args = process.argv.slice(2);
   const apply = args.includes("--apply"), replace = args.includes("--replace");
@@ -97,9 +105,9 @@ async function main() {
       totals.onlyLive++;
       if (replace) {
         totals.deleted++;
-        console.log(`  - DELETE  ${label(name, id)} (not in the test copy)`);
+        console.log(`  - DELETE  ${label(name, id)} (not in the test copy)${contents(a[id])}`);
         if (apply) await rawRequest(`${name}/${id}`, { method: "DELETE" });
-      } else console.log(`  . only in live, kept: ${label(name, id)}`);
+      } else console.log(`  . only in live, kept: ${label(name, id)}${contents(a[id])}`);
     }
   }
 
