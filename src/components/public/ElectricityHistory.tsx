@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useRef } from "react";
 import type { PublicPlot } from "@/lib/types";
 import { formatDate, formatMonthLabel } from "@/lib/month";
 import { rupee } from "@/lib/format";
@@ -15,7 +14,6 @@ export default function ElectricityHistory({
   selectedMonth: string;
   onClose: () => void;
 }) {
-  const dialog = useRef<HTMLDialogElement>(null);
   const months = plot.electricityMonths ?? [];
   const selected = months.find((entry) => entry.month === selectedMonth);
   const applicable = plot.electricityStatus !== "NA";
@@ -31,32 +29,22 @@ export default function ElectricityHistory({
   const totals = plot.electricityTotals;
   const rentMonths = plot.rentMonths ?? [];
   const rentTotals = plot.rentTotals;
-  useEffect(() => {
-    const element = dialog.current;
-    element?.showModal();
-    return () => element?.close();
-  }, []);
   return (
-    <dialog
-      ref={dialog}
-      className="electricity-history-dialog"
-      aria-labelledby="electricity-history-title"
-      onClose={onClose}
-      onClick={(event) => {
-        if (event.target === event.currentTarget) dialog.current?.close();
-      }}
+    <section
+      id={`plot-history-${plot.plotNumber}`}
+      className="inline-plot-history"
+      aria-labelledby={`plot-history-title-${plot.plotNumber}`}
     >
       <div className="history-dialog-inner">
         <div className="history-dialog-heading">
           <div>
             <p className="eyebrow">{plot.tenantName ?? "RESIDENT PORTAL"}</p>
-            <h2 id="electricity-history-title">
+            <h2 id={`plot-history-title-${plot.plotNumber}`}>
               Plot {plot.plotNumber} details
             </h2>
           </div>
           <button
-            autoFocus
-            onClick={() => dialog.current?.close()}
+            onClick={onClose}
             aria-label="Close plot details"
           >
             ×
@@ -287,6 +275,6 @@ export default function ElectricityHistory({
           )}
         </section>
       </div>
-    </dialog>
+    </section>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import Link from "next/link";
 import { Icon } from "@/components/public/Icon";
 import StatusBadge from "@/components/StatusBadge";
@@ -22,7 +22,14 @@ export default function Home() {
   const [month, setMonth] = useState(getCurrentMonth());
   const { data, loading, refreshing, error, online, updatedAt, refresh } =
     usePublicStatus(month);
-  const [historyPlot, setHistoryPlot] = useState<PublicPlot | null>(null);
+  const [expandedPlot, setExpandedPlot] = useState<string | null>(null);
+  const toggleHistory = (plotNumber: string) => {
+    setExpandedPlot((current) => current === plotNumber ? null : plotNumber);
+  };
+  const closeHistory = (plotNumber: string) => {
+    setExpandedPlot(null);
+    document.getElementById(`plot-trigger-${plotNumber}`)?.focus();
+  };
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("ALL");
   const [electricityFilter, setElectricityFilter] = useState<
@@ -430,7 +437,9 @@ export default function Home() {
           ) : (
             ready && (
               <div className="resident-table-wrap">
-                <table className="resident-table">
+                <table className="resident-table" onKeyDown={(event) => {
+                  if (event.key === "Escape" && expandedPlot) closeHistory(expandedPlot);
+                }}>
                   <thead>
                     <tr>
                       <th scope="col">PLOT</th>
@@ -441,19 +450,21 @@ export default function Home() {
                   </thead>
                   <tbody>
                     {plots.map((plot, index) => (
+                      <Fragment key={plot.plotNumber}>
                       <tr
-                        key={plot.plotNumber}
-                        className="plot-history-row"
-                        onClick={() => setHistoryPlot(plot)}
+                        className={`plot-history-row${expandedPlot === plot.plotNumber ? " is-expanded" : ""}`}
+                        onClick={() => toggleHistory(plot.plotNumber)}
                       >
                         <th scope="row">
                           <button
                             className="plot-number plot-row-trigger"
                             aria-label={`View details for plot ${plot.plotNumber}`}
-                            aria-haspopup="dialog"
+                            id={`plot-trigger-${plot.plotNumber}`}
+                            aria-expanded={expandedPlot === plot.plotNumber}
+                            aria-controls={`plot-history-${plot.plotNumber}`}
                             onClick={(event) => {
                               event.stopPropagation();
-                              setHistoryPlot(plot);
+                              toggleHistory(plot.plotNumber);
                             }}
                           >
                             {plot.plotNumber}
@@ -527,6 +538,18 @@ export default function Home() {
                           )}
                         </td>
                       </tr>
+                      {expandedPlot === plot.plotNumber && (
+                        <tr className="plot-history-expansion">
+                          <td colSpan={4}>
+                            <ElectricityHistory
+                              plot={plot}
+                              selectedMonth={month}
+                              onClose={() => closeHistory(plot.plotNumber)}
+                            />
+                          </td>
+                        </tr>
+                      )}
+                      </Fragment>
                     ))}
                   </tbody>
                 </table>
@@ -553,8 +576,7 @@ export default function Home() {
           <div>
             <strong>A little transparency. A lot of privacy.</strong>
             <p>
-              Tenant names follow your building’s privacy settings. Rent
-              amounts, contact details, and admin notes stay private.
+              Tenant names follow your building’s privacy settings. Contact details and admin notes stay private.
             </p>
           </div>
           <span className="privacy-label">
@@ -562,17 +584,6 @@ export default function Home() {
           </span>
         </aside>
       </main>
-      {historyPlot && (
-        <ElectricityHistory
-          selectedMonth={month}
-          plot={
-            data?.plots.find(
-              (plot) => plot.plotNumber === historyPlot.plotNumber,
-            ) ?? historyPlot
-          }
-          onClose={() => setHistoryPlot(null)}
-        />
-      )}
       <footer className="public-container site-footer">
         <span>
           <span className="footer-monogram">SJR</span> A place to call home.

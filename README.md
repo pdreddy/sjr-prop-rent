@@ -182,7 +182,8 @@ as Unicode graphemes so accented characters and emoji are not split.
 ### Public payment history
 
 Click anywhere on a plot row (or focus its plot-number button and press Enter)
-to open rent and electricity history together. Rent includes monthly rent plus
+to expand rent and electricity history directly below that row. Click the same
+row again to collapse it. Rent includes monthly rent plus
 maintenance, paid amounts, payment dates, recorded status, balance due and rent
 paid ahead. Missing rent records show expected charges through the current month.
 Rent calculations share the admin payment-history implementation; electricity

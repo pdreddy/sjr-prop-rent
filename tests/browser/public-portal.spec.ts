@@ -294,10 +294,10 @@ test("plot number opens electricity history without a separate details control",
   await page
     .getByRole("button", { name: "View details for plot 101" })
     .click();
-  await expect(page.getByRole("dialog")).toBeVisible();
-  await expect(page.getByRole("dialog")).toContainText("November 2026");
+  await expect(page.getByRole("region", { name: "Plot 101 details", exact: true })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Plot 101 details", exact: true })).toContainText("November 2026");
   await page.keyboard.press("Escape");
-  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page.getByRole("region", { name: "Plot 101 details", exact: true })).toHaveCount(0);
 });
 
 test("native install prompts work and the button disappears after installation", async ({
@@ -581,7 +581,7 @@ test("electricity history highlights the viewing month, including a historical s
       .getByRole("button", { name: "View details for plot 101" })
       .click();
     const current = page
-      .getByRole("dialog")
+      .getByRole("region", { name: "Plot 101 details", exact: true })
       .locator('tbody tr[aria-current="true"]');
     await expect(current).toHaveCount(1);
     const label = new Date(`${selected}-01T00:00:00Z`).toLocaleDateString(
@@ -593,7 +593,7 @@ test("electricity history highlights the viewing month, including a historical s
       "Selected",
     );
     await expect(
-      page.getByRole("dialog").locator("tbody tr:not([aria-current])"),
+      page.getByRole("region", { name: "Plot 101 details", exact: true }).locator("tbody tr:not([aria-current])"),
     ).toHaveCount(1);
     await page.keyboard.press("Escape");
   }
@@ -673,7 +673,7 @@ test("public plot details show rent and the complete electricity ledger from the
   await expect(page.locator(".plot-total-due")).toContainText("1,541.6");
   await page.getByLabel("VIEWING MONTH").selectOption("2026-10");
   await page.getByRole("button", { name: "View details for plot 101" }).click();
-  const details = page.getByRole("dialog");
+  const details = page.getByRole("region", { name: "Plot 101 details", exact: true });
   await expect(
     details.getByRole("heading", { name: "Plot 101 details" }),
   ).toBeVisible();
@@ -723,7 +723,7 @@ test("plot details are available without electricity history and show rent paid 
   );
   await page.goto("/");
   await page.getByRole("button", { name: "View details for plot 101" }).click();
-  const details = page.getByRole("dialog");
+  const details = page.getByRole("region", { name: "Plot 101 details", exact: true });
   await expect(
     details.getByRole("region", { name: "Selected month rent" }),
   ).toContainText("Paid");
@@ -753,13 +753,13 @@ test("masked public names stay masked in the list and details", async ({
   await page.goto("/");
   await expect(page.locator("tbody")).toContainText("Dee***");
   await page.getByRole("button", { name: "View details for plot 101" }).click();
-  await expect(page.getByRole("dialog")).toContainText("Dee***");
+  await expect(page.getByRole("region", { name: "Plot 101 details", exact: true })).toContainText("Dee***");
   await expect(page.getByText("Deepika Kumari", { exact: true })).toHaveCount(
     0,
   );
 });
 
-test("mobile details are full-screen and history is readable without horizontal scrolling", async ({
+test("mobile history expands below the row without horizontal scrolling", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -798,9 +798,11 @@ test("mobile details are full-screen and history is readable without horizontal 
   await expect(button).toHaveText("101");
   expect((await button.boundingBox())!.height).toBeGreaterThanOrEqual(44);
   await button.click();
-  const dialog = page.getByRole("dialog");
+  const dialog = page.getByRole("region", { name: "Plot 101 details", exact: true });
   await expect(dialog).toBeVisible();
-  expect((await dialog.boundingBox())!.width).toBe(390);
+  expect((await dialog.boundingBox())!.width).toBeLessThanOrEqual(390);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await expect(page.getByRole("dialog")).toHaveCount(0);
   expect(
     await dialog.evaluate(
       (element) => element.scrollWidth <= element.clientWidth,
@@ -833,10 +835,12 @@ for (const width of [390, 1440]) {
       }],
     } }));
     await page.goto("/");
-    const row = page.locator(".resident-table tbody tr");
+    const row = page.locator(".plot-history-row");
     await expect(row.getByRole("button")).toHaveCount(1);
     await row.locator(".resident-name").click();
-    const dialog = page.getByRole("dialog");
+    await expect(row.getByRole("button")).toHaveAttribute("aria-expanded", "true");
+    await expect(row.locator("xpath=following-sibling::tr[1]")).toHaveClass("plot-history-expansion");
+    const dialog = page.getByRole("region", { name: "Plot 101 details", exact: true });
     const rent = dialog.getByRole("region", { name: "Rent history", exact: true });
     await expect(rent.locator("tbody tr")).toHaveCount(3);
     await expect(rent.getByLabel("Rent history totals")).toContainText("₹16,000");
@@ -848,11 +852,15 @@ for (const width of [390, 1440]) {
     await expect(dialog.getByLabel("Electricity history totals")).toContainText("₹200");
     await rent.locator("tbody tr").last().scrollIntoViewIfNeeded();
     expect(await dialog.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
-    await page.keyboard.press("Escape");
+    // Clicking inside history must not collapse it. Clicking the parent row again does.
+    await rent.getByRole("heading", { name: "Rent history", exact: true }).click();
+    await expect(dialog).toBeVisible();
+    await row.locator(".resident-name").click();
     await expect(dialog).toHaveCount(0);
+    await expect(row.getByRole("button")).toHaveAttribute("aria-expanded", "false");
     await row.locator(".plot-payment-status").click();
     await expect(dialog).toBeVisible();
-    await page.keyboard.press("Escape");
+    await row.locator(".plot-payment-status").click();
     await expect(dialog).toHaveCount(0);
     const trigger = row.getByRole("button", { name: "View details for plot 101" });
     await trigger.focus();
@@ -861,5 +869,36 @@ for (const width of [390, 1440]) {
     await page.keyboard.press("Escape");
     await expect(dialog).toHaveCount(0);
     await expect(trigger).toBeFocused();
+  });
+}
+
+for (const width of [320, 1440]) {
+  test(`row cells toggle inline history and switching rows keeps one expanded at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await mockStatus(page);
+    await page.goto("/");
+    const rows = page.locator(".plot-history-row");
+    const first = rows.first();
+    for (const cell of [first.locator("th"), first.locator("td").first(), first.locator("td").last()]) {
+      await cell.click({ position: { x: 5, y: 5 } });
+      await expect(page.locator(".plot-history-expansion")).toHaveCount(1);
+      await expect(first.getByRole("button")).toHaveAttribute("aria-expanded", "true");
+      await expect(page.getByRole("region", { name: "Plot 101 details", exact: true })).toBeVisible();
+      await cell.click({ position: { x: 5, y: 5 } });
+      await expect(page.locator(".plot-history-expansion")).toHaveCount(0);
+    }
+    if (width > 520) {
+      await first.locator(".move-in-date").click();
+    } else {
+      await first.getByRole("button").click();
+    }
+    await rows.nth(1).locator(".resident-name").click();
+    await expect(page.locator(".plot-history-expansion")).toHaveCount(1);
+    await expect(page.getByRole("region", { name: "Plot 102 details", exact: true })).toBeVisible();
+    await expect(first.getByRole("button")).toHaveAttribute("aria-expanded", "false");
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await page.getByRole("button", { name: "Close plot details" }).click();
+    await expect(rows.nth(1).getByRole("button")).toBeFocused();
+    await expect(page.locator(".plot-history-expansion")).toHaveCount(0);
   });
 }

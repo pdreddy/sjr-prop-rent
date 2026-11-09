@@ -430,36 +430,36 @@
   text-align: left;
   table-layout: fixed;
 }
-.resident-table thead {
+.resident-table > thead {
   background: #f5f6f0;
   border-block: 1px solid #e9ece3;
 }
-.resident-table thead th {
+.resident-table > thead > tr > th {
   padding: 13px 28px;
   color: #6d7968;
   font-weight: 500;
   font-size: 9px;
   letter-spacing: 1.2px;
 }
-.resident-table th:first-child {
+.resident-table > :is(thead, tbody) > tr > th:first-child {
   width: 20%;
 }
-.resident-table th:nth-child(2) {
+.resident-table > :is(thead, tbody) > tr > th:nth-child(2) {
   width: 34%;
 }
-.resident-table th:nth-child(3) {
+.resident-table > :is(thead, tbody) > tr > th:nth-child(3) {
   width: 25%;
 }
-.resident-table tbody tr {
+.resident-table > tbody > tr {
   border-bottom: 1px solid #edf0e7;
 }
-.resident-table tbody tr:last-child {
+.resident-table > tbody > tr:last-child {
   border: 0;
 }
-.resident-table tbody tr:hover {
+.resident-table > tbody > tr:hover {
   background: #f8f9f3;
 }
-.resident-table tbody :is(th, td) {
+.resident-table > tbody > tr > :is(th, td) {
   padding: 19px 28px;
   font-size: 12px;
   font-weight: 400;
@@ -726,8 +726,8 @@
   .privacy-label {
     display: none;
   }
-  .resident-table thead th,
-  .resident-table tbody :is(th, td) {
+  .resident-table > thead > tr > th,
+  .resident-table > tbody > tr > :is(th, td) {
     padding-inline: 20px;
   }
 }
@@ -824,13 +824,13 @@
   .resident-search {
     width: 230px;
   }
-  .resident-table th:first-child {
+  .resident-table > :is(thead, tbody) > tr > th:first-child {
     width: 19%;
   }
-  .resident-table th:nth-child(2) {
+  .resident-table > :is(thead, tbody) > tr > th:nth-child(2) {
     width: 43%;
   }
-  .resident-table th:nth-child(3),
+  .resident-table > :is(thead, tbody) > tr > th:nth-child(3),
   .resident-table .move-in-date {
     display: none;
   }
@@ -840,10 +840,10 @@
     color: #74816b;
     margin-top: 3px;
   }
-  .resident-table tbody :is(th, td) {
+  .resident-table > tbody > tr > :is(th, td) {
     padding-block: 18px;
   }
-  .resident-table th:last-child {
+  .resident-table > :is(thead, tbody) > tr > th:last-child {
     width: 25%;
   }
   .directory-footer {
@@ -1007,26 +1007,26 @@
     padding-inline: 17px;
     font-size: 11px;
   }
-  .resident-table thead th {
+  .resident-table > thead > tr > th {
     font-size: 8px;
     letter-spacing: 0.8px;
     padding: 12px 16px;
   }
-  .resident-table tbody :is(th, td) {
+  .resident-table > tbody > tr > :is(th, td) {
     padding: 17px 16px;
     font-size: 11px;
   }
-  .resident-table th:first-child {
+  .resident-table > :is(thead, tbody) > tr > th:first-child {
     width: 23%;
   }
-  .resident-table th:nth-child(2) {
+  .resident-table > :is(thead, tbody) > tr > th:nth-child(2) {
     width: 47%;
   }
-  .resident-table th:last-child {
+  .resident-table > :is(thead, tbody) > tr > th:last-child {
     width: 30%;
     text-align: right;
   }
-  .resident-table td:last-child {
+  .resident-table > tbody > tr > td:last-child {
     text-align: right;
     padding-left: 3px;
   }
@@ -1113,8 +1113,8 @@
   .directory-heading h2 {
     font-size: 20px;
   }
-  .resident-table tbody :is(th, td),
-  .resident-table thead th {
+  .resident-table > tbody > tr > :is(th, td),
+  .resident-table > thead > tr > th {
     padding-inline: 12px;
   }
 }
@@ -1290,7 +1290,7 @@
   .status-filters button {
     padding-inline: 12px;
   }
-  .resident-table tbody :is(th, td) {
+  .resident-table > tbody > tr > :is(th, td) {
     vertical-align: top;
   }
   .history-dialog-inner {
