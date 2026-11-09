@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { logout } from "@/lib/auth";
-import { withErrorHandling } from "@/lib/apiHandler";
 
-export const POST = withErrorHandling(async () => {
+export async function POST() {
   await logout();
   return NextResponse.json({ ok: true });
-});
+}

@@ -1,22 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getUnitById, getUnitByPlotNumber, updateUnit } from "@/lib/db";
+import { unitById, unitByPlot, unitDTO, updateUnit } from "@/lib/store";
 import { getAuthedAdmin } from "@/lib/auth";
 import { updateUnitSchema } from "@/lib/validation";
 import { recordAuditLog } from "@/lib/audit";
-import { serializeUnit } from "@/lib/serialize";
-import { withErrorHandling } from "@/lib/apiHandler";
+import { formatMonthLabel, isBeforeBuildingOpened } from "@/lib/month";
+import { BUILDING_READY_MONTH } from "@/lib/constants";
 
-export const PATCH = withErrorHandling(async (
+export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
-) => {
+) {
   const admin = await getAuthedAdmin();
   if (!admin) {
     return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
   }
+  if (admin.role !== "ADMIN") {
+    return NextResponse.json({ error: "Not authorized." }, { status: 403 });
+  }
 
   const { id } = await params;
-  const existing = await getUnitById(id);
+  const existing = await unitById(id);
   if (!existing) {
     return NextResponse.json({ error: "Plot not found." }, { status: 404 });
   }
@@ -31,7 +34,7 @@ export const PATCH = withErrorHandling(async (
   }
 
   if (parsed.data.plotNumber && parsed.data.plotNumber !== existing.plotNumber) {
-    const conflict = await getUnitByPlotNumber(parsed.data.plotNumber);
+    const conflict = await unitByPlot(parsed.data.plotNumber);
     if (conflict) {
       return NextResponse.json(
         { error: "A plot with this number already exists." },
@@ -48,26 +51,45 @@ export const PATCH = withErrorHandling(async (
     }
   }
 
-  const unit = await updateUnit(id, existing.plotNumber, {
-    ...(parsed.data.plotNumber !== undefined && { plotNumber: parsed.data.plotNumber }),
-    ...(parsed.data.tenantName !== undefined && { tenantName: parsed.data.tenantName || null }),
-    ...(moveInDate !== undefined && { moveInDate: moveInDate ? moveInDate.getTime() : null }),
-    ...(parsed.data.phone !== undefined && { phone: parsed.data.phone || null }),
-    ...(parsed.data.monthlyRent !== undefined && { monthlyRent: parsed.data.monthlyRent }),
-    ...(parsed.data.maintenanceAmount !== undefined && {
-      maintenanceAmount: parsed.data.maintenanceAmount,
-    }),
-    ...(parsed.data.active !== undefined && { active: parsed.data.active }),
+  // Reject a move-in date from before the building opened (a wrong year), but only when it is being
+  // changed, so other edits to a plot that already has a bad date are not blocked.
+  if (moveInDate && isBeforeBuildingOpened(moveInDate) && moveInDate.toISOString().slice(0, 10) !== existing.moveInDate?.toISOString().slice(0, 10)) {
+    return NextResponse.json({ error: `Move-in date is before the building opened (${formatMonthLabel(BUILDING_READY_MONTH)}). Check the year.` }, { status: 400 });
+  }
+
+  let advancePaidDate: Date | null | undefined;
+  if (parsed.data.advancePaidDate !== undefined) {
+    advancePaidDate = parsed.data.advancePaidDate ? new Date(parsed.data.advancePaidDate) : null;
+    if (parsed.data.advancePaidDate && Number.isNaN(advancePaidDate?.getTime())) {
+      return NextResponse.json({ error: "Invalid advance paid date." }, { status: 400 });
+    }
+  }
+
+  const unit = await updateUnit(id, {
+      ...(parsed.data.plotNumber !== undefined && { plotNumber: parsed.data.plotNumber }),
+      ...(parsed.data.tenantName !== undefined && { tenantName: parsed.data.tenantName || null }),
+      ...(moveInDate !== undefined && { moveInDate }),
+      ...(parsed.data.phoneNumbers !== undefined && { phoneNumbers: parsed.data.phoneNumbers }),
+      ...(parsed.data.advanceAmount !== undefined && { advanceAmount: parsed.data.advanceAmount }),
+      ...(parsed.data.advancePaid !== undefined && { advancePaid: parsed.data.advancePaid }),
+      ...(advancePaidDate !== undefined && { advancePaidDate }),
+      ...(parsed.data.advanceNotes !== undefined && { advanceNotes: parsed.data.advanceNotes || null }),
+      ...(parsed.data.monthlyRent !== undefined && { monthlyRent: parsed.data.monthlyRent }),
+      ...(parsed.data.maintenanceAmount !== undefined && {
+        maintenanceAmount: parsed.data.maintenanceAmount,
+      }),
+      ...(parsed.data.active !== undefined && { active: parsed.data.active }),
   });
 
   await recordAuditLog({
     adminId: admin.id,
+    adminUsername: admin.username,
     action: "UPDATE",
     recordType: "Unit",
     recordId: unit.id,
-    previousValue: serializeUnit(existing),
-    newValue: serializeUnit(unit),
+    previousValue: unitDTO(existing),
+    newValue: unitDTO(unit),
   });
 
-  return NextResponse.json({ unit: serializeUnit(unit) });
-});
+  return NextResponse.json({ unit: unitDTO(unit) });
+}

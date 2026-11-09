@@ -1,73 +1,55 @@
 import { NextRequest, NextResponse } from "next/server";
-import { listUnits, getPaymentsForUnits, createPaymentIfAbsent } from "@/lib/db";
 import { getAuthedAdmin } from "@/lib/auth";
 import { copyMonthSchema } from "@/lib/validation";
+import { allPayments, allUnits, getElectricityConfig, savePayment } from "@/lib/store";
 import { recordAuditLog } from "@/lib/audit";
-import { withErrorHandling } from "@/lib/apiHandler";
+import { expectedForMonth } from "@/lib/proration";
+import { computeElectricityAmount } from "@/lib/electricity";
+import { isBeforeFirstRentMonth } from "@/lib/month";
 
-export const POST = withErrorHandling(async (request: NextRequest) => {
+export async function POST(request: NextRequest) {
   const admin = await getAuthedAdmin();
-  if (!admin) {
-    return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
-  }
-
-  const body = await request.json().catch(() => null);
-  const parsed = copyMonthSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json(
-      { error: parsed.error.issues[0]?.message ?? "Invalid input." },
-      { status: 400 }
-    );
-  }
-
+  if (!admin) return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
+  if (admin.role !== "ADMIN") return NextResponse.json({ error: "Not authorized." }, { status: 403 });
+  const parsed = copyMonthSchema.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Invalid input." }, { status: 400 });
   const { sourceMonth, targetMonth } = parsed.data;
-  if (sourceMonth === targetMonth) {
-    return NextResponse.json(
-      { error: "Source and target month must be different." },
-      { status: 400 }
-    );
+  if (sourceMonth === targetMonth) return NextResponse.json({ error: "Source and target month must be different." }, { status: 400 });
+  const [units, payments, rate] = await Promise.all([allUnits(), allPayments(), getElectricityConfig()]);
+  // A tenant has no rent record before the month after they move in.
+  const active = units.filter((unit) => unit.active && !isBeforeFirstRentMonth(unit.moveInDate, targetMonth));
+  let createdCount = 0;
+  for (const unit of active) {
+    if (payments.some((p) => p.unitId === unit.id && p.month === targetMonth)) continue;
+    const source = payments.find((p) => p.unitId === unit.id && p.month === sourceMonth);
+    const expected = expectedForMonth(unit, targetMonth);
+    // Only the move-in month is prorated; every later month is the full agreed rent. Last month's
+    // amounts are carried forward unless that month was itself a prorated move-in month - its partial
+    // amount must not become the new month's rent.
+    const sourceWasProrated = expectedForMonth(unit, sourceMonth).proration.prorated;
+    const carried = source && !sourceWasProrated ? source : null;
+    const rentAmount = expected.proration.prorated ? expected.rent : carried?.rentAmount ?? expected.rent;
+    const maintenanceAmount = expected.proration.prorated ? expected.maintenance : carried?.maintenanceAmount ?? expected.maintenance;
+    // Carry forward last month's current meter reading as this month's starting point —
+    // admins only need to fill in the new current reading once it's next read.
+    const prevReading = source?.currReading ?? 0; // ?? also covers legacy records saved before this field existed
+    const currReading = 0; // entered when the meter is next read
+    await savePayment(unit.id, targetMonth, {
+      paymentStatus: "UNPAID",
+      rentAmount,
+      maintenanceAmount,
+      amountPaid: 0,
+      balanceDue: rentAmount + maintenanceAmount,
+      paidDate: null,
+      notes: null,
+      prevReading,
+      currReading,
+      electricityAmount: computeElectricityAmount(prevReading, currReading, rate, unit.plotNumber),
+      electricityPaid: false,
+      updatedBy: admin.username,
+    });
+    createdCount++;
   }
-
-  const units = (await listUnits()).filter((u) => u.active);
-  const unitIds = units.map((u) => u.id);
-  const [sourcePayments, targetPayments] = await Promise.all([
-    getPaymentsForUnits(unitIds, sourceMonth),
-    getPaymentsForUnits(unitIds, targetMonth),
-  ]);
-
-  const toCreate = units.filter((unit) => !targetPayments.has(unit.id));
-
-  const results = await Promise.all(
-    toCreate.map((unit) => {
-      const sourcePayment = sourcePayments.get(unit.id);
-      const rentAmount = sourcePayment ? sourcePayment.rentAmount : unit.monthlyRent;
-      const maintenanceAmount = sourcePayment
-        ? sourcePayment.maintenanceAmount
-        : unit.maintenanceAmount;
-      const totalExpected = rentAmount + maintenanceAmount;
-      return createPaymentIfAbsent(unit.id, targetMonth, {
-        paymentStatus: "UNPAID",
-        rentAmount,
-        maintenanceAmount,
-        amountPaid: 0,
-        balanceDue: totalExpected,
-        paidDate: null,
-        notes: null,
-        updatedBy: admin.username,
-      });
-    })
-  );
-  const createdCount = results.filter(Boolean).length;
-
-  await recordAuditLog({
-    adminId: admin.id,
-    action: "COPY_MONTH",
-    recordType: "Payment",
-    newValue: { sourceMonth, targetMonth, createdCount },
-  });
-
-  return NextResponse.json({
-    createdCount,
-    skippedCount: units.length - createdCount,
-  });
-});
+  await recordAuditLog({ adminId: admin.id, adminUsername: admin.username, action: "COPY_MONTH", recordType: "Payment", newValue: { sourceMonth, targetMonth, createdCount } });
+  return NextResponse.json({ createdCount, skippedCount: active.length - createdCount });
+}

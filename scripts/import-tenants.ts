@@ -1,5 +1,5 @@
-import "dotenv/config";
-import { getUnitByPlotNumber, createUnit, updateUnit, upsertPayment } from "../src/lib/db";
+import { deleteDocument } from "../src/lib/firebase";
+import { allPayments, allUnits, createUnit, paymentStatus, savePayment, unitByPlot, updateUnit } from "../src/lib/store";
 
 const JUNE_2026 = "2026-06";
 
@@ -121,7 +121,7 @@ const tenants: TenantRecord[] = [
   {
     plotNumber: "402",
     tenantName: "Devashish",
-    moveInDate: new Date("2026-06-01"),
+    moveInDate: new Date("2016-06-01"),
     rent: 20000,
     maintenance: 1000,
     rentSum: 21000,
@@ -167,112 +167,38 @@ const tenants: TenantRecord[] = [
 // 101 and 501 joined in August 2026 — no June payment record; only their
 // total rent sum (rent + maintenance breakdown not yet finalized) is known.
 const newJoiners = [
-  {
-    plotNumber: "101",
-    tenantName: "Deepika Kumari",
-    moveInDate: new Date("2026-08-01"),
-    rentSum: 28000,
-    phone: null as string | null,
-  },
-  {
-    plotNumber: "501",
-    tenantName: "Prasunk Jain",
-    moveInDate: new Date("2026-08-01"),
-    rentSum: 30000,
-    phone: null as string | null,
-  },
+  { plotNumber: "101", tenantName: "Deepika Kumari", moveInDate: new Date("2026-08-01"), rentSum: 28000, phone: null as string | null },
+  { plotNumber: "501", tenantName: "Prasunk Jain", moveInDate: new Date("2026-08-01"), rentSum: 30000, phone: null as string | null },
 ];
 
-async function upsertUnit(data: {
-  plotNumber: string;
-  tenantName: string;
-  moveInDate: Date;
-  phone: string | null;
-  monthlyRent: number;
-  maintenanceAmount: number;
-}) {
-  const existing = await getUnitByPlotNumber(data.plotNumber);
-  if (existing) {
-    return updateUnit(existing.id, existing.plotNumber, {
-      tenantName: data.tenantName,
-      moveInDate: data.moveInDate.getTime(),
-      phone: data.phone,
-      monthlyRent: data.monthlyRent,
-      maintenanceAmount: data.maintenanceAmount,
-      active: true,
-    });
-  }
-  return createUnit({
-    plotNumber: data.plotNumber,
-    tenantName: data.tenantName,
-    moveInDate: data.moveInDate.getTime(),
-    phone: data.phone,
-    monthlyRent: data.monthlyRent,
-    maintenanceAmount: data.maintenanceAmount,
-    active: true,
-  });
-}
-
 async function main() {
+  const samplePlots = new Set(["A-101", "A-102", "A-103", "B-201", "B-202"]);
+  const [units, payments] = await Promise.all([allUnits(), allPayments()]);
+  for (const unit of units.filter((item) => samplePlots.has(item.plotNumber))) {
+    await Promise.all(payments.filter((payment) => payment.unitId === unit.id).map((payment) => deleteDocument(`payments/${payment.id}`)));
+    await deleteDocument(`units/${unit.id}`);
+    console.log(`Removed old sample plot ${unit.plotNumber}`);
+  }
+
   for (const t of tenants) {
-    const unit = await upsertUnit({
-      plotNumber: t.plotNumber,
-      tenantName: t.tenantName,
-      moveInDate: t.moveInDate,
-      phone: t.phone,
-      monthlyRent: t.rent,
-      maintenanceAmount: t.maintenance,
-    });
-
+    const existing = await unitByPlot(t.plotNumber);
+    const phoneNumbers = t.phone ? [t.phone] : [];
+    const unit = existing
+      ? await updateUnit(existing.id, { tenantName: t.tenantName, moveInDate: t.moveInDate, phoneNumbers, monthlyRent: t.rent, maintenanceAmount: t.maintenance, active: true })
+      : await createUnit({ plotNumber: t.plotNumber, tenantName: t.tenantName, moveInDate: t.moveInDate, phoneNumbers, advanceAmount: 0, advancePaid: 0, advancePaidDate: null, advanceNotes: null, monthlyRent: t.rent, maintenanceAmount: t.maintenance, active: true });
     const amountPaid = t.amountPaid === "unknown" ? 0 : t.amountPaid;
-    const balanceDue = t.rentSum - amountPaid;
-    const paymentStatus =
-      t.amountPaid === "unknown"
-        ? "UNPAID"
-        : amountPaid <= 0
-          ? "UNPAID"
-          : amountPaid >= t.rentSum
-            ? "PAID"
-            : "PARTIAL";
-    const notes =
-      t.amountPaid === "unknown"
-        ? [t.notes, "Amount paid for June unclear in source records — needs verification"]
-            .filter(Boolean)
-            .join(". ")
-        : t.notes;
-
-    await upsertPayment(unit.id, JUNE_2026, {
-      paymentStatus,
-      rentAmount: t.rent,
-      maintenanceAmount: t.maintenance,
-      amountPaid,
-      balanceDue,
-      paidDate: null,
-      notes,
-      updatedBy: null,
-    });
-
+    const notes = t.amountPaid === "unknown"
+      ? [t.notes, "Amount paid for June unclear in source records — needs verification"].filter(Boolean).join(". ")
+      : t.notes;
+    await savePayment(unit.id, JUNE_2026, { paymentStatus: paymentStatus(amountPaid, t.rentSum), rentAmount: t.rent, maintenanceAmount: t.maintenance, amountPaid, balanceDue: t.rentSum - amountPaid, paidDate: null, notes, prevReading: 0, currReading: 0, electricityAmount: 0, electricityPaid: false, updatedBy: null });
     console.log(`Imported plot ${t.plotNumber} (${t.tenantName})`);
   }
-
   for (const j of newJoiners) {
-    await upsertUnit({
-      plotNumber: j.plotNumber,
-      tenantName: j.tenantName,
-      moveInDate: j.moveInDate,
-      phone: j.phone,
-      monthlyRent: j.rentSum,
-      maintenanceAmount: 0,
-    });
-    console.log(`Imported plot ${j.plotNumber} (${j.tenantName}, no June payment — joined August)`);
+    const existing = await unitByPlot(j.plotNumber);
+    const data = { tenantName: j.tenantName, moveInDate: j.moveInDate, phoneNumbers: j.phone ? [j.phone] : [], advanceAmount: 0, advancePaid: 0, advancePaidDate: null, advanceNotes: null, monthlyRent: j.rentSum, maintenanceAmount: 0, active: true };
+    if (existing) await updateUnit(existing.id, data); else await createUnit({ plotNumber: j.plotNumber, ...data });
   }
-
-  console.log(`Done. Imported ${tenants.length + newJoiners.length} plots.`);
+  console.log(`Done. Imported ${tenants.length + newJoiners.length} plots into Firebase.`);
 }
 
-main()
-  .then(() => process.exit(0))
-  .catch((e) => {
-    console.error(e);
-    process.exit(1);
-  });
+main().catch((error) => { console.error(error); process.exit(1); });

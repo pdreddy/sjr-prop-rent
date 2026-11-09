@@ -14,13 +14,6 @@ export default function InstallApp() {
   const [showHelp, setShowHelp] = useState(false);
 
   useEffect(() => {
-    if ("serviceWorker" in navigator && process.env.NODE_ENV === "production") {
-      void navigator.serviceWorker
-        .register("/sw.js", { updateViaCache: "none" })
-        .catch(() => {
-          // The portal still works when a browser blocks service workers.
-        });
-    }
     const displayMode = window.matchMedia("(display-mode: standalone)");
     const checkInstalled = () =>
       setInstalled(

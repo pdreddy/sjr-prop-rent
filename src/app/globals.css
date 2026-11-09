@@ -1,11 +1,25 @@
 @import "tailwindcss";
 
+/* ------------------------------------------------------------------
+   Design tokens. Restyle the whole app from here.
+   - Surfaces are neutral; green (--color-primary) is for actions only.
+   - Status colors (paid / unpaid / partial / vacant) are for status only.
+   ------------------------------------------------------------------ */
 :root {
-  --background: #f7faf8;
-  --foreground: #1a2e22;
-  --color-primary: #0b4d33;
-  --color-primary-dark: #073523;
-  --color-primary-light: #e6f0ea;
+  /* Surfaces & text */
+  --background: #f5f6f5;
+  --foreground: #1b2420;
+  --color-ink: #17201b; /* headings and key figures */
+  --color-muted: #6b7570; /* labels, secondary text */
+  --color-line: #e3e7e4; /* hairline borders */
+  --color-line-strong: #cfd6d1; /* inputs, outlined buttons */
+
+  /* Accent (actions, active nav) */
+  --color-primary: #166a4a;
+  --color-primary-dark: #0f5238; /* hover / pressed */
+  --color-primary-light: #edf1ef; /* neutral tint for hover, chips, zebra */
+
+  /* Status */
   --color-paid: #15803d;
   --color-paid-bg: #dcfce7;
   --color-unpaid: #b91c1c;
@@ -13,12 +27,26 @@
   --color-partial: #b45309;
   --color-partial-bg: #fef3c7;
   --color-vacant: #52525b;
-  --color-vacant-bg: #e4e4e7;
+  --color-vacant-bg: #e8e9ea;
+
+  /* Shape & depth */
+  --radius-card: 1rem;
+  --radius-control: 0.75rem;
+  --shadow-card: 0 1px 2px rgb(16 24 20 / 0.04), 0 1px 3px rgb(16 24 20 / 0.05);
+  --shadow-raised: 0 4px 14px rgb(16 24 20 / 0.08);
+
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, Helvetica,
+    Arial, sans-serif;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-ink: var(--color-ink);
+  --color-muted: var(--color-muted);
+  --color-line: var(--color-line);
+  --color-line-strong: var(--color-line-strong);
   --color-primary: var(--color-primary);
   --color-primary-dark: var(--color-primary-dark);
   --color-primary-light: var(--color-primary-light);
@@ -30,8 +58,14 @@
   --color-partial-bg: var(--color-partial-bg);
   --color-vacant: var(--color-vacant);
   --color-vacant-bg: var(--color-vacant-bg);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --radius-card: var(--radius-card);
+  --radius-control: var(--radius-control);
+  --shadow-card: var(--shadow-card);
+  --shadow-raised: var(--shadow-raised);
+}
+
+html {
+  font-family: var(--font-sans);
 }
 
 body {
@@ -39,8 +73,50 @@ body {
   color: var(--foreground);
 }
 
+/* Typography helpers: small grey caps for labels, bold tabular figures for money. */
+@layer components {
+  .label-caps {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+  }
+  .money {
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-ink);
+  }
+  .money-lg {
+    font-size: 1.5rem;
+    line-height: 1.2;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-ink);
+  }
+}
+
 * {
   -webkit-tap-highlight-color: transparent;
+}
+
+::selection {
+  background: var(--color-primary-light);
+  color: var(--color-ink);
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-line-strong);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 /* Public resident portal. Scoped to preserve the admin workspace. */
@@ -244,127 +320,6 @@ body {
   line-height: 1.7;
   margin-block: 10px;
   color: var(--muted);
-}
-.overview {
-  position: relative;
-  isolation: isolate;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: #224c3e;
-  border: 1px solid #2c5948;
-  color: #fffef3;
-  border-radius: 16px;
-  min-height: 296px;
-  padding: 32px 42px;
-}
-.overview::after {
-  content: "";
-  position: absolute;
-  width: 600px;
-  height: 600px;
-  border: 1px solid #ffffff06;
-  border-radius: 50%;
-  top: -180px;
-  right: -100px;
-  box-shadow:
-    0 0 0 60px #ffffff02,
-    0 0 0 120px #ffffff02;
-  z-index: -1;
-}
-.hero-kicker {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 9px;
-  letter-spacing: 2px;
-  color: #d2e3be;
-}
-.hero-kicker > span {
-  height: 5px;
-  width: 5px;
-  border-radius: 50%;
-  background: #bed58e;
-}
-.overview h2 {
-  margin-block: 18px 12px;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 39px;
-  line-height: 1.12;
-  font-weight: 400;
-  letter-spacing: -0.8px;
-}
-.overview-copy > p:not(.hero-kicker) {
-  font-size: 12px;
-  color: #d4dfd5;
-  line-height: 1.7;
-}
-.hero-footnote {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  margin-top: 24px;
-  font-size: 10px;
-  color: #c6d9c6;
-}
-.hero-footnote svg {
-  width: 14px;
-  height: 14px;
-}
-.collection-visual {
-  margin-right: 170px;
-  text-align: center;
-  z-index: 1;
-}
-.collection-ring {
-  display: grid;
-  place-items: center;
-  width: 174px;
-  height: 174px;
-  border-radius: 50%;
-  padding: 9px;
-  background: conic-gradient(#d2e5aa var(--progress), #456757 0);
-  transform: rotate(0deg);
-}
-.collection-ring > div {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  background: #224c3e;
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-}
-.collection-ring strong {
-  font-family: Georgia, "Times New Roman", serif;
-  font-weight: 400;
-  font-size: 48px;
-  line-height: 1.2;
-  letter-spacing: -2px;
-}
-.collection-ring span {
-  font-size: 11px;
-  color: #d4dfd5;
-  margin-top: 3px;
-}
-.collection-visual > p {
-  margin-top: 15px;
-  font-size: 11px;
-  color: #d4dfd5;
-}
-.collection-visual > p strong {
-  color: #fffef3;
-}
-.hero-architecture {
-  position: absolute;
-  right: -12px;
-  bottom: -10px;
-  width: 240px;
-  height: 280px;
-  color: #c1d2a0;
-  opacity: 0.22;
-  z-index: -1;
 }
 .month-summary {
   display: grid;
@@ -874,9 +829,6 @@ body {
   }
 }
 @media (max-width: 1000px) {
-  .collection-visual {
-    margin-right: 95px;
-  }
   .month-summary {
     gap: 12px;
     padding: 20px;
@@ -943,28 +895,6 @@ body {
   .install-button {
     font-size: 11px;
     padding-inline: 10px;
-  }
-  .overview {
-    min-height: 274px;
-    padding: 28px;
-  }
-  .overview h2 {
-    font-size: 33px;
-  }
-  .collection-visual {
-    margin-right: 25px;
-  }
-  .collection-ring {
-    width: 142px;
-    height: 142px;
-    padding: 7px;
-  }
-  .collection-ring strong {
-    font-size: 41px;
-  }
-  .hero-architecture {
-    right: -65px;
-    opacity: 0.12;
   }
   .month-summary {
     grid-template-columns: repeat(3, 1fr);
@@ -1111,55 +1041,6 @@ body {
   .install-help {
     left: 0;
     right: auto;
-  }
-  .overview {
-    padding: 25px 22px;
-    min-height: 260px;
-    gap: 12px;
-    border-radius: 12px;
-  }
-  .hero-kicker {
-    font-size: 8px;
-    letter-spacing: 1.4px;
-  }
-  .overview h2 {
-    font-size: 29px;
-    margin-top: 17px;
-  }
-  .overview-copy > p:not(.hero-kicker) {
-    font-size: 11px;
-  }
-  .hero-footnote {
-    font-size: 9px;
-    line-height: 1.6;
-    max-width: 165px;
-    margin-top: 20px;
-  }
-  .hero-footnote svg {
-    width: 13px;
-  }
-  .collection-visual {
-    margin: 0;
-    min-width: 112px;
-  }
-  .collection-ring {
-    width: 112px;
-    height: 112px;
-    padding: 6px;
-  }
-  .collection-ring strong {
-    font-size: 33px;
-    letter-spacing: -1px;
-  }
-  .collection-ring span {
-    font-size: 9px;
-  }
-  .collection-visual > p {
-    font-size: 9px;
-    margin-top: 12px;
-  }
-  .hero-architecture {
-    display: none;
   }
   .month-summary {
     padding: 17px 14px;
@@ -1344,22 +1225,6 @@ body {
   .page-intro h1 {
     font-size: 28px;
   }
-  .overview {
-    padding-inline: 17px;
-  }
-  .overview h2 {
-    font-size: 25px;
-  }
-  .collection-ring {
-    width: 96px;
-    height: 96px;
-  }
-  .collection-visual {
-    min-width: 96px;
-  }
-  .hero-kicker {
-    font-size: 7px;
-  }
   .metric-icon {
     display: none;
   }
@@ -1381,5 +1246,175 @@ body {
     animation: none !important;
     scroll-behavior: auto !important;
     transition: none !important;
+  }
+}
+
+.paid-percentage {
+  display: inline-block;
+  margin-left: 8px;
+  font:
+    11px Arial,
+    sans-serif;
+  color: #5b7c48;
+  padding: 3px 5px;
+  background: #edf5e8;
+  border-radius: 4px;
+  vertical-align: middle;
+}
+@media (max-width: 520px) {
+  .paid-percentage {
+    display: block;
+    width: max-content;
+    margin: 3px 0 0;
+    font-size: 9px;
+  }
+}
+
+.public-notice {
+  padding: 16px 20px;
+  border: 1px solid #e3dfc3;
+  border-radius: 10px;
+  background: #fbf6e4;
+  white-space: pre-line;
+  line-height: 1.8;
+  margin-bottom: 16px;
+  font-size: 13px;
+}
+.status-filters {
+  max-width: 100%;
+  overflow-x: auto;
+}
+.status-filters button {
+  min-height: 40px;
+}
+.plot-payment-status {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.plot-payment-status > span {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+}
+.plot-payment-status small {
+  color: #69776e;
+  font-size: 10px;
+}
+.plot-payment-status > span > span {
+  font-size: 10px;
+  padding: 3px 8px;
+}
+.history-link {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #476c38;
+  font-size: 10px;
+  min-height: 36px;
+  margin-top: 4px;
+}
+.history-link svg {
+  width: 12px;
+  height: 12px;
+}
+.electricity-history-dialog {
+  width: min(700px, calc(100% - 32px));
+  max-height: 85dvh;
+  padding: 0;
+  border: 1px solid #dce2d5;
+  border-radius: 14px;
+  background: #fffefa;
+  color: #243c35;
+  margin: auto;
+  box-shadow: 0 24px 80px #193c3440;
+}
+.electricity-history-dialog::backdrop {
+  background: #10251d80;
+  backdrop-filter: blur(3px);
+}
+.history-dialog-inner {
+  padding: 25px;
+}
+.history-dialog-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+}
+.history-dialog-heading h2 {
+  font:
+    27px Georgia,
+    serif;
+  margin-top: 8px;
+}
+.history-dialog-heading button {
+  height: 44px;
+  width: 44px;
+  font-size: 28px;
+  border: 1px solid #dce2d5;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.history-dialog-note {
+  font-size: 12px;
+  margin-block: 15px 22px;
+  color: #69776e;
+}
+.history-table-scroll {
+  overflow-x: auto;
+}
+.history-table-scroll table {
+  width: 100%;
+  min-width: 500px;
+  text-align: left;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.history-table-scroll th {
+  font-weight: 500;
+}
+.history-table-scroll :is(th, td) {
+  padding: 14px 9px;
+  border-bottom: 1px solid #e3e6df;
+}
+.history-table-scroll thead {
+  background: #f0f3e9;
+}
+.history-table-scroll span {
+  font-size: 11px;
+}
+@media (max-width: 520px) {
+  .plot-payment-status {
+    gap: 9px;
+  }
+  .plot-payment-status > span {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 3px;
+  }
+  .plot-payment-status small {
+    font-size: 8px;
+  }
+  .plot-payment-status > span > span {
+    font-size: 9px;
+  }
+  .history-link {
+    justify-content: flex-end;
+    text-align: right;
+    font-size: 9px;
+  }
+  .status-filters {
+    align-self: stretch;
+  }
+  .status-filters button {
+    padding-inline: 12px;
+  }
+  .resident-table tbody :is(th, td) {
+    vertical-align: top;
+  }
+  .history-dialog-inner {
+    padding: 20px;
   }
 }

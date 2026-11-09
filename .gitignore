@@ -12,8 +12,6 @@
 
 # testing
 /coverage
-/playwright-report/
-/test-results/
 
 # next.js
 /.next/
@@ -25,6 +23,7 @@
 # misc
 .DS_Store
 *.pem
+firebase-service-account*.json
 
 # debug
 npm-debug.log*
@@ -43,12 +42,16 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# Firebase service account credentials — never commit these
-firebase-service-account*.json
-serviceAccountKey.json
+/src/generated/prisma
 
-# Firebase emulator local state
-firebase-debug.log
-database-debug.log
-.firebase/
-emulator-data/
+# agent skill docs fetched by `prisma init` (tooling reference, not app code)
+/.agents/
+/.claude/
+/.windsurf/
+skills-lock.json
+
+# database exports (contain tenant data and password hashes)
+/backups/
+
+/playwright-report/
+/test-results/

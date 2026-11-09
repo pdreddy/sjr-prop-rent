@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Icon } from "@/components/public/Icon";
+import StatusBadge from "@/components/StatusBadge";
+import ElectricityHistory from "@/components/public/ElectricityHistory";
 import InstallApp from "@/components/public/InstallApp";
 import {
   getCurrentMonth,
@@ -10,9 +12,9 @@ import {
   formatDate,
   formatMonthLabel,
 } from "@/lib/month";
-import type { PublicStatusResponse } from "@/lib/types";
+import type { PublicPlot, PublicStatusResponse } from "@/lib/types";
 
-type Filter = "ALL" | "PAID" | "UNPAID";
+type Filter = "ALL" | PublicPlot["status"];
 const monthOptions = getMonthOptions();
 
 export default function Home() {
@@ -23,6 +25,7 @@ export default function Home() {
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [historyPlot, setHistoryPlot] = useState<PublicPlot | null>(null);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("ALL");
   const [refresh, setRefresh] = useState(0);
@@ -30,6 +33,8 @@ export default function Home() {
 
   useEffect(() => {
     const controller = new AbortController();
+    let active = true;
+    const timeout = setTimeout(() => controller.abort(), 15_000);
     async function load() {
       setLoading(true);
       setError(false);
@@ -52,26 +57,33 @@ export default function Home() {
           }),
         );
       } catch {
-        if (!controller.signal.aborted) setError(true);
+        if (active) setError(true);
       } finally {
-        if (!controller.signal.aborted) setLoading(false);
+        clearTimeout(timeout);
+        if (active) setLoading(false);
       }
     }
     void load();
-    return () => controller.abort();
+    return () => {
+      active = false;
+      clearTimeout(timeout);
+      controller.abort();
+    };
   }, [month, refresh]);
 
   const data = result?.month === month ? result.data : null;
   const ready = !loading && !error && data !== null;
+  const eligiblePlots =
+    data?.plots.filter((plot) => plot.status !== "NA").length ?? 0;
   const percentage =
-    data && data.totalPlots
-      ? Math.round((data.paidCount / data.totalPlots) * 100)
+    eligiblePlots && data
+      ? Math.round((data.paidCount / eligiblePlots) * 100)
       : 0;
   const plots =
     data?.plots.filter(
       (plot) =>
         (filter === "ALL" || plot.status === filter) &&
-        `${plot.plotNumber} ${plot.tenantName ?? "No tenant"}`
+        `${plot.plotNumber} ${plot.tenantName ?? ""}`
           .toLowerCase()
           .includes(query.trim().toLowerCase()),
     ) ?? [];
@@ -107,73 +119,15 @@ export default function Home() {
       <main className="public-container public-main">
         <div className="page-intro">
           <div>
-            <p className="eyebrow">A LITTLE MORE CLARITY. EVERY MONTH.</p>
-            <h1>
-              Home is better, <em>together.</em>
-            </h1>
+            <p className="eyebrow">YOUR BUILDING · MONTH BY MONTH</p>
+            <h1>Monthly rent status</h1>
             <p className="intro-copy">
-              Your building’s rent status. Simple, transparent, and all in one
-              place.
+              See payment status, find your plot, and check previous months.
             </p>
           </div>
           <InstallApp />
         </div>
-        <section className="overview" aria-labelledby="overview-title">
-          <div className="overview-copy">
-            <p className="hero-kicker">
-              <span /> MONTHLY OVERVIEW
-            </p>
-            <h2 id="overview-title">
-              Every home.
-              <br />
-              One clear picture.
-            </h2>
-            <p>
-              A quick look at where things stand
-              <br className="desktop-break" /> for {formatMonthLabel(month)}.
-            </p>
-            <div className="hero-footnote">
-              <Icon name="shield" /> Rent status, without the private details.
-            </div>
-          </div>
-          <div className="collection-visual">
-            <div
-              className="collection-ring"
-              style={
-                {
-                  "--progress": `${ready ? percentage : 0}%`,
-                } as React.CSSProperties
-              }
-            >
-              <div>
-                <strong>{ready ? `${percentage}%` : "—"}</strong>
-                <span>marked paid</span>
-              </div>
-            </div>
-            <p>
-              {ready ? (
-                <>
-                  <strong>{data.paidCount}</strong> of {data.totalPlots} plots
-                  paid
-                </>
-              ) : (
-                "Your monthly snapshot"
-              )}
-            </p>
-          </div>
-          <svg
-            className="hero-architecture"
-            viewBox="0 0 240 280"
-            fill="none"
-            aria-hidden="true"
-          >
-            <path
-              d="M18 280V107l78-32v205M96 280V20l110 46v214M206 280V145l30 14v121M111 48l78 32M111 80l78 32M111 112l78 32M111 144l78 32M111 176l78 32M111 208l78 32M111 240l78 32M39 130l37-16M39 163l37-16M39 196l37-16M39 229l37-16M134 58v222M161 69v211"
-              stroke="currentColor"
-              strokeWidth="1.2"
-            />
-          </svg>
-        </section>
+        {data?.notice && <aside className="public-notice">{data.notice}</aside>}
         <section className="month-summary" aria-label="Monthly summary">
           <div className="period-picker">
             <label htmlFor="public-month">VIEWING MONTH</label>
@@ -212,6 +166,9 @@ export default function Home() {
               <span>Paid this month</span>
               <strong>
                 {ready ? data.paidCount.toString().padStart(2, "0") : "—"}
+                {ready && (
+                  <small className="paid-percentage">{percentage}%</small>
+                )}
               </strong>
             </div>
           </div>
@@ -223,9 +180,7 @@ export default function Home() {
               <span>Not marked paid</span>
               <strong>
                 {ready
-                  ? (data.totalPlots - data.paidCount)
-                      .toString()
-                      .padStart(2, "0")
+                  ? (eligiblePlots - data.paidCount).toString().padStart(2, "0")
                   : "—"}
               </strong>
             </div>
@@ -267,6 +222,9 @@ export default function Home() {
                   ["ALL", "All plots"],
                   ["PAID", "Paid"],
                   ["UNPAID", "Unpaid"],
+                  ["DUE", "Due"],
+                  ["PARTIAL", "Partial"],
+                  ["NA", "N/A"],
                 ] as const
               ).map(([value, label]) => (
                 <button
@@ -384,7 +342,7 @@ export default function Home() {
                               )}
                             </span>
                             <span>
-                              {plot.tenantName ?? "No tenant"}
+                              {plot.tenantName ?? "Not displayed"}
                               <span className="mobile-date">
                                 {plot.moveInDate
                                   ? `Joined ${formatDate(plot.moveInDate)}`
@@ -397,14 +355,26 @@ export default function Home() {
                           {formatDate(plot.moveInDate)}
                         </td>
                         <td>
-                          <span
-                            className={`public-status ${plot.status === "PAID" ? "is-paid" : "is-unpaid"}`}
-                          >
-                            <Icon
-                              name={plot.status === "PAID" ? "check" : "clock"}
-                            />
-                            {plot.status === "PAID" ? "Paid" : "Unpaid"}
-                          </span>
+                          <div className="plot-payment-status">
+                            <span>
+                              <small>Rent</small>
+                              <StatusBadge status={plot.status} />
+                            </span>
+                            <span>
+                              <small>Electricity</small>
+                              <StatusBadge
+                                status={plot.electricityStatus ?? "NA"}
+                              />
+                            </span>
+                          </div>
+                          {plot.electricityMonths?.length > 0 && (
+                            <button
+                              className="history-link"
+                              onClick={() => setHistoryPlot(plot)}
+                            >
+                              Electricity history <Icon name="arrow" />
+                            </button>
+                          )}
                         </td>
                       </tr>
                     ))}
@@ -433,8 +403,8 @@ export default function Home() {
           <div>
             <strong>A little transparency. A lot of privacy.</strong>
             <p>
-              Only names, move-in dates, and rent status are public. Contact
-              details, amounts, and payment history stay private.
+              Tenant names follow your building’s privacy settings. Rent
+              amounts, contact details, and admin notes stay private.
             </p>
           </div>
           <span className="privacy-label">
@@ -442,6 +412,12 @@ export default function Home() {
           </span>
         </aside>
       </main>
+      {historyPlot && (
+        <ElectricityHistory
+          plot={historyPlot}
+          onClose={() => setHistoryPlot(null)}
+        />
+      )}
       <footer className="public-container site-footer">
         <span>
           <span className="footer-monogram">SJR</span> A place to call home.

@@ -1,8 +1,10 @@
 import "server-only";
-import { createAuditLog as createAuditLogRecord } from "./db";
+import { addAuditLog } from "./store";
+import type { FirebaseValue } from "./firebase";
 
 export interface AuditLogInput {
-  adminId: string; // = admin username
+  adminId: string;
+  adminUsername?: string;
   action: string;
   recordType: string;
   recordId?: string | null;
@@ -11,12 +13,13 @@ export interface AuditLogInput {
 }
 
 export async function recordAuditLog(input: AuditLogInput): Promise<void> {
-  await createAuditLogRecord({
-    adminUsername: input.adminId,
+  await addAuditLog({
+    adminId: input.adminId,
+    adminUsername: input.adminUsername ?? "unknown",
     action: input.action,
     recordType: input.recordType,
     recordId: input.recordId ?? null,
-    previousValue: input.previousValue,
-    newValue: input.newValue,
+    previousValue: (input.previousValue ?? null) as FirebaseValue,
+    newValue: (input.newValue ?? null) as FirebaseValue,
   });
 }

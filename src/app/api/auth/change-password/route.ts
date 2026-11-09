@@ -1,12 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
-import { getAdminByUsername, updateAdmin } from "@/lib/db";
-import { getAuthedAdmin } from "@/lib/auth";
+import { getAuthedAdmin, findAdmin, saveAdminPassword, verifyPassword } from "@/lib/auth";
 import { changePasswordSchema } from "@/lib/validation";
 import { recordAuditLog } from "@/lib/audit";
-import { withErrorHandling } from "@/lib/apiHandler";
 
-export const POST = withErrorHandling(async (request: NextRequest) => {
+export async function POST(request: NextRequest) {
   const admin = await getAuthedAdmin();
   if (!admin) {
     return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
@@ -21,25 +18,20 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
     );
   }
 
-  const record = await getAdminByUsername(admin.id);
-  if (!record) {
-    return NextResponse.json({ error: "Admin not found." }, { status: 404 });
-  }
-
-  const matches = await bcrypt.compare(parsed.data.currentPassword, record.passwordHash);
-  if (!matches) {
+  const record = await findAdmin(admin.username);
+  if (!record || !(await verifyPassword(parsed.data.currentPassword, record.passwordHash))) {
     return NextResponse.json({ error: "Current password is incorrect." }, { status: 401 });
   }
 
-  const newHash = await bcrypt.hash(parsed.data.newPassword, 12);
-  await updateAdmin(admin.id, { passwordHash: newHash });
+  await saveAdminPassword(admin.id, parsed.data.newPassword);
 
   await recordAuditLog({
     adminId: admin.id,
+    adminUsername: admin.username,
     action: "CHANGE_PASSWORD",
     recordType: "Admin",
     recordId: admin.id,
   });
 
   return NextResponse.json({ ok: true });
-});
+}

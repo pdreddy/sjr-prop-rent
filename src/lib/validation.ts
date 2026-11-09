@@ -17,17 +17,24 @@ export const monthSchema = z
   .string()
   .regex(/^\d{4}-(0[1-9]|1[0-2])$/, "Month must be in YYYY-MM format");
 
+const phoneNumberSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .max(30)
+  .regex(/^[0-9+\-() ]*$/, "Phone number contains invalid characters");
+
+const phoneNumbersSchema = z.array(phoneNumberSchema).max(8).optional();
+
 export const createUnitSchema = z.object({
   plotNumber: z.string().trim().min(1).max(50),
   tenantName: z.string().trim().max(200).optional().nullable(),
   moveInDate: z.string().trim().max(30).optional().nullable(),
-  phone: z
-    .string()
-    .trim()
-    .max(30)
-    .regex(/^[0-9+\-() ]*$/, "Phone number contains invalid characters")
-    .optional()
-    .nullable(),
+  phoneNumbers: phoneNumbersSchema,
+  advanceAmount: z.coerce.number().min(0).max(10_000_000).optional(),
+  advancePaid: z.coerce.number().min(0).max(10_000_000).optional(),
+  advancePaidDate: z.string().trim().max(30).optional().nullable(),
+  advanceNotes: z.string().trim().max(2000).optional().nullable(),
   monthlyRent: z.coerce.number().min(0).max(10_000_000),
   maintenanceAmount: z.coerce.number().min(0).max(10_000_000).optional(),
 });
@@ -36,13 +43,11 @@ export const updateUnitSchema = z.object({
   plotNumber: z.string().trim().min(1).max(50).optional(),
   tenantName: z.string().trim().max(200).optional().nullable(),
   moveInDate: z.string().trim().max(30).optional().nullable(),
-  phone: z
-    .string()
-    .trim()
-    .max(30)
-    .regex(/^[0-9+\-() ]*$/, "Phone number contains invalid characters")
-    .optional()
-    .nullable(),
+  phoneNumbers: phoneNumbersSchema,
+  advanceAmount: z.coerce.number().min(0).max(10_000_000).optional(),
+  advancePaid: z.coerce.number().min(0).max(10_000_000).optional(),
+  advancePaidDate: z.string().trim().max(30).optional().nullable(),
+  advanceNotes: z.string().trim().max(2000).optional().nullable(),
   monthlyRent: z.coerce.number().min(0).max(10_000_000).optional(),
   maintenanceAmount: z.coerce.number().min(0).max(10_000_000).optional(),
   active: z.boolean().optional(),
@@ -50,19 +55,47 @@ export const updateUnitSchema = z.object({
 
 export const paymentStatusEnum = z.enum(["PAID", "UNPAID", "PARTIAL"]);
 
-export const upsertPaymentSchema = z.object({
-  unitId: z.string().min(1),
-  month: monthSchema,
-  paymentStatus: paymentStatusEnum,
-  rentAmount: z.coerce.number().min(0).max(10_000_000),
-  maintenanceAmount: z.coerce.number().min(0).max(10_000_000).default(0),
-  amountPaid: z.coerce.number().min(0).max(10_000_000),
-  balanceDue: z.coerce.number().min(-10_000_000).max(10_000_000),
-  paidDate: z.string().trim().max(30).optional().nullable(),
-  notes: z.string().trim().max(2000).optional().nullable(),
-});
+export const upsertPaymentSchema = z
+  .object({
+    unitId: z.string().min(1),
+    month: monthSchema,
+    /** Set when the record is being moved from another month (fixing a record filed under the wrong month). */
+    originalMonth: monthSchema.optional(),
+    paymentStatus: paymentStatusEnum,
+    rentAmount: z.coerce.number().min(0).max(10_000_000),
+    maintenanceAmount: z.coerce.number().min(0).max(10_000_000).default(0),
+    amountPaid: z.coerce.number().min(0).max(10_000_000),
+    balanceDue: z.coerce.number().min(-10_000_000).max(10_000_000),
+    paidDate: z.string().trim().max(30).optional().nullable(),
+    notes: z.string().trim().max(2000).optional().nullable(),
+    prevReading: z.coerce.number().min(0).max(10_000_000).default(0),
+    currReading: z.coerce.number().min(0).max(10_000_000).default(0),
+    electricityPaid: z.coerce.boolean().default(false),
+  })
+  .refine((data) => data.currReading === 0 || data.currReading >= data.prevReading, {
+    message: "Current meter reading must be greater than or equal to the previous reading (or 0 if not read yet).",
+    path: ["currReading"],
+  });
+
+export const electricityUpsertSchema = z
+  .object({
+    unitId: z.string().min(1),
+    month: monthSchema,
+    prevReading: z.coerce.number().min(0).max(10_000_000),
+    currReading: z.coerce.number().min(0).max(10_000_000),
+    electricityPaid: z.coerce.boolean().default(false),
+  })
+  .refine((data) => data.currReading === 0 || data.currReading >= data.prevReading, {
+    message: "Current meter reading must be greater than or equal to the previous reading (or 0 if not read yet).",
+    path: ["currReading"],
+  });
 
 export const copyMonthSchema = z.object({
   sourceMonth: monthSchema,
   targetMonth: monthSchema,
+});
+
+export const moveInPaymentSchema = z.object({
+  unitId: z.string().min(1),
+  paidByTenth: z.coerce.number().min(0).max(10_000_000).nullable(),
 });

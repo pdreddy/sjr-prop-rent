@@ -1,329 +1,133 @@
 # SJR Rent Tracker
 
-A mobile-friendly rent tracking application for SJR Building. Anyone with the
-link can see, per plot, the tenant name, move-in date, and whether that
-month's rent is Paid or Unpaid — phone numbers, rent amounts, payment
-history and notes stay admin-only. Three admins can log in to manage
-tenants, rent, and monthly payment records.
+A mobile-friendly Next.js rent tracker with one simple username/password administrator login. All units, tenants, payments, audit history, and the securely hashed administrator password are saved in Firebase Realtime Database.
 
-## Tech stack
+## Firebase setup
 
-- Next.js 16 (App Router) + TypeScript
-- Tailwind CSS 4
-- Firebase Realtime Database, accessed only through the Firebase Admin SDK
-  on the server (the browser never talks to Firebase directly)
-- Signed, HTTP-only session cookies (`jose`, 12-hour expiry)
-- `bcryptjs` password hashing, `zod` request validation
-
-## Project layout
-
-```
-src/lib/firebase.ts            Firebase Admin SDK init (lazy, memoized)
-src/lib/db.ts                  All Realtime Database reads/writes
-scripts/seed.ts                 Seeds the 3 admin accounts + sample plots
-scripts/import-tenants.ts       One-time import of real tenant data
-scripts/set-admin-password.ts   CLI to (re)set an admin's password
-database.rules.json             Realtime Database security rules (deny all
-                                 direct client access — everything goes
-                                 through the server's Admin SDK)
-src/app/page.tsx                Public status page
-src/app/admin/login/page.tsx    Admin login page
-src/app/admin/page.tsx          Admin dashboard (server-protected)
-src/app/api/public/status       Public read-only API (no auth)
-src/app/api/auth/*              Login / logout / session / change-password
-src/app/api/admin/*             Protected admin APIs (units, payments, audit log)
-src/lib/auth.ts, session.ts     Auth/session logic (unchanged by backend choice)
-```
-
-## Data model
-
-Everything lives under a Realtime Database instance, laid out as:
-
-```
-/admins/{username}                        passwordHash, active, lockout state
-/units/{unitId}                           plot number, tenant, rent, maintenance
-/unitsByPlotNumber/{encodedPlotNumber}     unitId — enforces unique plot numbers
-/payments/{unitId}/{month}                 one payment record per unit+month
-                                           (the nested path itself prevents
-                                           duplicate records for the same
-                                           plot/month — upserts always land
-                                           on the same node)
-/auditLogs/{pushId}                        who changed what, when
-```
-
-## Local development
-
-### 1. Prerequisites
-
-- Node.js 20+
-- A Firebase project with Realtime Database enabled (see below)
-
-### 2. Create a Firebase project + Realtime Database (~2 minutes)
-
-1. Go to https://console.firebase.google.com and create a project (free
-   Spark plan is enough for this app).
-2. In the left sidebar, go to **Build → Realtime Database → Create Database**.
-   Pick any region; start in **locked mode** (this repo's
-   `database.rules.json` denies all direct client access anyway, since the
-   app only talks to Firebase through the server-side Admin SDK).
-3. Copy the database URL shown at the top of that page (looks like
-   `https://your-project-id-default-rtdb.firebaseio.com`).
-4. Go to **Project settings → Service accounts → Generate new private key**.
-   This downloads a JSON file — treat it like a password, never commit it.
-
-### 3. Install dependencies
+1. In the Firebase project, open **Build > Realtime Database**, click **Create Database**, select a location, and start in locked mode. Firebase Authentication is not required.
+2. The repository includes the supplied Firebase web configuration for project `koc2-20fb8`. Firebase App and Analytics load in the browser after the page becomes interactive.
+3. Open **Project settings > Service accounts** in that project and generate a private key. The browser configuration alone cannot authorize the protected server routes to write Realtime Database data.
+4. Rename the downloaded file to `firebase-service-account.json` and put it in the repository root. It is gitignored. Copy `.env.example` to `.env`; no private-key editing is needed locally.
+5. Choose `ADMIN_USERNAME`, `ADMIN_PASSWORD`, and a random `SESSION_SECRET` of at least 32 characters.
+6. Install and initialize the login, then import the supplied tenant register:
 
 ```bash
 npm install
-```
-
-### 4. Configure environment variables
-
-```bash
-cp .env.example .env
-```
-
-Edit `.env`:
-
-- `FIREBASE_DATABASE_URL` — the URL from step 2.3.
-- `FIREBASE_SERVICE_ACCOUNT_JSON` — paste the entire contents of the
-  downloaded service account JSON file as one line. (Alternative for local
-  dev: save the file locally and use `FIREBASE_SERVICE_ACCOUNT_PATH`
-  instead — see the comments in `.env.example`.)
-- `SESSION_SECRET` — a long random string (`openssl rand -base64 48`).
-  Required for signing session cookies; the app refuses to start without one.
-- `BUILDING_NAME` — shown on the public page (defaults to "SJR Building").
-- `ADMIN1_PASSWORD`, `ADMIN2_PASSWORD`, `ADMIN3_PASSWORD` — initial passwords
-  used only when you run the seed script (usernames are fixed: `admin1`,
-  `admin2`, `admin3`).
-
-### 5. Deploy the security rules (one-time)
-
-```bash
-npx firebase login
-npx firebase deploy --only database --project <your-project-id>
-```
-
-This pushes `database.rules.json` (deny-all for direct client access, plus
-the index the audit log needs) to your Firebase project. You can also just
-paste the contents of `database.rules.json` into the Firebase console's
-**Realtime Database → Rules** tab and click Publish — same effect.
-
-### 6. Seed admins + sample plots
-
-```bash
-npm run db:seed
-```
-
-Creates the three admin accounts (hashed passwords) and a handful of sample
-plots so you can try the app immediately.
-
-### 7. Run the dev server
-
-```bash
+npm run setup:data
 npm run dev
 ```
 
-- Public view: http://localhost:3000
-- Admin login: http://localhost:3000/admin/login (use `admin1` / the password
-  you set in `.env`)
+`npm run setup:data` removes the old A-101…B-202 demo rows and loads the supplied plots 101–503 with their June 2026 payment figures. The admin dashboard has **Tenant details** and **Update rent** tabs. Click **Edit row** to change values directly in the table. Rent sum, balance, and status recalculate automatically, and paid amounts require a paid date. **Save** writes both the unit and monthly payment to Realtime Database. The public page shows status, amount paid, and paid date while keeping phone numbers, rent charges, and notes private.
 
-## Quality checks
-
-```bash
-npm run lint       # ESLint
-npm run typecheck  # tsc --noEmit
-npm run build      # next build (production build)
-```
-
-All three are expected to pass with zero errors.
-
-## Changing admin passwords
-
-**From the dashboard (recommended):** log in, click **Change password** in the
-header, enter the current password and a new one (10+ characters).
-
-**From the command line** (e.g. to recover a locked-out or forgotten
-password):
+If an IDE reports that it cannot resolve `next/package.json` or
+`default-transpiled-packages.json`, run the commands from the repository root
+(the folder containing `package.json`). Then reset the local installation:
 
 ```bash
-npm run admin:set-password -- admin2 "SomeNewLongPassword123"
+rm -rf .next node_modules
+npm ci
+npm run dev
 ```
 
-This hashes the new password with bcrypt, updates the database directly, and
-clears any lockout on that account.
+The project pins Turbopack's root in `next.config.ts`, so IDE launchers cannot
+incorrectly treat `src/app` as the workspace root.
 
-## Security notes
+Copy/paste local setup after downloading the JSON:
 
-- Passwords are hashed with bcrypt (cost factor 12) and never sent to or
-  stored in the browser.
-- Sessions are signed JWTs (`SESSION_SECRET`) in an `httpOnly`, `sameSite=lax`
-  cookie, `secure` in production, expiring after 12 hours.
-- Every admin API route re-verifies the session **and** re-checks the admin
-  is still active in the database on every request — deactivating an admin
-  revokes access immediately, and nothing is trusted from the client.
-- Failed logins are tracked per account; 5 consecutive failures lock the
-  account for 15 minutes. A lightweight in-memory IP rate limit (10
-  attempts / 5 minutes) additionally slows down brute-force attempts against
-  the login endpoint itself.
-- The public API (`/api/public/status`) only ever returns plot number,
-  tenant name, move-in date, and a Paid/Unpaid flag. Phone numbers, rent
-  amounts, amount paid, balance, payment dates, and notes are only queried
-  and returned from routes that require an active admin session.
-- Every create/update to a unit, payment, or admin password is written to
-  `auditLogs` with the acting admin, before/after values, and a timestamp.
-- All inputs are validated with `zod`.
-- **The browser never talks to Firebase directly** — there's no client-side
-  Firebase SDK or config in this app. Every read/write goes through this
-  app's own Next.js API routes, which use the Admin SDK (full access via
-  the service account) server-side. `database.rules.json` denies all direct
-  client access (`.read`/`.write`: false) as defense in depth, in case a
-  database URL or key ever leaked.
-- Payments are stored at `/payments/{unitId}/{month}` — that nested path
-  structure itself prevents duplicate records for the same plot/month;
-  saving a payment always upserts the one node at that path.
+```bash
+mv ~/Downloads/YOUR-DOWNLOADED-FIREBASE-FILE.json ./firebase-service-account.json
+cp .env.example .env
+npm install
+npm run db:seed
+npm run dev
+```
 
-## Deployment (Vercel)
+Open `/admin/login` and enter `ADMIN_USERNAME` and `ADMIN_PASSWORD`. On the first successful login, the server automatically creates the administrator node with an scrypt password hash, so seeding is optional for login. `npm run db:seed` is still useful for loading sample plots. Password changes made from the dashboard are saved directly to Realtime Database.
 
-### Step 1 — Firebase project (if you haven't already)
+Browser-console messages from `contentScript.bundle.js` or `api2.amplitude.com` come from a browser extension (often an ad/privacy blocker integration), not this application. They can be ignored or confirmed by testing in a private window with extensions disabled.
 
-Follow "Local development" steps 2–5 above against your real Firebase
-project (create the project, enable Realtime Database, generate a service
-account key, deploy the security rules). You'll reuse the same
-`FIREBASE_DATABASE_URL` and service account JSON in Vercel.
+Likewise, hydration differences containing injected attributes such as `jd-enabled` or `data-sharkid`, or a stack trace beginning with `chrome-extension://`, are caused by password-manager/security extensions changing the page before React starts. The root suppresses harmless extension attributes, and the login form mounts after hydration so extensions cannot mutate its server-rendered inputs. Disable the extension for localhost if it continues trying to replace `window.location`.
 
-### Step 2 — Deploy the app to Vercel
+The application uses the service account only in server-side Next.js route handlers. Deploy the included deny-all client rules with `firebase deploy --only database`; service-account requests continue to work while browser clients cannot read private rent data.
 
-1. Push this repository to GitHub.
-2. Go to https://vercel.com, sign up/log in, click **Add New → Project**,
-   and import the GitHub repo.
-3. Before clicking Deploy, open **Environment Variables** and add:
-   - `FIREBASE_DATABASE_URL`
-   - `FIREBASE_SERVICE_ACCOUNT_JSON` — the full service account JSON,
-     pasted as one line (this is the one to use in production, not
-     `FIREBASE_SERVICE_ACCOUNT_PATH`, since there's no local file on Vercel).
-   - `SESSION_SECRET` — a long random string. Generate one with
-     `openssl rand -base64 48` (or any password generator, 40+ characters).
-   - `BUILDING_NAME` — e.g. `SJR Building`.
-   - `ADMIN1_PASSWORD`, `ADMIN2_PASSWORD`, `ADMIN3_PASSWORD` — temporary
-     initial passwords, only needed for the one-time seed step below.
-4. Click **Deploy**.
+### Firebase browser and server configuration
 
-### Step 3 — Create the 3 admin accounts (one-time)
+The supplied `initializeApp()` and Analytics configuration is now loaded globally in the browser from Google's official Firebase module CDN. It provides browser analytics only. Tenant, payment, and login data still use protected server routes and the service account because the public web API key cannot authorize privileged Realtime Database writes.
 
-Run this once from your own computer, with `.env` pointed at the same
-Firebase project you just configured in Vercel:
+Like the reference KOC app, every public Firebase setting has a built-in fallback and can optionally be overridden in Netlify with `NEXT_PUBLIC_FIREBASE_API_KEY`, `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`, `NEXT_PUBLIC_FIREBASE_DATABASE_URL`, `NEXT_PUBLIC_FIREBASE_PROJECT_ID`, `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`, `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`, `NEXT_PUBLIC_FIREBASE_APP_ID`, and `NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID`. The included `koc2-20fb8` defaults mean none of these public variables are required for local testing.
+
+## Deploy to Netlify
+
+1. Push this repository to GitHub and select **Add new project > Import an existing project** in Netlify.
+2. Netlify reads `netlify.toml`, runs `npm run build`, and uses its Next.js runtime.
+3. In **Project configuration > Environment variables**, add:
+   - `FIREBASE_PROJECT_ID` (`koc2-20fb8`)
+   - `FIREBASE_DATABASE_URL` (`https://koc2-20fb8-default-rtdb.firebaseio.com`)
+   - `FIREBASE_CLIENT_EMAIL`
+   - `FIREBASE_PRIVATE_KEY` (use literal `\\n` between private-key lines)
+   - `SESSION_SECRET`
+   - `BUILDING_NAME` (optional)
+4. Deploy the site.
+5. From a trusted local computer, run the one-time seed against the same Firebase project:
 
 ```bash
 npm run db:seed
 ```
 
-This creates the three admin accounts (admin1/admin2/admin3) with the
-passwords you set in Step 2, plus a few sample plots.
+Do not put Firebase service-account values in variables prefixed with `NEXT_PUBLIC_`. They must remain server-only. You may remove `ADMIN_PASSWORD` from Netlify after seeding because login checks the hash stored in Realtime Database.
 
-### Step 4 — Log in and lock things down
-
-1. Visit `https://<your-app>.vercel.app/admin/login` and sign in as `admin1`.
-2. Change each admin's password immediately (see "Changing admin passwords"
-   above) — the ones from `.env`/Vercel were only temporary.
-3. In Vercel, remove the `ADMIN1_PASSWORD` / `ADMIN2_PASSWORD` /
-   `ADMIN3_PASSWORD` environment variables — they're no longer needed once
-   the accounts exist and passwords are changed.
-
-That's it — the public page is live at your Vercel URL with no login
-required, and `/admin/login` is the admin entry point.
-
-### Loading real tenant data
-
-`scripts/import-tenants.ts` (`npm run import:tenants`) is a one-time,
-re-runnable import of the building's actual plots — name, joining date,
-rent, maintenance, phone, and the June 2026 payment status — written from
-the original rent register. It upserts by plot number, so running it again
-is safe. Run it with `.env` pointed at whichever Firebase project you want
-to load:
+## Commands
 
 ```bash
+npm run lint
+npm run typecheck
+npm run build
+npm run db:seed
+npm run admin:set-password -- admin "SomeNewLongPassword123"
 npm run import:tenants
 ```
 
-A few source values were ambiguous and were imported as-is with a flag:
-- Plots 201, 402, and 403 had an unclear/uncertain amount paid for June in
-  the original sheet (shown as "?"/"??") — these were imported as
-  **Unpaid** with a note added ("Amount paid for June unclear in source
-  records — needs verification"). Fix them via the admin dashboard once you
-  confirm the real amount.
-- Plot 402's joining date was recorded as "01-Jun-16" in the source, which
-  is almost certainly a typo for 2026 — imported as **1 Jun 2026**. Correct
-  it in the admin dashboard if that's wrong.
-- Plots 101 and 501 joined in August 2026 with only a total rent figure
-  given (no rent/maintenance breakdown yet) — imported with that total as
-  the rent and maintenance at ₹0; split it once you know the real numbers.
+`import:tenants` loads the bundled building register into Realtime Database and is safe to rerun. Top-level nodes are created automatically as `admins`, `units`, `payments`, and `auditLogs`; payment keys combine unit ID and month to prevent duplicate monthly records.
 
-### Netlify instead of Vercel
+## Admin settings
 
-The same steps work on Netlify: create the Firebase project the same way
-(Step 1), set the same environment variables in Netlify's site settings,
-run the one-time `npm run db:seed` (Step 3) with `.env` pointed at that
-project, then deploy the Next.js app via Netlify's Next.js runtime
-(Netlify auto-detects Next.js and runs `npm run build`).
+**Admin → Settings** configures:
 
-## Sample data
+- **Electricity**: rate per unit, the fixed bill used while no meter units are recorded (a "high" amount for chosen plots, a standard amount for the rest, and optional per-plot amounts such as `305=650`), and the over-payment limit below which extra rent money counts as electricity.
+- **Building & public page**: building name and an optional notice shown on the public status page.
 
-`npm run db:seed` creates 5 sample plots (A-101, A-102, A-103 (vacant),
-B-201, B-202) so you can exercise search, filters, and the payment editor
-without entering data by hand.
+Once a month has a current meter reading, the bill is (current − previous) × rate; until then the fixed bill applies. Settings are stored in Realtime Database under `settings/electricity` and `settings/general`; existing rates carry over and missing values fall back to the previous defaults (₹7/unit, ₹750/₹500, ₹1,500). The public home page lists every plot's rent and electricity status; tenant names are shown by default and can be switched off in Settings (names are then stripped on the server). `PUBLIC_SHOW_TENANT_NAME` is no longer used.
 
-## Testing locally without a real Firebase project
+## Install as an app (PWA)
 
-The Firebase Realtime Database emulator lets you run the whole app without
-touching a real project (useful for trying things out or automated testing).
-It requires Java.
+The site is an installable Progressive Web App: Chrome/Edge/Android show **Install app**, and on iPhone/iPad use Safari **Share → Add to Home Screen**. It ships a manifest (`src/app/manifest.ts`), icons (`public/icons/`), and a service worker (`src/app/sw.js/route.ts`, registered only in production builds). The service worker caches only app icons and the informational offline page, showing `public/offline.html` for offline navigation to the public home page; it never caches `/api/*` or any page, so rent data and admin screens are not stored on the device. Browser support follows Tailwind CSS 4: Chrome/Edge 111+, Safari 16.4+, Firefox 128+.
+
+If you cannot sign in, run `npm run auth:check` (or `npm run auth:check -- <username> <password>`): it checks `SESSION_SECRET`, the Firebase connection, and the stored admin accounts, and tells you how to reset a password. In development the login form now also shows the underlying server error. Also, if sign-in appears to do nothing: the session cookie is now marked `Secure` only when the request is HTTPS (previously any production build on plain `http://`, such as `next start` on a LAN IP, silently dropped it). When running `npm run dev` from another device, list its address in `DEV_ORIGINS` (see `next.config.ts`).
+
+
+## Redesigned public portal
+
+The public page uses the same Firebase REST connection, database namespace,
+credential formats, settings and payment ledger as `claude/ui-style-redesign`.
+Use your existing `.env` and service-account file. Existing installations do not
+need an emulator, reseeding, or data migration. The large overview banner has
+been removed; month selection and totals lead directly into the resident list.
+Due, Partial and N/A remain distinct, and N/A plots do not count toward paid
+percentage. Admin notices and tenant-name visibility settings remain supported.
+
+## Browser and calculation checks
 
 ```bash
-npx firebase emulators:start --only database --project demo-sjr-rent-tracker
-```
-
-Then in `.env`, point the app at the emulator instead of a real project:
-
-```
-FIREBASE_DATABASE_EMULATOR_HOST="127.0.0.1:9000"
-FIREBASE_DATABASE_URL="https://demo-sjr-rent-tracker-default-rtdb.firebaseio.com"
-FIREBASE_PROJECT_ID="demo-sjr-rent-tracker"
-```
-
-No `FIREBASE_SERVICE_ACCOUNT_JSON`/`_PATH` is needed against the emulator —
-it doesn't check credentials. Data lives only in the emulator's memory and
-is lost when it stops (nothing to clean up).
-
-## Public resident portal and PWA
-
-The public portal supports month selection, resident/plot search, payment filters,
-and manual refresh. Its summary always represents the selected month, regardless
-of the active search or filter. Unpaid includes plots without a payment marked
-paid; vacant plots are still included in the public totals.
-
-The web manifest, branded 192/512 px icons, maskable icon, Apple touch icon and
-production service worker support installation on compatible browsers over
-HTTPS (localhost also works for testing). “Get the app” uses the browser install
-prompt when available and otherwise explains browser-menu installation, including
-Safari’s Share → Add to Home Screen. Installation options vary by browser.
-
-Only the informational offline page and app icons are cached. Resident records,
-API responses and admin pages are never cached by the service worker. Offline
-navigation to the public home page explains how to reconnect rather than showing
-stale payment information. Service workers register only in production builds.
-
-Browser checks use mocked public API responses; they do not require Firebase or
-validate live database integration:
-
-```bash
-npx playwright install chromium  # once, unless using a system Chromium
+npm run test:unit
+npx playwright install chromium  # once, or use a system Chromium
 npm run build
 npm run test:e2e
-# Optional in environments with an existing browser:
+# Optional if Chromium is already installed:
 PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium npm run test:e2e
 ```
 
-The suite covers desktop/mobile layouts (320, 390, 768 and 1440 px), keyboard
-search, filters, month changes, retries, empty results, install guidance,
-manifest/icon delivery and offline recovery with a cache privacy check.
+Browser tests use mocked public API data and do not require or write to Firebase.
+They cover responsive layouts, filters, search, month changes, retry/empty states,
+install guidance, manifest/icons, offline recovery.
+Unit tests verify
+Firebase credential/namespace/date compatibility with mocked network responses.

@@ -1,33 +1,18 @@
-import "dotenv/config";
-import bcrypt from "bcryptjs";
-import { getAdminByUsername, upsertAdminPassword } from "../src/lib/db";
+import { listDocuments, setDocument } from "../src/lib/firebase";
+import { hashPassword } from "../src/lib/password";
 
 async function main() {
-  const [username, newPassword] = process.argv.slice(2);
-  if (!username || !newPassword) {
-    console.error("Usage: npm run admin:set-password -- <username> <newPassword>");
-    process.exit(1);
-  }
-  if (newPassword.length < 10) {
-    console.error("Password must be at least 10 characters.");
-    process.exit(1);
-  }
+  const [username, password] = process.argv.slice(2);
+  if (!username || !password) throw new Error("Usage: npm run admin:set-password -- <username> <password>");
+  if (password.length < 10) throw new Error("Password must be at least 10 characters.");
 
-  const admin = await getAdminByUsername(username);
-  if (!admin) {
-    console.error(`No admin found with username "${username}".`);
-    process.exit(1);
-  }
-
-  const passwordHash = await bcrypt.hash(newPassword, 12);
-  await upsertAdminPassword(username, passwordHash);
-
-  console.log(`Password updated for admin "${username}".`);
+  const admin = (await listDocuments<{ username: string }>("admins")).find((item) => item.username.toLowerCase() === username.toLowerCase());
+  if (!admin) throw new Error(`No admin found with username "${username}".`);
+  await setDocument(`admins/${admin.id}`, { passwordHash: await hashPassword(password) }, true);
+  console.log(`Password updated for ${username}.`);
 }
 
-main()
-  .then(() => process.exit(0))
-  .catch((e) => {
-    console.error(e);
-    process.exit(1);
-  });
+main().catch((error) => {
+  console.error(error);
+  process.exit(1);
+});

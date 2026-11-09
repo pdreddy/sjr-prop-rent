@@ -52,7 +52,7 @@ test("search, payment filters, and reset keep the summary intact", async ({
   await expect(page.locator("tbody tr")).toHaveCount(4);
   await page.getByRole("searchbox").fill("202");
   await expect(page.locator("tbody tr")).toHaveCount(1);
-  await expect(page.locator("tbody")).toContainText("No tenant");
+  await expect(page.locator("tbody")).toContainText("Not displayed");
   await expect(page.getByText("50%", { exact: true })).toBeVisible();
 });
 
@@ -80,7 +80,9 @@ test("month changes fetch fresh data; refresh and error retry recover", async ({
   await expect(page.locator("tbody tr")).toHaveCount(4);
   fail = true;
   await page.getByRole("button", { name: "Refresh", exact: true }).click();
-  await expect(page.locator(".directory-empty[role='alert']")).toContainText("couldn’t load");
+  await expect(page.locator(".directory-empty[role='alert']")).toContainText(
+    "couldn’t load",
+  );
   await expect(page.locator("tbody tr")).toHaveCount(0);
   fail = false;
   await page.getByRole("button", { name: "Try again" }).click();
@@ -194,4 +196,38 @@ test("manifest and icons are valid; offline fallback never stores records or adm
   await context.setOffline(false);
   await page.getByRole("link", { name: "Try again" }).click();
   await expect(page.locator("tbody tr")).toHaveCount(4);
+});
+
+test("banner is absent and due, partial and N/A statuses remain distinct", async ({
+  page,
+}) => {
+  await page.route("**/api/public/status?*", (route) =>
+    route.fulfill({
+      json: {
+        ...fixture,
+        totalPlots: 3,
+        paidCount: 0,
+        plots: [
+          { ...fixture.plots[0], status: "DUE", electricityStatus: "PAID" },
+          {
+            ...fixture.plots[1],
+            status: "PARTIAL",
+            electricityStatus: "UNPAID",
+          },
+          { ...fixture.plots[2], status: "NA", electricityStatus: "NA" },
+        ],
+      },
+    }),
+  );
+  await page.goto("/");
+  await expect(page.getByRole("heading", { name: "Every home." })).toHaveCount(
+    0,
+  );
+  await expect(page.locator("tbody tr")).toHaveCount(3);
+  await page.getByRole("button", { name: "Due", exact: true }).click();
+  await expect(page.locator("tbody tr")).toHaveCount(1);
+  await expect(page.locator("tbody")).toContainText("Due");
+  await page.getByRole("button", { name: "Partial", exact: true }).click();
+  await expect(page.locator("tbody tr")).toHaveCount(1);
+  await expect(page.locator("tbody")).toContainText("Partial");
 });

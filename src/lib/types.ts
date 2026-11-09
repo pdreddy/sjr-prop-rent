@@ -1,14 +1,72 @@
+import type { ElectricityConfig, GeneralSettings } from "./config";
+export type { ElectricityConfig, GeneralSettings };
+
 export type PaymentStatus = "PAID" | "UNPAID" | "PARTIAL";
+export type AdminRole = "ADMIN" | "SECURITY";
+
+export interface ElectricityRow {
+  unitId: string;
+  plotNumber: string;
+  tenantName: string | null;
+  isBeforeMoveIn: boolean;
+  prevReading: number;
+  currReading: number;
+  electricityAmount: number;
+  electricityPaid: boolean;
+  /** Part of this month's bill covered by rent overpayments (or all of it if marked paid). */
+  electricityCovered: number;
+  /** Still owed for this month after overpayments. */
+  electricityBalance: number;
+  /** Total still owed for electricity across all months for this tenant. */
+  outstandingTotal: number;
+}
+
+export interface ElectricityListResponse {
+  month: string;
+  ratePerUnit: number;
+  config: ElectricityConfig;
+  rows: ElectricityRow[];
+}
+
+export interface PublicElectricityMonth {
+  month: string;
+  prevReading: number;
+  currReading: number;
+  /** Units used; 0 when the meter was not read and the flat default is billed. */
+  units: number;
+  /** True when there was no meter reading, so the flat default bill applies. */
+  isDefault: boolean;
+  bill: number;
+  paid: number;
+  balance: number;
+  status: "PAID" | "PARTIAL" | "UNPAID";
+}
 
 export interface PublicPlot {
   plotNumber: string;
   tenantName: string | null;
   moveInDate: string | null;
-  status: "PAID" | "UNPAID";
+  /** DUE: unpaid, but the first-week-of-next-month payment window hasn't passed yet. */
+  status: PaymentStatus | "DUE" | "NA";
+  paidDate: string | null;
+  electricityStatus: "PAID" | "UNPAID" | "NA";
+  electricityAmount: number;
+  electricityCovered: number;
+  electricityBalance: number;
+  prevReading: number;
+  currReading: number;
+  /** Sum of electricity bills across all months that are still unpaid. */
+  unpaidElectricityTotal: number;
+  unpaidElectricityMonths: { month: string; bill: number; paid: number; amount: number }[];
+  /** Every month's electricity for the plot: units, bill, paid and what is still due. */
+  electricityMonths: PublicElectricityMonth[];
+  electricityTotals: { billed: number; paid: number; due: number };
 }
 
 export interface PublicStatusResponse {
   buildingName: string;
+  notice: string;
+  ratePerUnit: number;
   month: string;
   totalPlots: number;
   paidCount: number;
@@ -20,7 +78,11 @@ export interface UnitDTO {
   plotNumber: string;
   tenantName: string | null;
   moveInDate: string | null;
-  phone: string | null;
+  phoneNumbers: string[];
+  advanceAmount: number;
+  advancePaid: number;
+  advancePaidDate: string | null;
+  advanceNotes: string | null;
   monthlyRent: number;
   maintenanceAmount: number;
   active: boolean;
@@ -39,6 +101,10 @@ export interface PaymentDTO {
   balanceDue: number;
   paidDate: string | null;
   notes: string | null;
+  prevReading: number;
+  currReading: number;
+  electricityAmount: number;
+  electricityPaid: boolean;
   updatedBy: string | null;
   createdAt: string;
   updatedAt: string;
@@ -48,7 +114,12 @@ export interface DashboardRow {
   unit: UnitDTO;
   payment: PaymentDTO | null;
   isVacant: boolean;
+  isBeforeMoveIn: boolean;
   effectiveStatus: PaymentStatus;
+  /** Rent / maintenance owed for the month when no payment record exists (prorated in the move-in month). */
+  expectedRent: number;
+  expectedMaintenance: number;
+  proratedDays: number | null;
 }
 
 export interface DashboardTotals {
@@ -63,6 +134,202 @@ export interface DashboardTotals {
 
 export interface DashboardResponse {
   month: string;
+  electricityRatePerUnit: number;
+  electricityConfig: ElectricityConfig;
   rows: DashboardRow[];
   totals: DashboardTotals;
+}
+
+export type ElectricityMonthStatus = "PAID" | "PARTIAL" | "UNPAID" | "NONE";
+
+export interface ElectricityStatementMonth {
+  month: string;
+  recorded: boolean;
+  rentAmount: number;
+  maintenanceAmount: number;
+  baseline: number;
+  totalPaid: number;
+  excess: number;
+  credited: number;
+  carriedForward: number;
+  electricityBill: number;
+  balance: number;
+  markedPaid: boolean;
+  status: ElectricityMonthStatus;
+}
+
+export interface ElectricityStatementTenant {
+  unitId: string;
+  plotNumber: string;
+  tenantName: string | null;
+  moveInDate: string | null;
+  months: ElectricityStatementMonth[];
+  totals: { bill: number; credited: number; balance: number; unusedCredit: number };
+}
+
+export interface ElectricityStatementResponse {
+  ratePerUnit: number;
+  config: ElectricityConfig;
+  currentMonth: string;
+  tenants: ElectricityStatementTenant[];
+}
+
+export interface RentalHistoryMonth {
+  month: string;
+  recorded: boolean;
+  status: PaymentStatus | null;
+  due: number;
+  amountPaid: number;
+  balanceDue: number;
+  paidDate: string | null;
+  /** Days charged when this is the move-in month (rent × days / 30), otherwise null. */
+  proratedDays: number | null;
+  // The month's record, so it can be edited from the history tab (expected values when nothing is recorded).
+  rentAmount: number;
+  maintenanceAmount: number;
+  notes: string | null;
+  prevReading: number;
+  currReading: number;
+  electricityPaid: boolean;
+}
+
+export interface RentalStay {
+  tenantName: string;
+  moveInDate: string | null;
+  movedOutDate: string | null;
+  startMonth: string;
+  endMonth: string | null;
+  monthsPaid: number;
+  totalPaid: number;
+  months: RentalHistoryMonth[];
+}
+
+export interface RentalHistoryPlot {
+  unitId: string;
+  plotNumber: string;
+  currentTenant: string | null;
+  /** The current tenant's move-in date and the plot's agreed rent, for editing. */
+  moveInDate: string | null;
+  monthlyRent: number;
+  maintenanceAmount: number;
+  stays: RentalStay[];
+  /** Records filed under months outside every stay (e.g. a payment entered under the wrong month). */
+  otherRecords: RentalHistoryMonth[];
+}
+
+export interface RentalHistoryResponse {
+  currentMonth: string;
+  plots: RentalHistoryPlot[];
+}
+
+export interface MoveInProrationTenant {
+  unitId: string;
+  plotNumber: string;
+  tenantName: string;
+  moveInDate: string | null;
+  monthlyRent: number;
+  maintenanceAmount: number;
+  /** Rent received by the 10th of the month after move-in; null until entered. */
+  paidByTenth: number | null;
+}
+
+export interface MoveInProrationResponse {
+  tenants: MoveInProrationTenant[];
+}
+
+export interface RentPaidTenant {
+  unitId: string;
+  plotNumber: string;
+  tenantName: string;
+  moveInDate: string | null;
+  /** First month a rent record exists: the month after move-in (null without a move-in date). */
+  firstRentMonth: string | null;
+  monthsBilled: number;
+  monthsPaid: number;
+  totalDue: number;
+  /** Money counted as rent (includes rent paid ahead). */
+  totalPaid: number;
+  /** Paid above the full monthly rent, counted as electricity. */
+  overRent: number;
+  balance: number;
+  lastPaidDate: string | null;
+}
+
+export interface RentPaidResponse {
+  currentMonth: string;
+  config: ElectricityConfig;
+  tenants: RentPaidTenant[];
+}
+
+export interface PaymentHistoryMonth {
+  month: string;
+  /** Payment recorded before the tenant's rent starts - usually belongs to the first rent month. */
+  beforeRentStart: boolean;
+  /** Filed before the move-in month, so it may belong to an earlier tenant: shown, but left out of the totals. */
+  unapplied: boolean;
+  recorded: boolean;
+  rentDue: number;
+  rentPaid: number;
+  rentBalance: number;
+  /** Rent paid ahead and still unused after this month (covers later shortfalls). */
+  rentAdvance: number;
+  paidDate: string | null;
+  prevReading: number;
+  currReading: number;
+  electricityBill: number;
+  /** Money received for electricity: whatever was paid above rent that month (or the whole bill when marked paid). */
+  electricityPaid: number;
+  /** Part of this month's bill actually covered, from received money carried forward. */
+  electricityCovered: number;
+  /** Total received this month before splitting it into rent and electricity. */
+  amountReceived: number;
+  electricityBalance: number;
+  electricityStatus: ElectricityMonthStatus;
+  // Full detail shown when a month is opened.
+  rentAmount: number;
+  maintenanceAmount: number;
+  /** Days charged when this is the first (prorated) rent record, otherwise null. */
+  proratedDays: number | null;
+  paymentStatus: PaymentStatus | null;
+  notes: string | null;
+  updatedBy: string | null;
+  updatedAt: string | null;
+  electricityUnits: number;
+  /** No meter reading for the month, so the flat default (₹750 / ₹500) is billed. */
+  electricityDefault: boolean;
+  electricityMarkedPaid: boolean;
+  /** Paid above rent + maintenance this month (goes to electricity). */
+  overpayment: number;
+  /** Unused overpayment credit carried into the next month. */
+  creditCarriedForward: number;
+}
+
+export interface PaymentHistoryTenant {
+  unitId: string;
+  plotNumber: string;
+  tenantName: string;
+  moveInDate: string | null;
+  firstRentMonth: string | null;
+  months: PaymentHistoryMonth[];
+  totals: {
+    /** Everything received, before it is split into rent and electricity. */
+    totalReceived: number;
+    rentDue: number;
+    rentPaid: number;
+    rentBalance: number;
+    /** Rent paid ahead that is still unused. */
+    rentAdvance: number;
+    electricityBill: number;
+    electricityPaid: number;
+    electricityBalance: number;
+    /** Overpayment not yet used by an electricity bill. */
+    unusedCredit: number;
+  };
+}
+
+export interface PaymentHistoryResponse {
+  currentMonth: string;
+  ratePerUnit: number;
+  config: ElectricityConfig;
+  tenants: PaymentHistoryTenant[];
 }

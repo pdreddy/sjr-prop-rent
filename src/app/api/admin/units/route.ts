@@ -1,37 +1,40 @@
 import { NextRequest, NextResponse } from "next/server";
-import { listUnits, getUnitByPlotNumber, createUnit } from "@/lib/db";
+import { allUnits, createUnit, unitByPlot, unitDTO } from "@/lib/store";
 import { getAuthedAdmin } from "@/lib/auth";
 import { createUnitSchema } from "@/lib/validation";
 import { recordAuditLog } from "@/lib/audit";
-import { serializeUnit } from "@/lib/serialize";
-import { withErrorHandling } from "@/lib/apiHandler";
+import { formatMonthLabel, isBeforeBuildingOpened } from "@/lib/month";
+import { BUILDING_READY_MONTH } from "@/lib/constants";
 
-export const GET = withErrorHandling(async (request: NextRequest) => {
+export async function GET(request: NextRequest) {
   const admin = await getAuthedAdmin();
   if (!admin) {
     return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
   }
+  if (admin.role !== "ADMIN") {
+    return NextResponse.json({ error: "Not authorized." }, { status: 403 });
+  }
 
-  const search = request.nextUrl.searchParams.get("search")?.trim().toLowerCase();
+  const search = request.nextUrl.searchParams.get("search")?.trim();
 
-  let units = await listUnits();
+  let units = await allUnits();
   if (search) {
-    units = units.filter(
-      (u) =>
-        u.plotNumber.toLowerCase().includes(search) ||
-        (u.tenantName?.toLowerCase().includes(search) ?? false) ||
-        (u.phone?.toLowerCase().includes(search) ?? false)
+    const needle = search.toLowerCase();
+    units = units.filter((unit) =>
+      [unit.plotNumber, unit.tenantName, ...(unit.phoneNumbers ?? [])].some((value) => value?.toLowerCase().includes(needle))
     );
   }
-  units.sort((a, b) => a.plotNumber.localeCompare(b.plotNumber));
 
-  return NextResponse.json({ units: units.map(serializeUnit) });
-});
+  return NextResponse.json({ units: units.map(unitDTO) });
+}
 
-export const POST = withErrorHandling(async (request: NextRequest) => {
+export async function POST(request: NextRequest) {
   const admin = await getAuthedAdmin();
   if (!admin) {
     return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
+  }
+  if (admin.role !== "ADMIN") {
+    return NextResponse.json({ error: "Not authorized." }, { status: 403 });
   }
 
   const body = await request.json().catch(() => null);
@@ -43,7 +46,7 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
     );
   }
 
-  const existing = await getUnitByPlotNumber(parsed.data.plotNumber);
+  const existing = await unitByPlot(parsed.data.plotNumber);
   if (existing) {
     return NextResponse.json(
       { error: "A plot with this number already exists." },
@@ -56,23 +59,37 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
     return NextResponse.json({ error: "Invalid move-in date." }, { status: 400 });
   }
 
+  if (isBeforeBuildingOpened(moveInDate)) {
+    return NextResponse.json({ error: `Move-in date is before the building opened (${formatMonthLabel(BUILDING_READY_MONTH)}). Check the year.` }, { status: 400 });
+  }
+
+  const advancePaidDate = parsed.data.advancePaidDate ? new Date(parsed.data.advancePaidDate) : null;
+  if (parsed.data.advancePaidDate && Number.isNaN(advancePaidDate?.getTime())) {
+    return NextResponse.json({ error: "Invalid advance paid date." }, { status: 400 });
+  }
+
   const unit = await createUnit({
-    plotNumber: parsed.data.plotNumber,
-    tenantName: parsed.data.tenantName || null,
-    moveInDate: moveInDate ? moveInDate.getTime() : null,
-    phone: parsed.data.phone || null,
-    monthlyRent: parsed.data.monthlyRent,
-    maintenanceAmount: parsed.data.maintenanceAmount ?? 0,
-    active: true,
+      plotNumber: parsed.data.plotNumber,
+      tenantName: parsed.data.tenantName || null,
+      moveInDate,
+      phoneNumbers: parsed.data.phoneNumbers ?? [],
+      advanceAmount: parsed.data.advanceAmount ?? 0,
+      advancePaid: parsed.data.advancePaid ?? 0,
+      advancePaidDate,
+      advanceNotes: parsed.data.advanceNotes || null,
+      monthlyRent: parsed.data.monthlyRent,
+      maintenanceAmount: parsed.data.maintenanceAmount ?? 0,
+      active: true,
   });
 
   await recordAuditLog({
     adminId: admin.id,
+    adminUsername: admin.username,
     action: "CREATE",
     recordType: "Unit",
     recordId: unit.id,
-    newValue: serializeUnit(unit),
+    newValue: unitDTO(unit),
   });
 
-  return NextResponse.json({ unit: serializeUnit(unit) }, { status: 201 });
-});
+  return NextResponse.json({ unit: unitDTO(unit) }, { status: 201 });
+}
