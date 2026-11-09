@@ -16,7 +16,9 @@ import {
 import {
   computeElectricityAmount,
   computeElectricityUnits,
+  describeFormula,
   hasMeterReading,
+  profileForMonth,
 } from "@/lib/electricity";
 import { buildPublicRentHistory } from "@/lib/publicRentHistory";
 import { publicTenantName } from "@/lib/config";
@@ -153,6 +155,7 @@ export const GET = withErrorHandling(async (request: NextRequest) => {
         currReading,
         rate,
         billPlot,
+        month,
       ),
       electricityCovered: thisMonth?.paid ?? 0,
       electricityBalance: thisMonth?.balance ?? 0,
@@ -166,7 +169,8 @@ export const GET = withErrorHandling(async (request: NextRequest) => {
   return NextResponse.json({
     buildingName: general.buildingName,
     notice: general.notice,
-    ratePerUnit: rate.ratePerUnit,
+    ratePerUnit: profileForMonth(rate, month).profile.ratePerUnit,
+    formula: describeFormula(rate, month),
     month,
     // Plots in the list (including N/A ones); the progress totals only count plots that apply that month.
     totalPlots: plots.length,

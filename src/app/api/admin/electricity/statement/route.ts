@@ -1,6 +1,7 @@
 import { withErrorHandling } from "@/lib/apiHandler";
 import { NextResponse } from "next/server";
 import { getAuthedAdmin } from "@/lib/auth";
+import { profileForMonth } from "@/lib/electricity";
 import { allPayments, allUnits, getElectricityConfig } from "@/lib/store";
 import { getCurrentMonth } from "@/lib/month";
 import { BUILDING_READY_MONTH } from "@/lib/constants";
@@ -43,6 +44,6 @@ export const GET = withErrorHandling(async () => {
       };
     });
 
-  const response: ElectricityStatementResponse = { ratePerUnit: rate.ratePerUnit, config: rate, currentMonth, tenants };
+  const response: ElectricityStatementResponse = { ratePerUnit: profileForMonth(rate, currentMonth).profile.ratePerUnit, config: rate, currentMonth, tenants };
   return NextResponse.json(response);
 });

@@ -4,7 +4,7 @@ import { getAuthedAdmin } from "@/lib/auth";
 import { isValidMonth, getCurrentMonth, getPreviousMonth, isBeforeMoveInMonth, isBeforeFirstRentMonth } from "@/lib/month";
 import { allPayments, allUnits, getElectricityConfig, paymentDTO, paymentFor, savePayment, unitById } from "@/lib/store";
 import { expectedForMonth } from "@/lib/proration";
-import { computeElectricityAmount } from "@/lib/electricity";
+import { computeElectricityAmount, profileForMonth } from "@/lib/electricity";
 import { buildElectricityLedger } from "@/lib/electricityLedger";
 import { electricityUpsertSchema } from "@/lib/validation";
 import { recordAuditLog } from "@/lib/audit";
@@ -49,7 +49,7 @@ export const GET = withErrorHandling(async (request: NextRequest) => {
         isBeforeMoveIn: isBeforeMoveInMonth(unit.moveInDate, month),
         prevReading,
         currReading,
-        electricityAmount: computeElectricityAmount(prevReading, currReading, rate, billPlot),
+        electricityAmount: computeElectricityAmount(prevReading, currReading, rate, billPlot, month),
         electricityPaid: payment?.electricityPaid ?? false,
         electricityCovered: entry?.paid ?? 0,
         electricityBalance: entry?.balance ?? 0,
@@ -57,7 +57,7 @@ export const GET = withErrorHandling(async (request: NextRequest) => {
       };
     });
 
-  const response: ElectricityListResponse = { month, ratePerUnit: rate.ratePerUnit, config: rate, rows };
+  const response: ElectricityListResponse = { month, ratePerUnit: profileForMonth(rate, month).profile.ratePerUnit, config: rate, rows };
   return NextResponse.json(response);
 });
 
@@ -97,7 +97,7 @@ export const PUT = withErrorHandling(async (request: NextRequest) => {
     notes: existing?.notes ?? null,
     prevReading: parsed.data.prevReading,
     currReading: parsed.data.currReading,
-    electricityAmount: computeElectricityAmount(parsed.data.prevReading, parsed.data.currReading, rate, unit.plotNumber),
+    electricityAmount: computeElectricityAmount(parsed.data.prevReading, parsed.data.currReading, rate, unit.plotNumber, parsed.data.month),
     electricityPaid: parsed.data.electricityPaid,
     updatedBy: admin.username,
   };

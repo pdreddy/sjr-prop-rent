@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuthedAdmin } from "@/lib/auth";
 import { isValidMonth, getCurrentMonth, isBeforeFirstRentMonth } from "@/lib/month";
 import { expectedForMonth } from "@/lib/proration";
+import { profileForMonth } from "@/lib/electricity";
 import { allPayments, allUnits, getElectricityConfig, paymentDTO, unitDTO } from "@/lib/store";
 
 export const GET = withErrorHandling(async (request: NextRequest) => {
@@ -46,5 +47,5 @@ export const GET = withErrorHandling(async (request: NextRequest) => {
     if (row.effectiveStatus === "PAID") acc.numPaid++; else if (row.effectiveStatus === "PARTIAL") acc.numPartial++; else acc.numUnpaid++;
     return acc;
   }, { totalExpected: 0, totalCollected: 0, numPaid: 0, numPartial: 0, numUnpaid: 0, applicable: 0 });
-  return NextResponse.json({ month, electricityRatePerUnit: rate.ratePerUnit, electricityConfig: rate, rows, totals: { ...totals, outstandingBalance: totals.totalExpected - totals.totalCollected, totalUnits: totals.applicable } });
+  return NextResponse.json({ month, electricityRatePerUnit: profileForMonth(rate, month).profile.ratePerUnit, electricityConfig: rate, rows, totals: { ...totals, outstandingBalance: totals.totalExpected - totals.totalCollected, totalUnits: totals.applicable } });
 });

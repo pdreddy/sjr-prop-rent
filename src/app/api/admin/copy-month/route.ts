@@ -45,7 +45,7 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
       notes: null,
       prevReading,
       currReading,
-      electricityAmount: computeElectricityAmount(prevReading, currReading, rate, unit.plotNumber),
+      electricityAmount: computeElectricityAmount(prevReading, currReading, rate, unit.plotNumber, targetMonth),
       electricityPaid: false,
       updatedBy: admin.username,
     });

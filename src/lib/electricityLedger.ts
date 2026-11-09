@@ -29,7 +29,7 @@ export function buildElectricityLedger(payments: LedgerPayment[], rate: Electric
   let credit = 0;
   return sorted.map((p) => {
     credit += electricityPortionOfExcess(p.amountPaid - (p.rentAmount + p.maintenanceAmount), rate);
-    const bill = computeElectricityAmount(p.prevReading ?? 0, p.currReading ?? 0, rate, plotNumber);
+    const bill = computeElectricityAmount(p.prevReading ?? 0, p.currReading ?? 0, rate, plotNumber, p.month);
     if (p.electricityPaid) return { month: p.month, bill, paid: bill, balance: 0 };
     const paid = Math.min(credit, bill);
     credit -= paid;
@@ -103,7 +103,7 @@ export function buildElectricityStatement(
     const baseline = p.rentAmount + p.maintenanceAmount;
     const excess = electricityPortionOfExcess(p.amountPaid - baseline, rate);
     credit += excess;
-    const bill = computeElectricityAmount(p.prevReading ?? 0, p.currReading ?? 0, rate, plotNumber);
+    const bill = computeElectricityAmount(p.prevReading ?? 0, p.currReading ?? 0, rate, plotNumber, p.month);
     const markedPaid = !!p.electricityPaid;
     let credited = 0;
     let balance = 0;

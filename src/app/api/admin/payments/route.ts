@@ -57,7 +57,7 @@ export const PUT = withErrorHandling(async (request: NextRequest) => {
     notes: parsed.data.notes || null,
     prevReading: parsed.data.prevReading,
     currReading: parsed.data.currReading,
-    electricityAmount: computeElectricityAmount(parsed.data.prevReading, parsed.data.currReading, rate, unit.plotNumber),
+    electricityAmount: computeElectricityAmount(parsed.data.prevReading, parsed.data.currReading, rate, unit.plotNumber, parsed.data.month),
     electricityPaid: parsed.data.electricityPaid,
     updatedBy: admin.username,
   };

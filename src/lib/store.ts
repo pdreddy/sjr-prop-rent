@@ -1,7 +1,7 @@
 import { deleteDocument, getDocument, listDocuments, newDocumentId, setDocument, type FirebaseValue } from "./firebase";
 import { computeElectricityAmount } from "./electricity";
 import { ELECTRICITY_RATE_PER_UNIT } from "./constants";
-import { formatPlotFixed, normalizeElectricityConfig, normalizeGeneralSettings, type ElectricityConfig, type GeneralSettings } from "./config";
+import { formatPlotFixed, normalizeElectricityConfig, scheduleToStored, normalizeGeneralSettings, type ElectricityConfig, type GeneralSettings } from "./config";
 import type { PaymentDTO, PaymentStatus, UnitDTO } from "./types";
 
 type StoredUnit = Omit<UnitDTO, "id" | "createdAt" | "updatedAt" | "moveInDate" | "advancePaidDate"> & {
@@ -40,7 +40,7 @@ export const paymentDTO = (payment: StoredPayment & { id: string }, rate: Electr
     ...payment,
     prevReading,
     currReading,
-    electricityAmount: computeElectricityAmount(prevReading, currReading, rate, plotNumber),
+    electricityAmount: computeElectricityAmount(prevReading, currReading, rate, plotNumber, payment.month),
     electricityPaid: payment.electricityPaid ?? false,
     paidDate: iso(payment.paidDate),
     createdAt: payment.createdAt.toISOString(),
@@ -65,12 +65,10 @@ export async function updateUnit(id: string, data: Partial<Omit<StoredUnit, "cre
 export async function getElectricityConfig(): Promise<ElectricityConfig> {
   return normalizeElectricityConfig(await getDocument<Partial<Record<keyof ElectricityConfig, unknown>>>("settings/electricity"));
 }
-export async function getElectricityRate(): Promise<number> { return (await getElectricityConfig()).ratePerUnit; }
 export async function setElectricityConfig(config: ElectricityConfig, updatedBy: string) {
-  await setDocument("settings/electricity", { ...config, highPlots: config.highPlots.join(", "), plotFixed: formatPlotFixed(config.plotFixed), updatedBy, updatedAt: new Date() });
-}
-export async function setElectricityRate(ratePerUnit: number, updatedBy: string) {
-  await setDocument("settings/electricity", { ratePerUnit, updatedBy, updatedAt: new Date() }, true);
+  // The schedule is stored as an object keyed by month ({ "2026-11": "slab" }) because Realtime Database
+  // turns arrays into objects and drops empty ones. A legacy top-level ratePerUnit is no longer written.
+  await setDocument("settings/electricity", { ...config, formulas: { flat: { ...config.formulas.flat }, slab: { ...config.formulas.slab } }, schedule: scheduleToStored(config.schedule), highPlots: config.highPlots.join(", "), plotFixed: formatPlotFixed(config.plotFixed), updatedBy, updatedAt: new Date() });
 }
 
 export async function getGeneralSettings(): Promise<GeneralSettings> {

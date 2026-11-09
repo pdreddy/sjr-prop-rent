@@ -1,6 +1,7 @@
 import { withErrorHandling } from "@/lib/apiHandler";
 import { NextResponse } from "next/server";
 import { getAuthedAdmin } from "@/lib/auth";
+import { profileForMonth } from "@/lib/electricity";
 import { allPayments, allUnits, getElectricityConfig } from "@/lib/store";
 import { getCurrentMonth } from "@/lib/month";
 import { buildPaymentHistory } from "@/lib/paymentHistory";
@@ -17,6 +18,6 @@ export const GET = withErrorHandling(async () => {
   const tenants = units
     .filter((unit) => unit.active && unit.tenantName?.trim())
     .map((unit) => buildPaymentHistory(unit, payments, rate, currentMonth));
-  const response: PaymentHistoryResponse = { currentMonth, ratePerUnit: rate.ratePerUnit, config: rate, tenants };
+  const response: PaymentHistoryResponse = { currentMonth, ratePerUnit: profileForMonth(rate, currentMonth).profile.ratePerUnit, config: rate, tenants };
   return NextResponse.json(response);
 });
