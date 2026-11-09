@@ -15,8 +15,6 @@ export default function ElectricityHistory({
   onClose: () => void;
 }) {
   const months = plot.electricityMonths ?? [];
-  const selected = months.find((entry) => entry.month === selectedMonth);
-  const applicable = plot.electricityStatus !== "NA";
   const totalUnits =
     Math.round(
       months.reduce(
@@ -55,36 +53,15 @@ export default function ElectricityHistory({
             : "Move-in date not recorded"}{" "}
           · Viewing {formatMonthLabel(selectedMonth)}
         </p>
-        <div className="plot-detail-panels">
-          <section
-            className="plot-month-detail"
-            aria-label="Selected month rent"
-          >
-            <h3>Rent</h3>
-            <StatusBadge status={plot.status} />
-
-          </section>
-          <section
-            className="plot-month-detail"
-            aria-label="Selected month electricity"
-          >
-            <h3>Electricity</h3>
-            <StatusBadge status={plot.electricityStatus ?? "NA"} />
-            {selected ? (
-              <p>
-                {selected.isDefault ? "Default bill · no reading" : `${selected.prevReading} → ${selected.currReading} · ${selected.units.toLocaleString("en-IN", { maximumFractionDigits: 2 })} units`}
-                <br />
-                Bill {rupee(selected.bill)} · Paid {rupee(selected.paid)} · Due {rupee(selected.balance)}
-              </p>
-            ) : (
-              <p>
-                {!applicable
-                  ? "Electricity does not apply to this plot for the selected month."
-                  : `No electricity record for this month yet.${Number.isFinite(plot.electricityAmount) ? ` Estimated bill: ${rupee(plot.electricityAmount)}.` : ""}`}
-              </p>
-            )}
-          </section>
-        </div>
+        <p className="plot-month-summary" aria-label="Selected month status">
+          <strong>{formatMonthLabel(selectedMonth)}</strong>
+          <span>
+            Rent <StatusBadge status={plot.status} />
+          </span>
+          <span>
+            Electricity <StatusBadge status={plot.electricityStatus ?? "NA"} />
+          </span>
+        </p>
         <section
           className="public-electricity-ledger"
           aria-labelledby="public-electricity-ledger-title"
@@ -170,10 +147,10 @@ export default function ElectricityHistory({
                               : `${entry.prevReading} → ${entry.currReading}`}
                           </small>
                         </th>
-                        <td data-label="Rent status">
+                        <td data-label="Rent">
                           <StatusBadge status={rentMonths.find((rent) => rent.month === entry.month)?.status ?? (entry.month === selectedMonth ? plot.status : "NA")} />
                         </td>
-                        <td data-label="Units used">
+                        <td data-label="Units">
                           {entry.isDefault
                             ? "—"
                             : entry.units.toLocaleString("en-IN", {
@@ -181,11 +158,11 @@ export default function ElectricityHistory({
                               })}
                         </td>
                         <td data-label="Bill">{rupee(entry.bill)}</td>
-                        <td data-label="Paid / credited">
+                        <td data-label="Paid">
                           {rupee(entry.paid)}
                         </td>
-                        <td data-label="Balance due">{rupee(entry.balance)}</td>
-                        <td data-label="Electricity status">
+                        <td data-label="Due">{rupee(entry.balance)}</td>
+                        <td data-label="Electricity">
                           <StatusBadge status={entry.status} />
                         </td>
                       </tr>
@@ -196,7 +173,7 @@ export default function ElectricityHistory({
                       <tr>
                         <th scope="row">Total</th>
                         <td />
-                        <td data-label="Recorded units">
+                        <td data-label="Units">
                           {totalUnits.toLocaleString("en-IN", {
                             maximumFractionDigits: 2,
                           })}
@@ -204,13 +181,13 @@ export default function ElectricityHistory({
                             Recorded only
                           </small>
                         </td>
-                        <td data-label="Total billed">
+                        <td data-label="Billed">
                           {rupee(totals.billed)}
                         </td>
-                        <td data-label="Total paid / credited">
+                        <td data-label="Paid">
                           {rupee(totals.paid)}
                         </td>
-                        <td data-label="Total due">{rupee(totals.due)}</td>
+                        <td data-label="Due">{rupee(totals.due)}</td>
                         <td />
                       </tr>
                     </tfoot>

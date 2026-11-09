@@ -677,15 +677,10 @@ test("public plot details show rent and the complete electricity ledger from the
   await expect(
     details.getByRole("heading", { name: "Plot 101 details" }),
   ).toBeVisible();
-  await expect(
-    details.getByRole("region", { name: "Selected month rent" }),
-  ).toContainText("Unpaid");
-  await expect(
-    details.getByRole("region", { name: "Selected month electricity" }),
-  ).toContainText("53 → 148.8");
-  await expect(
-    details.getByRole("region", { name: "Selected month electricity" }),
-  ).toContainText("95.8");
+  await expect(details.locator(".plot-month-summary")).toContainText("Rent");
+  await expect(details.locator(".plot-month-summary")).toContainText("Unpaid");
+  await expect(details.locator('tr[aria-current="true"]')).toContainText("53 → 148.8");
+  await expect(details.locator('tr[aria-current="true"]')).toContainText("95.8");
   await expect(details.locator("tbody tr")).toHaveCount(4);
   await expect(details.locator("tfoot")).toContainText("148.8");
   await expect(details.locator("tfoot")).toContainText("₹2,041.6");
@@ -724,12 +719,9 @@ test("plot details without electricity history show only rent status", async ({
   await page.goto("/");
   await page.getByRole("button", { name: "View details for plot 101" }).click();
   const details = page.getByRole("region", { name: "Plot 101 details", exact: true });
-  await expect(
-    details.getByRole("region", { name: "Selected month rent" }),
-  ).toContainText("Paid");
-  await expect(details.getByRole("region", { name: "Selected month rent" })).not.toContainText("Nov 5, 2026");
+  await expect(details.locator(".plot-month-summary")).toContainText("Paid");
+  await expect(details.locator(".plot-month-summary")).not.toContainText("Nov 5, 2026");
   await expect(details).toContainText("No electricity records yet");
-  await expect(details).toContainText("Estimated bill: ₹500");
   await expect(details.locator("tfoot")).toHaveCount(0);
 });
 
@@ -841,7 +833,7 @@ for (const width of [390, 1440]) {
     const dialog = page.getByRole("region", { name: "Plot 101 details", exact: true });
     await expect(dialog.getByRole("table")).toHaveCount(1);
     await expect(dialog.getByRole("heading", { name: "Rent history", exact: true })).toHaveCount(0);
-    await expect(dialog.locator('[data-label="Rent status"]')).toContainText("Unpaid");
+    await expect(dialog.locator('[data-label="Rent"]')).toContainText("Unpaid");
     await expect(dialog).not.toContainText("₹16,000");
     await expect(dialog).not.toContainText("₹17,000");
     await expect(dialog).not.toContainText("₹33,000");

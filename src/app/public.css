@@ -1,7 +1,7 @@
 /* Public resident portal. Scoped to preserve the admin workspace. */
 .public-site {
   --ink: #243c35;
-  --muted: #69776e;
+  --muted: #5a6a60;
   --line: #e3e6df;
   background: #f8f9f5;
   color: var(--ink);
@@ -89,7 +89,7 @@
   margin-top: 6px;
   font-size: 12px;
   letter-spacing: 2px;
-  color: #6a786f;
+  color: #626f67;
 }
 .header-actions {
   display: flex;
@@ -101,7 +101,7 @@
   display: flex;
   align-items: center;
   gap: 7px;
-  color: #69776e;
+  color: #626f67;
   font-size: 12px;
 }
 .public-view > span {
@@ -139,7 +139,7 @@
   font-size: 12px;
   letter-spacing: 1.9px;
   font-weight: 600;
-  color: #6c7c70;
+  color: #627065;
 }
 .page-intro h1 {
   font-family: Georgia, "Times New Roman", serif;
@@ -151,7 +151,7 @@
 }
 .page-intro h1 em {
   font-weight: 400;
-  color: #6d8157;
+  color: #61724d;
 }
 .intro-copy {
   color: var(--muted);
@@ -215,7 +215,7 @@
   display: block;
   font-size: 12px;
   letter-spacing: 1.4px;
-  color: #6d786e;
+  color: #656f66;
   margin-bottom: 7px;
 }
 .period-picker > div {
@@ -227,7 +227,7 @@
 .period-picker svg {
   width: 17px;
   height: 17px;
-  color: #6b7e60;
+  color: #607156;
   pointer-events: none;
 }
 .period-picker svg:last-child {
@@ -268,15 +268,15 @@
 }
 .metric-icon.neutral {
   background: #f0f0e8;
-  color: #788066;
+  color: #686f58;
 }
 .metric-icon.green {
   background: #eaf2e6;
-  color: #567c46;
+  color: #517542;
 }
 .metric-icon.amber {
   background: #faf0df;
-  color: #a17b3c;
+  color: #876732;
 }
 .summary-item > div > span {
   display: block;
@@ -329,7 +329,7 @@
   border: 1px solid #e3e7da;
   border-radius: 5px;
   background: #f3f5ec;
-  color: #667257;
+  color: #647056;
 }
 .refresh-button {
   display: flex;
@@ -338,7 +338,7 @@
   gap: 7px;
   min-height: 44px;
   padding: 0 10px;
-  color: #667461;
+  color: #62705e;
   font-size: 12px;
 }
 .refresh-button svg {
@@ -369,7 +369,7 @@
   border: 1px solid transparent;
   border-radius: 5px;
   font-size: 12px;
-  color: #70796a;
+  color: #676f61;
   white-space: nowrap;
 }
 .status-filters button.selected {
@@ -398,7 +398,7 @@
   border-radius: 7px;
   padding: 0 12px;
   width: 280px;
-  color: #88917e;
+  color: #686f61;
 }
 .resident-search svg {
   width: 16px;
@@ -421,7 +421,7 @@
   outline: none;
 }
 .resident-search input::placeholder {
-  color: #788471;
+  color: #646e5e;
   opacity: 1;
 }
 .resident-table {
@@ -436,7 +436,7 @@
 }
 .resident-table > thead > tr > th {
   padding: 13px 28px;
-  color: #6d7968;
+  color: #646f5f;
   font-weight: 500;
   font-size: 12px;
   letter-spacing: 1.2px;
@@ -474,7 +474,7 @@
 .plot-number svg {
   width: 15px;
   height: 15px;
-  color: #8c9985;
+  color: #666f61;
 }
 .resident-name {
   display: flex;
@@ -494,26 +494,26 @@
 }
 .avatar-0 {
   background: #e9eedd;
-  color: #69764d;
+  color: #647149;
 }
 .avatar-1 {
   background: #eee7dc;
-  color: #927252;
+  color: #84674a;
 }
 .avatar-2 {
   background: #e4ebeb;
-  color: #527a76;
+  color: #4d7370;
 }
 .avatar-3 {
   background: #ede8ee;
-  color: #8b7091;
+  color: #7d6482;
 }
 .resident-avatar svg {
   width: 14px;
   height: 14px;
 }
 .move-in-date {
-  color: #73806e;
+  color: #646f5f;
 }
 .mobile-date {
   display: none;
@@ -539,7 +539,7 @@
 }
 .public-status.is-unpaid {
   background: #fcf3e6;
-  color: #8f662c;
+  color: #8d642b;
   border-color: #f0e4cc;
 }
 .directory-footer {
@@ -550,7 +550,7 @@
   padding: 17px 28px;
   border-top: 1px solid var(--line);
   font-size: 12px;
-  color: #73806c;
+  color: #65705f;
   background: #fdfef9;
 }
 .directory-empty {
@@ -566,7 +566,7 @@
   border-radius: 50%;
   background: #edf1e5;
   margin: 0 auto 15px;
-  color: #6e8459;
+  color: #5f724d;
 }
 .directory-empty h3 {
   font-family: Georgia, "Times New Roman", serif;
@@ -646,7 +646,7 @@
   width: 38px;
   border-radius: 50%;
   background: #ecefe4;
-  color: #7e8f63;
+  color: #63704e;
   flex-shrink: 0;
 }
 .privacy-icon svg {
@@ -660,7 +660,7 @@
 }
 .privacy-note p {
   font-size: 12px;
-  color: #76826d;
+  color: #656f5d;
   line-height: 1.7;
   margin-top: 5px;
 }
@@ -671,7 +671,7 @@
   margin-left: auto;
   flex-shrink: 0;
   font-size: 12px;
-  color: #7d8a71;
+  color: #656f5b;
   letter-spacing: 1px;
 }
 .privacy-label svg {
@@ -685,7 +685,7 @@
   padding-block: 25px;
   border-top: 1px solid var(--line);
   font-size: 12px;
-  color: #74816c;
+  color: #64705d;
 }
 .site-footer > span:first-child {
   display: flex;
@@ -837,7 +837,7 @@
   .mobile-date {
     display: block;
     font-size: 12px;
-    color: #74816b;
+    color: #64705d;
     margin-top: 3px;
   }
   .resident-table > tbody > tr > :is(th, td) {
@@ -1134,7 +1134,7 @@
   font:
     12px Arial,
     sans-serif;
-  color: #5b7c48;
+  color: #567544;
   padding: 3px 5px;
   background: #edf5e8;
   border-radius: 4px;
@@ -1178,7 +1178,7 @@
   justify-content: space-between;
 }
 .plot-payment-status small {
-  color: #69776e;
+  color: #626f67;
   font-size: 12px;
 }
 .plot-payment-status > span > span {
@@ -1239,7 +1239,7 @@
 .history-dialog-note {
   font-size: 12px;
   margin-block: 15px 22px;
-  color: #69776e;
+  color: #626f67;
 }
 .history-table-scroll {
   overflow-x: auto;
@@ -1697,14 +1697,14 @@
   border-radius: 4px;
 }
 .payment-detail {
-  color: #69776e;
+  color: #626f67;
   font-size: 12px;
 }
 .history-meter-readings {
   display: block;
   margin-top: 4px;
   font-size: 12px;
-  color: #69776e;
+  color: #626f67;
 }
 .history-table-scroll tfoot {
   background: #f0f3e9;
@@ -1838,7 +1838,7 @@
 .install-dialog p:not(.eyebrow) {
   font-size: 13px;
   line-height: 1.8;
-  color: #66765d;
+  color: #617159;
 }
 .install-dialog ol {
   list-style: none;
@@ -1857,7 +1857,7 @@
 }
 .install-dialog li span {
   margin-top: 4px;
-  color: #66765d;
+  color: #617159;
 }
 .install-dialog .install-small {
   font-size: 12px !important;
@@ -1963,7 +1963,7 @@
 }
 .attention-copy .attention-breakdown {
   font-size: 12px;
-  color: #697b60;
+  color: #607158;
   white-space: nowrap;
 }
 .attention-breakdown strong {
@@ -2043,7 +2043,7 @@
   margin-bottom: 12px;
 }
 .plot-month-detail p {
-  color: #69776e;
+  color: #626f67;
   font-size: 12px;
   line-height: 1.8;
   margin-top: 12px;
@@ -2059,7 +2059,7 @@
   font-size: 12px;
 }
 .plot-month-detail dt {
-  color: #69776e;
+  color: #626f67;
 }
 .plot-month-detail dd {
   text-align: right;
@@ -2079,7 +2079,7 @@
 }
 .electricity-history-totals dt {
   font-size: 12px;
-  color: #69776e;
+  color: #626f67;
   line-height: 1.7;
 }
 .electricity-history-totals dd {
@@ -2091,7 +2091,7 @@
 .history-ledger-note,
 .no-electricity-history {
   font-size: 12px;
-  color: #69776e;
+  color: #626f67;
   line-height: 1.8;
   margin-bottom: 16px;
 }
@@ -2380,7 +2380,7 @@
     display: block;
     font-size: 12px;
     line-height: 1.6;
-    color: #69776e;
+    color: #626f67;
     margin-bottom: 4px;
     font-weight: 400;
   }
@@ -2726,4 +2726,65 @@
 }
 .resident-portal .status-filters button {
   flex: 0 0 auto;
+}
+
+/* Selected-month summary line in the plot history heading. */
+.inline-plot-history .plot-month-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+  margin: 0 0 10px;
+  font-size: 14px;
+}
+.inline-plot-history .plot-month-summary > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #5a6a60;
+}
+.resident-portal .attention-note {
+  display: block;
+  font-size: 12px;
+  line-height: 1.3;
+  color: #5a6a60;
+}
+
+/* Phone: each month is a compact card with a 3-column grid (Rent | Units | Bill, then Paid | Due | Electricity). */
+@media (max-width: 520px) {
+  .inline-plot-history .history-table-scroll tbody tr {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .inline-plot-history .history-table-scroll tbody td:last-child {
+    grid-column: auto;
+    display: block;
+  }
+  .inline-plot-history .history-table-scroll tbody td {
+    padding: 6px 10px;
+    border-bottom: 0;
+  }
+  .inline-plot-history .history-table-scroll tbody th {
+    padding: 6px 10px;
+  }
+  .inline-plot-history .history-table-scroll tfoot tr {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .inline-plot-history .history-table-scroll tfoot td {
+    padding: 6px 10px;
+    border-bottom: 0;
+  }
+}
+
+/* Very narrow phones: trim vertical gaps so the first plot row stays near the top of the screen. */
+@media (max-width: 360px) {
+  .resident-portal .directory-toolbar {
+    gap: 6px;
+  }
+  .resident-portal .secondary-filters {
+    row-gap: 0;
+    padding-bottom: 4px;
+  }
+  .resident-portal .attention-note {
+    line-height: 1.2;
+  }
 }

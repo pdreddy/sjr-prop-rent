@@ -18,6 +18,16 @@ import type { PublicPlot } from "@/lib/types";
 type Filter = "ALL" | "PENDING" | PublicPlot["status"];
 const monthOptions = getMonthOptions();
 
+// First visible character (grapheme) of the first two words, so emoji and non-Latin names stay intact.
+const graphemes = new Intl.Segmenter(undefined, { granularity: "grapheme" });
+const initials = (name: string) =>
+  name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((word) => graphemes.segment(word)[Symbol.iterator]().next().value?.segment ?? "")
+    .join("");
+
 export default function Home() {
   const [month, setMonth] = useState(getCurrentMonth());
   const { data, loading, refreshing, error, online, updatedAt, refresh } =
@@ -346,13 +356,13 @@ export default function Home() {
                   <span>
                     Needs attention <b>{ready ? attentionCount : "—"}</b>
                   </span>
-                  <span
-                    className="attention-breakdown"
-                    title="A plot can need attention for both rent and electricity."
-                  >
+                  <span className="attention-breakdown">
                     Rent <strong>{ready ? rentAttentionCount : "—"}</strong> ·
                     Electricity{" "}
                     <strong>{ready ? electricityCounts.UNPAID : "—"}</strong>
+                  </span>
+                  <span className="attention-note">
+                    A plot can be counted for both.
                   </span>
                 </span>
               </label>
@@ -478,12 +488,7 @@ export default function Home() {
                               aria-hidden="true"
                             >
                               {plot.tenantName ? (
-                                plot.tenantName
-                                  .trim()
-                                  .split(/\s+/)
-                                  .slice(0, 2)
-                                  .map((word) => word[0])
-                                  .join("")
+                                initials(plot.tenantName)
                               ) : (
                                 <Icon name="home" />
                               )}
