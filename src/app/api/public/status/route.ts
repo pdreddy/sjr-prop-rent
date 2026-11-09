@@ -79,7 +79,8 @@ export async function GET(request: NextRequest) {
           ? ("DUE" as const)
           : payment?.paymentStatus ?? ("UNPAID" as const),
       paidDate: payment?.paidDate?.toISOString() ?? null,
-      electricityStatus: isBeforeMoveIn || isVacant
+      // Same rule as rent: a tenant who moved in this month is not tracked until the following month.
+      electricityStatus: isBeforeFirstRent || isVacant
         ? ("NA" as const)
         : payment?.electricityPaid || (thisMonth && thisMonth.bill > 0 && thisMonth.balance <= 0)
           ? ("PAID" as const)
