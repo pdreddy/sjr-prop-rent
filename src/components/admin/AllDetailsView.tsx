@@ -198,15 +198,15 @@ export default function AllDetailsView({
               <table className="w-full text-left text-sm">
                 <thead className="sticky top-0 z-20 bg-primary-light text-muted shadow-[0_1px_0_var(--color-line)]">
                   <tr>
-                    <th className="sticky left-0 z-20 min-w-[150px] bg-primary-light px-4 py-3 font-semibold">Plot &amp; tenant</th>
-                    <th className="min-w-[170px] px-3 py-3 font-semibold">Phone numbers</th>
-                    <th className="min-w-[100px] px-3 py-3 font-semibold">Advance</th>
-                    <th className="min-w-[100px] px-3 py-3 font-semibold">Rent</th>
-                    <th className="min-w-[110px] px-3 py-3 font-semibold">Maintenance</th>
-                    <th className="min-w-[90px] px-3 py-3 font-semibold">Total</th>
-                    <th className="min-w-[120px] px-3 py-3 font-semibold">Amount paid</th>
-                    <th className="min-w-[120px] px-3 py-3 font-semibold">Paid date</th>
-                    <th className="min-w-[200px] px-3 py-3 font-semibold">Notes</th>
+                    <th className="label-caps whitespace-nowrap sticky left-0 z-20 min-w-[150px] bg-primary-light px-4 py-3">Plot &amp; tenant</th>
+                    <th className="label-caps whitespace-nowrap min-w-[170px] px-3 py-3">Phone numbers</th>
+                    <th className="label-caps whitespace-nowrap min-w-[100px] px-3 py-3">Advance</th>
+                    <th className="label-caps whitespace-nowrap min-w-[100px] px-3 py-3">Rent</th>
+                    <th className="label-caps whitespace-nowrap min-w-[110px] px-3 py-3">Maintenance</th>
+                    <th className="label-caps whitespace-nowrap min-w-[90px] px-3 py-3">Total</th>
+                    <th className="label-caps whitespace-nowrap min-w-[120px] px-3 py-3">Amount paid</th>
+                    <th className="label-caps whitespace-nowrap min-w-[120px] px-3 py-3">Paid date</th>
+                    <th className="label-caps whitespace-nowrap min-w-[200px] px-3 py-3">Notes</th>
                   </tr>
                 </thead>
                 <tbody>

@@ -1,12 +1,13 @@
 "use client";
 
+import { Toolbar, ToolbarButton } from "./ui";
 import { useEffect, useMemo, useState } from "react";
 import StatusBadge from "@/components/StatusBadge";
 import { formatDate, formatMonthLabel, isRentOverdue } from "@/lib/month";
 import type { RentalHistoryMonth, RentalHistoryResponse, RentalHistoryPlot, RentalStay } from "@/lib/types";
 import HistoryMonthEditModal from "./HistoryMonthEditModal";
 import HistoryTenantEditModal from "./HistoryTenantEditModal";
-import { IconEdit, IconSearch } from "@/components/icons";
+import { IconEdit } from "@/components/icons";
 
 const rupees = (n: number) => `₹${n.toFixed(0)}`;
 
@@ -127,37 +128,21 @@ export default function RentalHistoryView({ onUnauthorized, onChanged }: { onUna
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="rounded-card border border-line bg-white p-3.5 shadow-card sm:p-4">
-        <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-ink">Search</span>
-          <div className="relative">
-            <IconSearch className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-primary/50" />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Plot or any past/current tenant"
-              className="min-h-11 w-full rounded-control border border-line-strong bg-white py-2 pl-9 pr-3 text-base focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
-            />
-          </div>
-        </label>
-        <div className="mt-3 flex flex-wrap items-center gap-3">
-          <button
-            type="button"
-            onClick={fillMissingMonths}
-            disabled={fixing}
-            className="min-h-10 rounded-control border border-line-strong bg-white px-4 text-sm font-semibold text-ink hover:bg-primary-light disabled:opacity-60"
-          >
-            {fixing ? "Checking…" : "Fill missing months"}
-          </button>
-          {notice && <span className="text-xs font-medium text-foreground/70">{notice}</span>}
-        </div>
-        <p className="mt-2.5 text-xs text-foreground/55">
+      <Toolbar
+        title="Rental history"
+        subtitle="Every tenant a plot has had, and every month's record"
+        search={{ value: search, onChange: setSearch, placeholder: "Plot or any past/current tenant" }}
+        actions={<ToolbarButton onClick={fillMissingMonths} disabled={fixing}>{fixing ? "Checking…" : "Fill missing months"}</ToolbarButton>}
+        extra={notice ? <p className="text-xs font-medium text-foreground/70">{notice}</p> : null}
+        help={
+          <>
           Past tenants are rebuilt from recorded plot edits, so a tenant who was set up before edits were logged may show
           only as the current tenant. Move-out is the date the next tenant moved in (or the plot was marked vacant). Open a plot and click any
           month to edit its rent, payment, paid date, meter readings or notes, move it to the right month, or delete it; use &ldquo;Edit
           move-in &amp; rent&rdquo; on the current tenant to fix the move-in date. Changes show on every tab straight away.
-        </p>
-      </div>
+</>
+        }
+      />
 
       {plots.length === 0 && (
         <div className="rounded-card border border-line bg-white p-8 text-center text-foreground/60">No plots match your search.</div>
@@ -297,12 +282,12 @@ function Stay({ stay, onEditMonth, onEditTenant }: { stay: RentalStay; onEditMon
         <table className="w-full min-w-[560px] text-left text-sm">
           <thead className="text-xs uppercase tracking-wide text-foreground/45">
             <tr>
-              <th className="px-3 py-2 font-semibold">Month</th>
-              <th className="px-3 py-2 font-semibold">Status</th>
-              <th className="px-3 py-2 text-right font-semibold">Due</th>
-              <th className="px-3 py-2 text-right font-semibold">Paid</th>
-              <th className="px-3 py-2 font-semibold">Paid on</th>
-              <th className="px-3 py-2 text-right font-semibold">Balance</th>
+              <th className="label-caps whitespace-nowrap px-3 py-2">Month</th>
+              <th className="label-caps whitespace-nowrap px-3 py-2">Status</th>
+              <th className="label-caps whitespace-nowrap px-3 py-2 text-right">Due</th>
+              <th className="label-caps whitespace-nowrap px-3 py-2 text-right">Paid</th>
+              <th className="label-caps whitespace-nowrap px-3 py-2">Paid on</th>
+              <th className="label-caps whitespace-nowrap px-3 py-2 text-right">Balance</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-line">

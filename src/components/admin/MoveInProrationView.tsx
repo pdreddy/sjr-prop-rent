@@ -1,10 +1,10 @@
 "use client";
 
+import { Toolbar } from "./ui";
 import { useEffect, useMemo, useState } from "react";
 import { formatDate, formatMonthLabel } from "@/lib/month";
 import { calcMoveIn, isPartialFirstMonth, sumMoveIn, BILLING_DAYS } from "@/lib/moveInProration";
 import type { MoveInProrationResponse, MoveInProrationTenant } from "@/lib/types";
-import { IconSearch } from "@/components/icons";
 
 const rupees = (n: number) => `₹${n.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
 const parseAmount = (text: string): number | null => {
@@ -85,27 +85,20 @@ export default function MoveInProrationView({ onUnauthorized }: { onUnauthorized
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="rounded-card border border-line bg-white p-3.5 shadow-card sm:p-4">
-        <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-ink">Search</span>
-          <div className="relative">
-            <IconSearch className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-primary/50" />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Plot or tenant"
-              className="min-h-11 w-full rounded-control border border-line-strong bg-white py-2 pl-9 pr-3 text-base focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
-            />
-          </div>
-        </label>
-        <p className="mt-2.5 text-xs text-foreground/55">
+      <Toolbar
+        title="Move-in proration"
+        subtitle="Rent for a part first month, and what was received by the 10th"
+        search={{ value: search, onChange: setSearch }}
+        help={
+          <>
           Only the first month is prorated, and only when a tenant did not move in on the 1st - every later month is the full
           agreed rent. Each month counts as {BILLING_DAYS} days; days charged = {BILLING_DAYS} − move-in day + 1.
           {fullMonthCount > 0 && ` ${fullMonthCount} tenant${fullMonthCount === 1 ? "" : "s"} moved in on the 1st and pay the full rent, so they are not listed.`} Enter the rent actually
           received by the 10th of the month after move-in; a payment covers the prorated rent first, anything above it is an
           electricity credit, and any shortfall stays as a rent balance. Leave the box blank if nothing was received.
-        </p>
-      </div>
+</>
+        }
+      />
 
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         <Summary label="Prorated rent" value={rupees(totals.proratedRent)} cls="bg-primary-light text-ink" />
@@ -122,17 +115,17 @@ export default function MoveInProrationView({ onUnauthorized }: { onUnauthorized
             <table className="w-full min-w-[1100px] text-left text-sm">
               <thead className="sticky top-0 z-20 bg-primary-light text-muted">
                 <tr>
-                  <th className="px-3 py-3 font-semibold">Plot</th>
-                  <th className="px-3 py-3 font-semibold">Tenant</th>
-                  <th className="px-3 py-3 font-semibold">Move-in date</th>
-                  <th className="px-3 py-3 font-semibold">Move-in month</th>
-                  <th className="px-3 py-3 text-right font-semibold">Days charged</th>
-                  <th className="px-3 py-3 text-right font-semibold">Monthly rent + maint.</th>
-                  <th className="px-3 py-3 text-right font-semibold">Daily rate (÷30)</th>
-                  <th className="px-3 py-3 text-right font-semibold">Prorated rent</th>
-                  <th className="min-w-[150px] px-3 py-3 text-right font-semibold">Paid by 10th of next month</th>
-                  <th className="px-3 py-3 text-right font-semibold">Electricity credit</th>
-                  <th className="px-3 py-3 text-right font-semibold">Remaining balance</th>
+                  <th className="label-caps whitespace-nowrap px-3 py-3">Plot</th>
+                  <th className="label-caps whitespace-nowrap px-3 py-3">Tenant</th>
+                  <th className="label-caps whitespace-nowrap px-3 py-3">Move-in date</th>
+                  <th className="label-caps whitespace-nowrap px-3 py-3">Move-in month</th>
+                  <th className="label-caps whitespace-nowrap px-3 py-3 text-right">Days charged</th>
+                  <th className="label-caps whitespace-nowrap px-3 py-3 text-right">Monthly rent + maint.</th>
+                  <th className="label-caps whitespace-nowrap px-3 py-3 text-right">Daily rate (÷30)</th>
+                  <th className="label-caps whitespace-nowrap px-3 py-3 text-right">Prorated rent</th>
+                  <th className="label-caps whitespace-nowrap min-w-[150px] px-3 py-3 text-right">Paid by 10th of next month</th>
+                  <th className="label-caps whitespace-nowrap px-3 py-3 text-right">Electricity credit</th>
+                  <th className="label-caps whitespace-nowrap px-3 py-3 text-right">Remaining balance</th>
                 </tr>
               </thead>
               <tbody>

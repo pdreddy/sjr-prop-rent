@@ -1,5 +1,6 @@
 "use client";
 
+import { Toolbar } from "./ui";
 import { useEffect, useMemo, useState } from "react";
 import { formatMonthLabel, formatDate } from "@/lib/month";
 import type {
@@ -9,7 +10,6 @@ import type {
 } from "@/lib/types";
 import PaymentMonthDetail from "./PaymentMonthDetail";
 import type { PaymentHistoryResponse } from "@/lib/types";
-import { IconSearch } from "@/components/icons";
 
 const STATUS_STYLE: Record<ElectricityMonthStatus, { label: string; cls: string }> = {
   PAID: { label: "Paid", cls: "bg-paid-bg text-paid" },
@@ -96,25 +96,18 @@ export default function ElectricityStatementView({ onUnauthorized }: { onUnautho
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="rounded-card border border-line bg-white p-3.5 shadow-card sm:p-4">
-        <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-ink">Search</span>
-          <div className="relative">
-            <IconSearch className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-primary/50" />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Plot or tenant"
-              className="min-h-11 w-full rounded-control border border-line-strong bg-white py-2 pl-9 pr-3 text-base focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
-            />
-          </div>
-        </label>
-        <p className="mt-2.5 text-xs text-foreground/55">
-          Rate ₹{data.ratePerUnit}/unit. Each month&apos;s baseline is rent + maintenance; a small amount paid above it (under ₹{data.config.excessLimit.toLocaleString("en-IN")})
-          is credited to electricity, oldest bill first, and unused credit carries forward. A larger excess is rent paid ahead. Months run from the tenant&apos;s joining month
-          to {formatMonthLabel(data.currentMonth)}.
-        </p>
-      </div>
+      <Toolbar
+        title="Electricity bills"
+        subtitle={`Each tenant's electricity, month by month, to ${formatMonthLabel(data.currentMonth)}`}
+        search={{ value: search, onChange: setSearch }}
+        help={
+          <>
+            Rate ₹{data.ratePerUnit}/unit. Each month&apos;s baseline is rent + maintenance; a small amount paid above it (under ₹{data.config.excessLimit.toLocaleString("en-IN")})
+            is credited to electricity, oldest bill first, and unused credit carries forward. A larger excess is rent paid ahead. Months run from the tenant&apos;s joining month
+            to {formatMonthLabel(data.currentMonth)}.
+          </>
+        }
+      />
 
       {tenants.length === 0 && (
         <div className="rounded-card border border-line bg-white p-8 text-center text-foreground/60">
@@ -180,14 +173,14 @@ function TenantStatement({
             <table className="w-full min-w-[760px] text-left text-sm">
               <thead className="bg-primary-light text-xs uppercase tracking-wide text-ink">
                 <tr>
-                  <th className="px-3 py-2 font-semibold">Month</th>
-                  <th className="px-3 py-2 text-right font-semibold">Rent due</th>
-                  <th className="px-3 py-2 text-right font-semibold">Total paid</th>
-                  <th className="px-3 py-2 text-right font-semibold">Over rent</th>
-                  <th className="px-3 py-2 text-right font-semibold">Electricity bill</th>
-                  <th className="px-3 py-2 text-right font-semibold">Credited</th>
-                  <th className="px-3 py-2 text-right font-semibold">Balance</th>
-                  <th className="px-3 py-2 font-semibold">Status</th>
+                  <th className="label-caps whitespace-nowrap px-3 py-2">Month</th>
+                  <th className="label-caps whitespace-nowrap px-3 py-2 text-right">Rent due</th>
+                  <th className="label-caps whitespace-nowrap px-3 py-2 text-right">Total paid</th>
+                  <th className="label-caps whitespace-nowrap px-3 py-2 text-right">Over rent</th>
+                  <th className="label-caps whitespace-nowrap px-3 py-2 text-right">Electricity bill</th>
+                  <th className="label-caps whitespace-nowrap px-3 py-2 text-right">Credited</th>
+                  <th className="label-caps whitespace-nowrap px-3 py-2 text-right">Balance</th>
+                  <th className="label-caps whitespace-nowrap px-3 py-2">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-line">
