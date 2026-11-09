@@ -104,6 +104,14 @@ The site is an installable Progressive Web App: Chrome/Edge/Android show **Insta
 
 If you cannot sign in, run `npm run auth:check` (or `npm run auth:check -- <username> <password>`): it checks `SESSION_SECRET`, the Firebase connection, and the stored admin accounts, and tells you how to reset a password. In development the login form now also shows the underlying server error. Also, if sign-in appears to do nothing: the session cookie is now marked `Secure` only when the request is HTTPS (previously any production build on plain `http://`, such as `next start` on a LAN IP, silently dropped it). When running `npm run dev` from another device, list its address in `DEV_ORIGINS` (see `next.config.ts`).
 
+## Try it locally in one command
+
+```bash
+npm run local
+```
+
+Starts an in-memory demo database filled with sample plots, then the app. No Firebase, no `.env`, no password setup. Open http://localhost:3000 (public page) and http://localhost:3000/admin/login (sign in with `admin` / `admin123`). Demo data resets on every restart. To run on your real data, use `npm run dev` with your `.env`.
+
 ## Checking that data loads
 
 `npm run db:mock` starts an in-memory stand-in for Realtime Database, so the whole app can be tested without credentials. With the mock running and the app started against it (`FIREBASE_DATABASE_EMULATOR_HOST=127.0.0.1:9000`), `npm run smoke` seeds plots, signs in as the admin, loads every public and admin endpoint and asserts the numbers (rent, electricity units and fixed bills, N/A rules, settings round-trip, no private data on the public page). See the comments at the top of `scripts/smoke.ts` for the exact commands. API routes are wrapped so a database failure returns a JSON error instead of a broken response, and the server logs a clear message at startup when settings are missing.

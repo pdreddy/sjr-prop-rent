@@ -23,7 +23,8 @@
     "sync:payment-notes": "tsx --env-file=.env scripts/sync-payment-notes.ts",
     "auth:check": "tsx --env-file=.env scripts/check-login.ts",
     "db:mock": "tsx scripts/mock-firebase.ts",
-    "smoke": "tsx scripts/smoke.ts"
+    "smoke": "tsx scripts/smoke.ts",
+    "local": "tsx scripts/local.ts"
   },
   "dependencies": {
     "next": "16.2.12",
