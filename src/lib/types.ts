@@ -385,3 +385,28 @@ export interface SummaryResponse {
   /** Plots owing the most this month (rent + electricity), largest first. */
   topDue: SummaryDueRow[];
 }
+
+// ---- Admin activity log (what was entered or changed) ----
+export interface ActivityChange {
+  label: string;
+  key: string;
+  from: unknown;
+  to: unknown;
+}
+export interface ActivityEntry {
+  id: string;
+  createdAt: string;
+  adminUsername: string;
+  action: string;
+  recordType: string;
+  group: "Payment" | "Electricity" | "Unit" | "Settings" | "Other";
+  recordId: string | null;
+  plotNumber: string | null;
+  tenantName: string | null;
+  month: string | null;
+  changes: ActivityChange[];
+}
+export interface ActivityLogResponse {
+  entries: ActivityEntry[];
+  hasMore: boolean;
+}

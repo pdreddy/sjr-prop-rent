@@ -77,6 +77,7 @@ async function main() {
 
   console.log("\nAdmin login");
   check("admin endpoints are protected", (await api(`/api/admin/dashboard?month=${M}`)).status === 401);
+  check("activity log is protected", (await api("/api/admin/audit-logs")).status === 401);
   check("summary endpoint is protected", (await api(`/api/admin/summary?month=${M}`)).status === 401);
   check("wrong password rejected", (await api("/api/auth/login", { method: "POST", body: JSON.stringify({ username: USER, password: "definitely-wrong-1" }) })).status === 401);
   const login = await api("/api/auth/login", { method: "POST", body: JSON.stringify({ username: USER, password: PASS }) });
@@ -130,6 +131,12 @@ async function main() {
   check("per-plot fixed bill (₹900) applies to the unread month", p2?.electricityMonths?.find((m: any) => m.month === M)?.bill === 900);
   check("building name from settings", pub2.json?.buildingName === "Test Building");
   check("tenant names hidden when switched off", p2?.tenantName === null);
+
+  const log = await api("/api/admin/audit-logs?limit=50");
+  const settingsEntry = log.json?.entries?.find((e: any) => e.group === "Settings" && e.changes?.some((c: any) => c.key === "ratePerUnit" && c.from === 7 && c.to === 8));
+  check("activity log records the settings change with old and new value", log.status === 200 && !!settingsEntry, log.text.slice(0, 200));
+  check("activity log names who made the change", settingsEntry?.adminUsername === USER, settingsEntry?.adminUsername);
+  check("activity log has no NaN/undefined", noNaN(log.json));
 
   const maskedSettings = { electricity: { ...after.electricity, highPlots: after.electricity.highPlots.join(", "), plotFixed: "101=900" }, general: { ...after.general, showTenantNames: true, maskTenantNames: true } };
   check("masking setting saved", (await api("/api/admin/settings", { method: "PUT", body: JSON.stringify(maskedSettings) })).status === 200);
