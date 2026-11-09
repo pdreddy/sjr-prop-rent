@@ -117,3 +117,31 @@ No Firebase handy? `npm run demo` starts the app with an in-memory demo database
 ## Checking that data loads
 
 `npm run db:mock` starts an in-memory stand-in for Realtime Database, so the whole app can be tested without credentials. With the mock running and the app started against it (`FIREBASE_DATABASE_EMULATOR_HOST=127.0.0.1:9000`), `npm run smoke` seeds plots, signs in as the admin, loads every public and admin endpoint and asserts the numbers (rent, electricity units and fixed bills, N/A rules, settings round-trip, no private data on the public page). See the comments at the top of `scripts/smoke.ts` for the exact commands. API routes are wrapped so a database failure returns a JSON error instead of a broken response, and the server logs a clear message at startup when settings are missing.
+
+
+## Compact public UI branch
+
+`codex/public-ui-on-working-firebase` starts from `claude/merge-codex-pwa`.
+The Firebase implementation, API routes, authentication, settings, data model,
+admin screens, `.env.example`, and existing startup/demo/smoke scripts are
+unchanged. Use the same local configuration and commands as that branch.
+This UI update does not require reseeding, an emulator, or new credentials.
+
+The public page retains rent and electricity filters, needs-attention filtering,
+collection counts, paid dates, meter readings and electricity history totals in a
+compact table. Existing PWA installation, shortcuts, offline behavior and
+service-worker registration are retained.
+
+Browser validation:
+
+```bash
+npx playwright install chromium
+npm run build
+npm run test:e2e
+```
+
+For an existing system Chromium, set
+`PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium`. Browser tests mock API
+responses; the repository's separate `npm run smoke` command exercises the
+server and data layer using its isolated mock database. Never run smoke tests
+against the live database.

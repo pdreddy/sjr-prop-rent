@@ -1,0 +1,461 @@
+/* Compact public view; administrative forms retain their own spacing. */
+.resident-portal {
+  --portal-gutter: 24px;
+}
+.resident-portal .public-container {
+  width: min(1240px, calc(100% - var(--portal-gutter) - var(--portal-gutter)));
+}
+.resident-portal .header-inner {
+  min-height: 68px;
+}
+.resident-portal .brand-mark {
+  width: 34px;
+  height: 38px;
+  border-radius: 9px 9px 9px 3px;
+}
+.resident-portal .brand-mark svg {
+  width: 23px;
+  height: 23px;
+}
+.resident-portal .brand strong {
+  font-size: 21px;
+}
+.resident-portal .brand span span {
+  margin-top: 4px;
+}
+.resident-portal .public-main {
+  padding-top: 18px;
+}
+.resident-portal .page-intro {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.resident-portal .page-intro h1 {
+  font-size: 28px;
+  line-height: 1.2;
+  margin: 0;
+  letter-spacing: -0.8px;
+}
+.resident-portal .install-app {
+  margin: 0;
+}
+.resident-portal .month-summary {
+  margin-top: 0;
+  padding: 14px 18px;
+  gap: 16px;
+}
+.resident-portal .summary-item strong {
+  font-size: 24px;
+}
+.resident-portal .directory {
+  margin-top: 16px;
+}
+.resident-portal .directory-heading {
+  padding: 10px 18px 8px;
+}
+.resident-portal .directory-heading h2 {
+  font-size: 21px;
+  margin: 0;
+}
+.resident-portal .directory-toolbar {
+  padding: 0 18px 12px;
+  gap: 14px;
+}
+.resident-portal .status-filters {
+  padding: 2px;
+}
+.resident-portal .status-filters button {
+  min-height: 40px;
+  padding-inline: 13px;
+}
+.resident-portal .resident-search {
+  width: 260px;
+}
+.resident-portal .resident-search input {
+  min-height: 44px;
+}
+.resident-portal .resident-table thead th {
+  padding: 10px 18px;
+}
+.resident-portal .resident-table tbody :is(th, td) {
+  padding: 10px 18px;
+  vertical-align: middle;
+}
+.resident-portal .resident-table th:first-child {
+  width: 14%;
+}
+.resident-portal .resident-table th:nth-child(2) {
+  width: 34%;
+}
+.resident-portal .resident-table th:nth-child(3) {
+  width: 24%;
+}
+.resident-portal .resident-table th:last-child {
+  width: 28%;
+}
+.resident-portal .plot-payment-status {
+  flex-direction: row;
+  gap: 18px;
+  align-items: center;
+}
+.resident-portal .plot-payment-status > span {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+}
+.resident-portal .plot-payment-status > span > span,
+.resident-portal .payment-history-button > span {
+  font-size: 11px;
+  padding: 3px 8px;
+}
+.resident-portal .payment-history-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 44px;
+  margin-block: 0;
+  border-radius: 6px;
+}
+.resident-portal .payment-history-button > svg {
+  height: 12px;
+  width: 12px;
+}
+.resident-portal .directory-footer {
+  padding: 10px 18px;
+}
+.resident-portal .privacy-note {
+  padding: 14px 0;
+  gap: 10px;
+}
+.resident-portal .privacy-icon {
+  height: 30px;
+  width: 30px;
+}
+.resident-portal .privacy-note p {
+  margin-top: 3px;
+}
+.resident-portal .site-footer {
+  padding-block: 14px max(14px, env(safe-area-inset-bottom));
+}
+@media (max-width: 760px) {
+  .resident-portal {
+    --portal-gutter: max(
+      16px,
+      env(safe-area-inset-left),
+      env(safe-area-inset-right)
+    );
+  }
+  .resident-portal .header-inner {
+    min-height: 62px;
+  }
+  .resident-portal .public-main {
+    padding-top: 14px;
+  }
+  .resident-portal .month-summary {
+    padding: 12px 14px;
+    gap: 12px;
+  }
+  .resident-portal .period-picker {
+    padding-bottom: 8px;
+  }
+  .resident-portal .directory {
+    margin-top: 12px;
+  }
+  .resident-portal .directory-heading {
+    padding: 8px 14px 6px;
+  }
+  .resident-portal .directory-toolbar {
+    padding: 0 14px 10px;
+  }
+  .resident-portal .resident-table th:first-child {
+    width: 17%;
+  }
+  .resident-portal .resident-table th:nth-child(2) {
+    width: 48%;
+  }
+  .resident-portal .resident-table th:last-child {
+    width: 35%;
+  }
+  .resident-portal .resident-table tbody :is(th, td),
+  .resident-portal .resident-table thead th {
+    padding-inline: 14px;
+  }
+  .resident-portal .plot-payment-status {
+    gap: 10px;
+  }
+}
+@media (max-width: 520px) {
+  .resident-portal {
+    --portal-gutter: max(
+      12px,
+      env(safe-area-inset-left),
+      env(safe-area-inset-right)
+    );
+  }
+  .resident-portal .header-inner {
+    min-height: 60px;
+  }
+  .resident-portal .brand strong {
+    font-size: 19px;
+  }
+  .resident-portal .brand span span {
+    font-size: 7px;
+  }
+  .resident-portal .brand-mark {
+    width: 30px;
+    height: 34px;
+  }
+  .resident-portal .public-main {
+    padding-top: 12px;
+  }
+  .resident-portal .page-intro {
+    margin-bottom: 10px;
+  }
+  .resident-portal .page-intro h1 {
+    font-size: 23px;
+    letter-spacing: -0.6px;
+  }
+  .resident-portal .install-button {
+    min-height: 44px;
+    padding-inline: 10px;
+    font-size: 10px;
+  }
+  .resident-portal .install-help {
+    left: auto;
+    right: 0;
+  }
+  .resident-portal .month-summary {
+    padding: 10px 12px;
+    gap: 10px 8px;
+  }
+  .resident-portal .period-picker {
+    padding-bottom: 7px;
+  }
+  .resident-portal .period-picker select {
+    min-height: 36px;
+    font-size: 16px;
+  }
+  .resident-portal .summary-item {
+    align-items: center;
+  }
+  .resident-portal .summary-item strong {
+    font-size: 22px;
+  }
+  .resident-portal .metric-icon {
+    height: 24px;
+    width: 24px;
+    margin: 0;
+  }
+  .resident-portal .paid-percentage {
+    display: inline;
+    background: none;
+    padding: 0;
+    margin-left: 4px;
+    font-size: 9px;
+  }
+  .resident-portal .directory-heading h2 {
+    font-size: 19px;
+  }
+  .resident-portal .directory-toolbar {
+    gap: 8px;
+    padding-inline: 12px;
+  }
+  .resident-portal .resident-search {
+    width: 100%;
+  }
+  .resident-portal .resident-search input {
+    font-size: 16px;
+  }
+  .resident-portal .status-filters button {
+    min-height: 44px;
+    padding-inline: 11px;
+  }
+  .resident-portal .resident-table thead th {
+    padding: 9px 12px;
+  }
+  .resident-portal .resident-table tbody :is(th, td) {
+    padding: 8px 12px;
+  }
+  .resident-portal .resident-table th:first-child {
+    width: 17%;
+  }
+  .resident-portal .resident-table th:nth-child(2) {
+    width: 47%;
+  }
+  .resident-portal .resident-table th:last-child {
+    width: 36%;
+  }
+  .resident-portal .resident-table td:last-child {
+    padding-left: 2px;
+  }
+  .resident-portal .plot-payment-status {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 5px;
+  }
+  .resident-portal .plot-payment-status > span {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 3px;
+  }
+  .resident-portal .plot-payment-status small {
+    font-size: 8px;
+  }
+  .resident-portal .plot-payment-status > span > span,
+  .resident-portal .payment-history-button > span {
+    font-size: 9px;
+    padding: 3px 5px;
+    gap: 3px;
+  }
+  .resident-portal .payment-history-button {
+    margin-block: 0;
+  }
+  .resident-portal .payment-history-button > svg {
+    display: none;
+  }
+  .resident-portal .directory-footer {
+    padding: 9px 12px;
+  }
+  .resident-portal .privacy-note {
+    padding-block: 11px;
+  }
+  .resident-portal .privacy-note strong {
+    font-size: 10px;
+  }
+  .resident-portal .site-footer {
+    row-gap: 8px;
+    padding-top: 11px;
+  }
+}
+@media (max-width: 360px) {
+  .resident-portal .page-intro h1 {
+    font-size: 21px;
+  }
+  .resident-portal .brand strong {
+    font-size: 18px;
+  }
+  .resident-portal .resident-table tbody :is(th, td),
+  .resident-portal .resident-table thead th {
+    padding-inline: 8px;
+  }
+}
+
+.resident-portal .refresh-button {
+  min-width: 44px;
+}
+
+.resident-portal .month-summary {
+  grid-template-columns: 1.2fr repeat(4, 1fr);
+}
+.resident-portal .summary-item {
+  padding-left: 12px;
+  gap: 8px;
+}
+.resident-portal .install-app > div > button {
+  min-height: 44px;
+  padding-inline: 12px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.resident-portal .secondary-filters {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  padding: 0 18px 10px;
+  font-size: 11px;
+  color: #53684c;
+}
+.secondary-filters > label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+}
+.secondary-filters select {
+  min-height: 44px;
+  border: 1px solid #dce2d5;
+  border-radius: 6px;
+  padding: 5px 24px 5px 10px;
+  background: #fffefa;
+  color: #243c35;
+}
+.attention-toggle input {
+  width: 17px;
+  height: 17px;
+  accent-color: #224c3e;
+}
+.attention-toggle > span {
+  background: #f0f2e8;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.payment-detail {
+  color: #69776e;
+  font-size: 10px;
+}
+.history-meter-readings {
+  display: block;
+  margin-top: 4px;
+  font-size: 10px;
+  color: #69776e;
+}
+.history-table-scroll tfoot {
+  background: #f0f3e9;
+  font-weight: 600;
+}
+@media (max-width: 760px) {
+  .resident-portal .month-summary {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  .resident-portal .summary-item {
+    border: 0;
+    padding-left: 0;
+  }
+  .resident-portal .secondary-filters {
+    padding-inline: 14px;
+  }
+}
+@media (max-width: 520px) {
+  .resident-portal .metric-icon {
+    display: none;
+  }
+  .resident-portal .summary-item {
+    justify-content: center;
+  }
+  .resident-portal .install-app > div > button {
+    font-size: 10px;
+    padding-inline: 10px;
+  }
+  .resident-portal .secondary-filters {
+    padding: 0 12px 8px;
+    gap: 3px 8px;
+  }
+  .secondary-filters {
+    font-size: 10px !important;
+  }
+  .secondary-filters select {
+    font-size: 16px;
+    max-width: 133px;
+  }
+  .secondary-filters > label {
+    gap: 5px;
+  }
+  .resident-portal .plot-payment-status > span {
+    flex-wrap: wrap;
+  }
+  .resident-portal .plot-payment-status > span > .payment-detail {
+    flex-basis: 100%;
+    text-align: right;
+    font-size: 8px;
+  }
+  .resident-portal .plot-payment-status > span > small:first-child {
+    max-width: 45%;
+    overflow-wrap: anywhere;
+  }
+}

@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import "./public-portal.css";
+import "./public-density.css";
 import { FirebaseAnalytics } from "@/components/FirebaseAnalytics";
 import { PwaRegister } from "@/components/PwaRegister";
 

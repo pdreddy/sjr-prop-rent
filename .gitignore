@@ -52,3 +52,6 @@ skills-lock.json
 
 # database exports (contain tenant data and password hashes)
 /backups/
+
+/playwright-report/
+/test-results/
