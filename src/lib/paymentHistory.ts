@@ -1,17 +1,35 @@
 import { firstRentMonth, isBeforeBuildingOpened } from "./month";
 import { BUILDING_READY_MONTH } from "./constants";
-import { buildElectricityStatement } from "./electricityLedger";
+import { buildElectricityStatement, statementStartMonth, type StatementPayment } from "./electricityLedger";
 import { expectedForMonth } from "./proration";
 import { computeElectricityUnits, hasMeterReading } from "./electricity";
-import type { allUnits, allPayments } from "./store";
-import type { ElectricityConfig, PaymentHistoryMonth, PaymentHistoryTenant } from "./types";
+import type { ElectricityConfig, PaymentHistoryMonth, PaymentHistoryTenant, PaymentStatus } from "./types";
+
+/** The parts of a plot and of a month's record the ledger reads (the stored records satisfy both). */
+export interface LedgerUnit {
+  id: string;
+  plotNumber: string;
+  tenantName: string | null;
+  moveInDate: Date | null;
+  monthlyRent: number;
+  maintenanceAmount: number;
+}
+export interface LedgerRecord extends StatementPayment {
+  unitId: string;
+  paymentStatus: PaymentStatus;
+  paidDate?: Date | null;
+  notes?: string | null;
+  updatedBy?: string | null;
+  updatedAt?: Date | null;
+}
 
 const cents = (n: number) => Math.round(n * 100) / 100;
 
-// Shared by admin and public history so rent advances and electricity credits agree.
+// The one ledger for a tenant: rent (with rent paid ahead) and electricity (with its credit) month by
+// month. Every tab - admin and public, month views and histories - reads its numbers from here.
 export function buildPaymentHistory(
-  unit: Awaited<ReturnType<typeof allUnits>>[number],
-  payments: Awaited<ReturnType<typeof allPayments>>,
+  unit: LedgerUnit,
+  payments: LedgerRecord[],
   rate: ElectricityConfig,
   currentMonth: string,
 ): PaymentHistoryTenant {
@@ -22,8 +40,7 @@ export function buildPaymentHistory(
   // from the joining month (or the earliest record) through now. Rent, though, only starts the
   // month after move-in - earlier months are flagged and never billed.
   const joinMonth = unit.moveInDate?.toISOString().slice(0, 7);
-  let start = joinMonth ?? unitPayments.map((p) => p.month).sort()[0] ?? BUILDING_READY_MONTH;
-  if (start < BUILDING_READY_MONTH) start = BUILDING_READY_MONTH;
+  const start = statementStartMonth(unit.moveInDate, unitPayments.map((p) => p.month), BUILDING_READY_MONTH);
   const statement = start <= currentMonth ? buildElectricityStatement(unitPayments, rate, start, currentMonth, unit.plotNumber) : [];
   let advance = 0; // rent paid ahead, e.g. a full month paid on a part-month first record
 
@@ -52,8 +69,15 @@ export function buildPaymentHistory(
         rentBalance = Math.max(0, -net);
         advance = Math.max(0, net);
       }
+      // Status follows the ledger, so a month covered by rent paid ahead is paid. Without a usable move-in
+      // date nothing is billed here, and a recorded month keeps the status saved on its record.
+      const rentStatus: PaymentHistoryMonth["rentStatus"] = before
+        ? "NA"
+        : first === null
+          ? record?.paymentStatus ?? "NA"
+          : rentBalance <= 0 ? "PAID" : rentBalance < rentDue ? "PARTIAL" : "UNPAID";
       return {
-        month: m.month, beforeRentStart: before, unapplied: before && m.month !== joinMonth, recorded: !!record, rentDue, rentPaid, rentBalance, rentAdvance: cents(advance),
+        month: m.month, beforeRentStart: before, unapplied: before && m.month !== joinMonth, recorded: !!record, rentDue, rentPaid, rentBalance, rentStatus, rentAdvance: cents(advance),
         paidDate: record?.paidDate?.toISOString() ?? null, prevReading: record?.prevReading ?? 0, currReading: record?.currReading ?? 0,
         electricityBill: cents(m.electricityBill), electricityPaid: cents(overRent + (m.markedPaid ? m.electricityBill : 0)), electricityCovered: cents(m.credited),
         electricityBalance: cents(m.balance), electricityStatus: m.status, amountReceived: received,

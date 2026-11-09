@@ -81,6 +81,16 @@ export function monthsBetween(start: string, end: string): string[] {
   return months;
 }
 
+/**
+ * First month of a tenant's statement: the joining month, or the earliest record when no joining date
+ * is known, never earlier than the month the building opened. Every tab starts from this same month.
+ */
+export function statementStartMonth(moveInDate: Date | string | null | undefined, recordedMonths: string[], buildingReadyMonth: string): string {
+  const iso = moveInDate instanceof Date ? moveInDate.toISOString() : moveInDate;
+  const start = iso?.slice(0, 7) ?? [...recordedMonths].sort()[0] ?? buildingReadyMonth;
+  return start < buildingReadyMonth ? buildingReadyMonth : start;
+}
+
 // Every month from the tenant's joining month through `currentMonth`, including months
 // with no payment record (shown as NONE), each with the numbers that produced its status.
 export function buildElectricityStatement(

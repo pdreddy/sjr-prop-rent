@@ -5,7 +5,7 @@ import { isValidMonth, getCurrentMonth, getPreviousMonth, isBeforeMoveInMonth, i
 import { allPayments, allUnits, getElectricityConfig, paymentDTO, paymentFor, savePayment, unitById } from "@/lib/store";
 import { expectedForMonth } from "@/lib/proration";
 import { computeElectricityAmount, profileForMonth } from "@/lib/electricity";
-import { buildElectricityLedger } from "@/lib/electricityLedger";
+import { buildLedgers, buildUnitMonthView } from "@/lib/monthView";
 import { electricityUpsertSchema } from "@/lib/validation";
 import { recordAuditLog } from "@/lib/audit";
 import type { ElectricityListResponse } from "@/lib/types";
@@ -23,22 +23,17 @@ export const GET = withErrorHandling(async (request: NextRequest) => {
   const previousMonth = getPreviousMonth(month);
 
   const [units, payments, rate] = await Promise.all([allUnits(), allPayments(), getElectricityConfig()]);
+  const currentMonth = getCurrentMonth();
+  const ledgers = buildLedgers(units.filter((unit) => unit.active), payments, rate, month > currentMonth ? month : currentMonth);
   const rows = units
     .filter((unit) => unit.active && (!search || [unit.plotNumber, unit.tenantName].some((v) => v?.toLowerCase().includes(search))))
     .map((unit) => {
       const payment = payments.find((p) => p.unitId === unit.id && p.month === month);
-      // The no-reading default bill only applies to an occupied plot (not vacant, not before move-in).
-      const occupied = !!unit.tenantName?.trim();
-      const billPlot = occupied && !isBeforeMoveInMonth(unit.moveInDate, month) ? unit.plotNumber : undefined;
       // Nothing recorded yet for this month → start from last month's current reading, so
       // only the new current reading has to be entered.
       const unrecorded = !payment || (!payment.prevReading && !payment.currReading);
-      const ledger = buildElectricityLedger(
-        payments.filter((p) => p.unitId === unit.id && !isBeforeMoveInMonth(unit.moveInDate, p.month)),
-        rate,
-        occupied ? unit.plotNumber : undefined
-      );
-      const entry = ledger.find((e) => e.month === month);
+      // Bill, paid and balance come from the tenant's ledger, exactly as on the Electricity bills tab.
+      const { electricity } = buildUnitMonthView(unit, ledgers.get(unit.id), payment, month);
       const lastMonthPayment = payments.find((p) => p.unitId === unit.id && p.month === previousMonth);
       const prevReading = unrecorded ? lastMonthPayment?.currReading ?? 0 : payment.prevReading ?? 0;
       const currReading = unrecorded ? 0 : payment.currReading ?? 0;
@@ -49,11 +44,11 @@ export const GET = withErrorHandling(async (request: NextRequest) => {
         isBeforeMoveIn: isBeforeMoveInMonth(unit.moveInDate, month),
         prevReading,
         currReading,
-        electricityAmount: computeElectricityAmount(prevReading, currReading, rate, billPlot, month),
+        electricityAmount: electricity.bill,
         electricityPaid: payment?.electricityPaid ?? false,
-        electricityCovered: entry?.paid ?? 0,
-        electricityBalance: entry?.balance ?? 0,
-        outstandingTotal: ledger.reduce((sum, e) => sum + e.balance, 0),
+        electricityCovered: electricity.covered,
+        electricityBalance: electricity.balance,
+        outstandingTotal: electricity.outstandingTotal,
       };
     });
 

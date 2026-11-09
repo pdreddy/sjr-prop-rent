@@ -57,7 +57,8 @@ export default function EditPaymentModal({ row, month, ratePerUnit, onClose, onS
 
   const prevReadingNumber = Number(prevReading || 0);
   const currReadingNumber = Number(currReading || 0);
-  const readingError = currReadingNumber < prevReadingNumber;
+  // A current reading of 0 means "not read yet" (as on the Meter readings page), so it is not an error.
+  const readingError = currReadingNumber !== 0 && currReadingNumber < prevReadingNumber;
   const electricityUnits = computeElectricityUnits(prevReadingNumber, currReadingNumber);
   const electricityAmount = computeElectricityAmount(prevReadingNumber, currReadingNumber, ratePerUnit, plotNumber, month);
 

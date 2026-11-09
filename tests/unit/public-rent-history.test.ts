@@ -5,7 +5,7 @@ import { buildPublicRentHistory } from "../../src/lib/publicRentHistory";
 import { DEFAULT_ELECTRICITY_CONFIG } from "../../src/lib/config";
 
 const date = new Date("2026-07-01T00:00:00Z");
-const unit: Parameters<typeof buildPublicRentHistory>[0] = {
+const unit = {
   id: "tenant", plotNumber: "102", tenantName: "Private Name", moveInDate: date,
   monthlyRent: 10000, maintenanceAmount: 1000, active: true,
   phoneNumbers: ["private-phone"], advanceAmount: 0, advancePaid: 0,
@@ -42,12 +42,14 @@ test("large rent advances cover later months and first rent is prorated", () => 
   assert.equal(prorated.months[0].rentDue, 5500);
 });
 
-test("vacant and future tenants have no rent history; unknown move-in dates do not invent bills", () => {
+test("vacant and future tenants have no rent history; unknown move-in dates show only what was recorded", () => {
   for (const tenant of [{ ...unit, tenantName: null }, { ...unit, moveInDate: new Date("2027-01-01T00:00:00Z") }]) {
     assert.deepEqual(buildPublicRentHistory(tenant, [], DEFAULT_ELECTRICITY_CONFIG, "2026-10").rentMonths, []);
   }
   const unknown = buildPublicRentHistory({ ...unit, moveInDate: null }, [payment("2026-08", 11000)], DEFAULT_ELECTRICITY_CONFIG, "2026-10");
   assert.equal(unknown.rentMonths.length, 1);
-  assert.equal(unknown.rentMonths[0].status, "NA");
+  // Nothing is billed without a move-in date, but the recorded month keeps the status saved on it,
+  // so the history row matches the month's own status on the page.
+  assert.equal(unknown.rentMonths[0].status, "PAID");
   assert.deepEqual(Object.keys(unknown.rentMonths[0]).sort(), ["month", "status"]);
 });

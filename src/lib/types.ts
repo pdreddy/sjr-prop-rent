@@ -4,6 +4,34 @@ export type { ElectricityConfig, GeneralSettings };
 export type PaymentStatus = "PAID" | "UNPAID" | "PARTIAL";
 export type AdminRole = "ADMIN" | "SECURITY";
 
+/** Electricity for one plot in one month. N/A: vacant, not moved in yet, or no bill for the month. */
+export type ElectricityViewStatus = "PAID" | "PARTIAL" | "UNPAID" | "NA";
+
+/** One plot in one month, read from the tenant's ledger (see lib/monthView.ts). */
+export interface UnitMonthView {
+  isVacant: boolean;
+  /** Occupied and rent has started: the plot counts toward the month's rent totals. */
+  applicable: boolean;
+  rent: {
+    status: PaymentStatus | "NA";
+    due: number;
+    /** Everything received under this month (before any small excess is moved to electricity). */
+    received: number;
+    /** Still owed after this month's payment and any rent paid ahead. */
+    balance: number;
+  };
+  electricity: {
+    status: ElectricityViewStatus;
+    bill: number;
+    /** Part of the bill covered by electricity payments (or all of it when marked paid). */
+    covered: number;
+    balance: number;
+    /** Electricity still owed across all of the tenant's months. */
+    outstandingTotal: number;
+    hasReading: boolean;
+  };
+}
+
 export interface ElectricityRow {
   unitId: string;
   plotNumber: string;
@@ -39,7 +67,7 @@ export interface PublicElectricityMonth {
   bill: number;
   paid: number;
   balance: number;
-  status: "PAID" | "PARTIAL" | "UNPAID";
+  status: ElectricityViewStatus;
 }
 
 export interface PublicRentMonth {
@@ -55,7 +83,7 @@ export interface PublicPlot {
   moveInDate: string | null;
   /** DUE: unpaid, but the first-week-of-next-month payment window hasn't passed yet. */
   status: PaymentStatus | "DUE" | "NA";
-  electricityStatus: "PAID" | "UNPAID" | "NA";
+  electricityStatus: ElectricityViewStatus;
   electricityAmount: number;
   electricityCovered: number;
   electricityBalance: number;
@@ -128,6 +156,8 @@ export interface DashboardRow {
   expectedRent: number;
   expectedMaintenance: number;
   proratedDays: number | null;
+  /** Rent and electricity for the month from the tenant's ledger - the same figures every other tab shows. */
+  view: UnitMonthView;
 }
 
 export interface DashboardTotals {
@@ -279,6 +309,8 @@ export interface PaymentHistoryMonth {
   rentDue: number;
   rentPaid: number;
   rentBalance: number;
+  /** Rent status from the ledger (rent paid ahead counts); N/A before rent starts. */
+  rentStatus: PaymentStatus | "NA";
   /** Rent paid ahead and still unused after this month (covers later shortfalls). */
   rentAdvance: number;
   paidDate: string | null;

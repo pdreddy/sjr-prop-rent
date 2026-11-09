@@ -6,27 +6,12 @@ import {
   getElectricityConfig,
   getGeneralSettings,
 } from "@/lib/store";
-import {
-  isValidMonth,
-  getCurrentMonth,
-  isBeforeMoveInMonth,
-  isBeforeFirstRentMonth,
-  isRentOverdue,
-} from "@/lib/month";
-import {
-  computeElectricityAmount,
-  computeElectricityUnits,
-  describeFormula,
-  hasMeterReading,
-  profileForMonth,
-} from "@/lib/electricity";
-import { buildPublicRentHistory } from "@/lib/publicRentHistory";
+import { isValidMonth, getCurrentMonth } from "@/lib/month";
+import { describeFormula, profileForMonth } from "@/lib/electricity";
+import { publicRentMonths, publicRentStatus } from "@/lib/publicRentHistory";
 import { publicTenantName } from "@/lib/config";
-import { BUILDING_READY_MONTH } from "@/lib/constants";
-import {
-  buildElectricityLedger,
-  buildElectricityStatement,
-} from "@/lib/electricityLedger";
+import { buildLedgers, buildUnitMonthView } from "@/lib/monthView";
+import type { PublicElectricityMonth, PublicPlot } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -43,124 +28,59 @@ export const GET = withErrorHandling(async (request: NextRequest) => {
   ]);
   const units = allUnitRecords.filter((unit) => unit.active);
 
-  const plots = units.map((unit) => {
+  // One ledger per tenant feeds everything below - the selected month's status and the full history -
+  // so the row, the expanded history and the admin tabs can never disagree.
+  const currentMonth = getCurrentMonth();
+  const ledgers = buildLedgers(units, payments, rate, month > currentMonth ? month : currentMonth);
+
+  const plots: PublicPlot[] = units.map((unit) => {
     const payment = payments.find(
       (item) => item.unitId === unit.id && item.month === month,
     );
-    const moveInDate = unit.moveInDate?.toISOString() ?? null;
-    const isBeforeMoveIn = isBeforeMoveInMonth(moveInDate, month);
-    const isBeforeFirstRent = isBeforeFirstRentMonth(moveInDate, month);
-    const isVacant = !unit.tenantName?.trim();
-    // The no-reading default bill only applies to an occupied plot (not vacant, not before move-in).
-    const billPlot =
-      unit.tenantName?.trim() && !isBeforeMoveIn ? unit.plotNumber : undefined;
-    const prevReading = payment?.prevReading ?? 0;
-    const currReading = payment?.currReading ?? 0;
-    const ledger = buildElectricityLedger(
-      payments.filter(
-        (item) =>
-          item.unitId === unit.id &&
-          !isBeforeMoveInMonth(moveInDate, item.month),
-      ),
-      rate,
-      billPlot,
-    );
-    const thisMonth = ledger.find((entry) => entry.month === month);
-    const unpaidElectricityMonths = ledger
-      .filter((entry) => entry.balance > 0)
-      .map((entry) => ({
-        month: entry.month,
-        bill: entry.bill,
-        paid: entry.paid,
-        amount: entry.balance,
-      }));
-    const unpaidElectricityTotal = unpaidElectricityMonths.reduce(
-      (sum, item) => sum + item.amount,
-      0,
-    );
+    const ledger = ledgers.get(unit.id);
+    const view = buildUnitMonthView(unit, ledger, payment, month);
 
     // Every month with a record, oldest first: what was read, billed, paid and is still due.
-    const unitPayments = payments.filter((item) => item.unitId === unit.id);
-    let electricityStart =
-      moveInDate?.slice(0, 7) ??
-      unitPayments.map((p) => p.month).sort()[0] ??
-      BUILDING_READY_MONTH;
-    if (electricityStart < BUILDING_READY_MONTH)
-      electricityStart = BUILDING_READY_MONTH;
+    const electricityMonths: PublicElectricityMonth[] = (ledger?.months ?? [])
+      .filter((m) => m.recorded && !m.unapplied)
+      .map((m) => ({
+        month: m.month,
+        prevReading: m.prevReading,
+        currReading: m.currReading,
+        units: m.electricityUnits,
+        isDefault: m.electricityDefault,
+        bill: m.electricityBill,
+        paid: m.electricityCovered,
+        balance: m.electricityBalance,
+        status: m.electricityStatus === "NONE" ? "NA" : m.electricityStatus,
+      }));
+    const unpaidElectricityMonths = electricityMonths
+      .filter((m) => m.balance > 0)
+      .map((m) => ({ month: m.month, bill: m.bill, paid: m.paid, amount: m.balance }));
     const cents = (n: number) => Math.round(n * 100) / 100;
-    const electricityMonths =
-      unit.tenantName?.trim() && electricityStart <= getCurrentMonth()
-        ? buildElectricityStatement(
-            unitPayments,
-            rate,
-            electricityStart,
-            getCurrentMonth(),
-            unit.plotNumber,
-          )
-            .filter((m) => m.recorded)
-            .map((m) => {
-              const record = unitPayments.find((p) => p.month === m.month);
-              return {
-                month: m.month,
-                prevReading: record?.prevReading ?? 0,
-                currReading: record?.currReading ?? 0,
-                units: computeElectricityUnits(
-                  record?.prevReading ?? 0,
-                  record?.currReading ?? 0,
-                ),
-                isDefault: !hasMeterReading(record?.currReading),
-                bill: cents(m.electricityBill),
-                paid: cents(m.credited),
-                balance: cents(m.balance),
-                status: (m.balance <= 0
-                  ? "PAID"
-                  : m.credited > 0
-                    ? "PARTIAL"
-                    : "UNPAID") as "PAID" | "PARTIAL" | "UNPAID",
-              };
-            })
-        : [];
     const electricityTotals = {
       billed: cents(electricityMonths.reduce((s, m) => s + m.bill, 0)),
       paid: cents(electricityMonths.reduce((s, m) => s + m.paid, 0)),
       due: cents(electricityMonths.reduce((s, m) => s + m.balance, 0)),
     };
     return {
-      ...buildPublicRentHistory(unit, payments, rate, getCurrentMonth()),
+      rentMonths: ledger ? publicRentMonths(ledger) : [],
       electricityMonths,
       electricityTotals,
-      unpaidElectricityTotal,
+      unpaidElectricityTotal: electricityTotals.due,
       unpaidElectricityMonths,
       plotNumber: unit.plotNumber,
       tenantName: publicTenantName(unit.tenantName, general),
-      moveInDate,
+      moveInDate: unit.moveInDate?.toISOString() ?? null,
       // Vacant plots and tenants who have not started yet are N/A, so they are left out of the month's totals.
-      status:
-        isBeforeFirstRent || isVacant
-          ? ("NA" as const)
-          : (payment?.paymentStatus ?? "UNPAID") === "UNPAID" &&
-              !isRentOverdue(month)
-            ? ("DUE" as const)
-            : (payment?.paymentStatus ?? ("UNPAID" as const)),
-      // Same rule as rent: a tenant who moved in this month is not tracked until the following month.
-      electricityStatus:
-        isBeforeFirstRent || isVacant
-          ? ("NA" as const)
-          : payment?.electricityPaid ||
-              (thisMonth && thisMonth.bill > 0 && thisMonth.balance <= 0)
-            ? ("PAID" as const)
-            : ("UNPAID" as const),
-      electricityAmount: computeElectricityAmount(
-        prevReading,
-        currReading,
-        rate,
-        billPlot,
-        month,
-      ),
-      electricityCovered: thisMonth?.paid ?? 0,
-      electricityBalance: thisMonth?.balance ?? 0,
-      prevReading,
-      currReading,
+      status: publicRentStatus(view.rent.status, month),
+      // N/A until the month has an electricity bill; otherwise the same status as its row in the history.
+      electricityStatus: view.electricity.status,
+      electricityAmount: view.electricity.bill,
+      electricityCovered: view.electricity.covered,
+      electricityBalance: view.electricity.balance,
+      prevReading: payment?.prevReading ?? 0,
+      currReading: payment?.currReading ?? 0,
     };
   });
 

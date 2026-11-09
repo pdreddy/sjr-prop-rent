@@ -24,6 +24,7 @@
     "auth:check": "tsx --env-file=.env scripts/check-login.ts",
     "db:mock": "tsx scripts/mock-firebase.ts",
     "smoke": "tsx scripts/smoke.ts",
+    "check:tabs": "tsx scripts/cross-check.ts",
     "local": "tsx --env-file=.env scripts/dev.ts",
     "demo": "tsx scripts/local.ts",
     "test:unit": "tsx --test tests/unit/*.test.ts",

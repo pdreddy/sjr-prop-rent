@@ -8,14 +8,14 @@ import type { RentalHistoryMonth, RentalHistoryResponse, RentalHistoryPlot, Rent
 import HistoryMonthEditModal from "./HistoryMonthEditModal";
 import HistoryTenantEditModal from "./HistoryTenantEditModal";
 import { IconEdit } from "@/components/icons";
+import { rupee as rupees } from "@/lib/format";
 
-const rupees = (n: number) => `₹${n.toFixed(0)}`;
 
 // Green = paid in full. Red = still pending (unpaid, partly paid, or nothing recorded) and past the
 // first-week-of-next-month payment window. Amber = pending but not yet overdue.
 type RowTone = "paid" | "overdue" | "due";
 function rowTone(m: RentalHistoryMonth): RowTone {
-  if (m.recorded && m.status === "PAID") return "paid";
+  if (m.status === "PAID") return "paid"; // includes a month covered by rent paid ahead
   return isRentOverdue(m.month) ? "overdue" : "due";
 }
 const ROW_STYLE: Record<RowTone, string> = {
@@ -302,8 +302,13 @@ function Stay({ stay, onEditMonth, onEditTenant }: { stay: RentalStay; onEditMon
               >
                 <td className="px-3 py-2 font-medium">{formatMonthLabel(m.month)}</td>
                 <td className="px-3 py-2">
-                  {m.recorded && m.status && !(m.status === "UNPAID" && tone === "due") ? (
-                    <StatusBadge status={m.status} />
+                  {m.status && (m.recorded || m.status === "PAID") && !(m.status === "UNPAID" && tone === "due") ? (
+                    <>
+                      <StatusBadge status={m.status} />
+                      {m.status === "PAID" && m.amountPaid < m.due && (
+                        <span className="block text-[11px] text-foreground/45">covered by rent paid ahead</span>
+                      )}
+                    </>
                   ) : tone === "due" ? (
                     <StatusBadge status="DUE" />
                   ) : (

@@ -2,6 +2,7 @@
 import { createUnit, savePayment, setElectricityConfig } from "../src/lib/store";
 import { DEFAULT_ELECTRICITY_CONFIG } from "../src/lib/config";
 import { getCurrentMonth, getPreviousMonth } from "../src/lib/month";
+import { crossCheck } from "./cross-check";
 
 // End-to-end data check against the local mock database (see scripts/mock-firebase.ts):
 //   npm run db:mock                       (terminal 1)
@@ -108,6 +109,9 @@ async function main() {
   check("summary trend ends on the selected month", sum.json?.trend?.at(-1)?.month === M && sum.json.trend.length <= 6, sum.json?.trend?.map((t: any) => t.month));
   const rp = await api("/api/admin/rent-paid");
   check("rent-paid: 101 balance reflects unpaid current month", rp.json?.tenants?.find((t: any) => t.plotNumber === "101")?.totalPaid === 42000, rp.json?.tenants?.[0]);
+
+  console.log("\nEvery tab shows the same figures");
+  await crossCheck(api, check);
 
   console.log("\nSettings round-trip");
   const settings = (await api("/api/admin/settings")).json;

@@ -5,7 +5,7 @@ import { profileForMonth } from "@/lib/electricity";
 import { allPayments, allUnits, getElectricityConfig } from "@/lib/store";
 import { getCurrentMonth } from "@/lib/month";
 import { BUILDING_READY_MONTH } from "@/lib/constants";
-import { buildElectricityStatement } from "@/lib/electricityLedger";
+import { buildElectricityStatement, statementStartMonth } from "@/lib/electricityLedger";
 import type { ElectricityStatementResponse } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -23,11 +23,8 @@ export const GET = withErrorHandling(async () => {
     .filter((unit) => unit.active && unit.tenantName?.trim())
     .map((unit) => {
       const unitPayments = payments.filter((p) => p.unitId === unit.id);
-      const joinMonth = unit.moveInDate?.toISOString().slice(0, 7);
-      const earliestPayment = unitPayments.map((p) => p.month).sort()[0];
-      // Start at the joining month; tenants without a joining date start at their first record.
-      let start = joinMonth ?? earliestPayment ?? BUILDING_READY_MONTH;
-      if (start < BUILDING_READY_MONTH) start = BUILDING_READY_MONTH;
+      // Same first month as every other tab (joining month, or the first record without a joining date).
+      const start = statementStartMonth(unit.moveInDate, unitPayments.map((p) => p.month), BUILDING_READY_MONTH);
       const months = start <= currentMonth ? buildElectricityStatement(unitPayments, rate, start, currentMonth, unit.plotNumber) : [];
       return {
         unitId: unit.id,

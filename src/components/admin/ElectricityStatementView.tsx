@@ -11,6 +11,7 @@ import type {
 } from "@/lib/types";
 import PaymentMonthDetail from "./PaymentMonthDetail";
 import type { PaymentHistoryResponse } from "@/lib/types";
+import { rupee as rupees } from "@/lib/format";
 
 const STATUS_STYLE: Record<ElectricityMonthStatus, { label: string; cls: string }> = {
   PAID: { label: "Paid", cls: "bg-paid-bg text-paid" },
@@ -19,7 +20,7 @@ const STATUS_STYLE: Record<ElectricityMonthStatus, { label: string; cls: string 
   NONE: { label: "No payment recorded", cls: "bg-vacant-bg text-vacant" },
 };
 
-const rupees = (n: number) => `₹${n.toFixed(0)}`;
+
 
 function MonthStatusBadge({ status }: { status: ElectricityMonthStatus }) {
   const { label, cls } = STATUS_STYLE[status];

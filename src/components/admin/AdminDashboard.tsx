@@ -483,10 +483,10 @@ function StatCard({ label, value, colorClass }: { label: string; value: string |
 type Attention = "bad" | "warn" | null;
 /** Rows that need the owner's eye: unpaid or partial rent, or unpaid electricity. */
 function attentionOf(row: DashboardRow): Attention {
-  if (row.isVacant || row.isBeforeMoveIn) return null;
-  if (row.effectiveStatus === "UNPAID") return "bad";
-  if (row.effectiveStatus === "PARTIAL") return "warn";
-  if ((row.payment?.electricityAmount ?? 0) > 0 && !row.payment?.electricityPaid) return "warn";
+  if (row.isVacant) return null;
+  if (row.view.rent.status === "UNPAID") return "bad";
+  if (row.view.rent.status === "PARTIAL") return "warn";
+  if (row.view.electricity.balance > 0) return "warn";
   return null;
 }
 const ATTENTION_EDGE: Record<"bad" | "warn", string> = {
@@ -505,15 +505,15 @@ function ReadRow({
   onEdit: () => void;
   onDetails: () => void;
 }) {
-  const rentAmount = row.payment?.rentAmount ?? row.expectedRent;
-  const maintenanceAmount = row.payment?.maintenanceAmount ?? row.expectedMaintenance;
-  const rentSum = rentAmount + maintenanceAmount;
-  const balanceDue = row.payment?.balanceDue ?? 0;
-  const status = row.isBeforeMoveIn ? "NA" : row.isVacant ? "VACANT" : row.effectiveStatus;
+  // Rent and electricity come from the tenant's ledger (row.view), the same figures as every other tab.
+  const { rent, electricity } = row.view;
+  const rentSum = rent.due;
+  const balanceDue = rent.balance;
+  const status = row.isVacant ? "VACANT" : rent.status;
   const prevReading = row.payment?.prevReading ?? 0;
   const currReading = row.payment?.currReading ?? 0;
-  const electricityAmount = row.payment?.electricityAmount ?? 0;
-  const electricityStatus = row.isBeforeMoveIn ? "NA" : row.payment?.electricityPaid ? "PAID" : "UNPAID";
+  const electricityAmount = electricity.bill;
+  const electricityStatus = electricity.status;
   const rowBg = striped ? "bg-primary-light/40" : "bg-white";
   const attention = attentionOf(row);
 
@@ -530,7 +530,7 @@ function ReadRow({
           <>
             <p className="money">{rupee(rentSum)}</p>
             <p className="text-muted">
-              {rupee(row.payment?.amountPaid ?? 0)} paid
+              {rupee(rent.received)} paid
               {row.payment?.paidDate ? ` · ${formatDate(row.payment.paidDate)}` : ""}
             </p>
             {balanceDue > 0 && <p className="font-semibold text-unpaid">{rupee(balanceDue)} balance</p>}
@@ -538,10 +538,10 @@ function ReadRow({
         )}
       </td>
       <td className="px-3 py-3">
-        {row.isBeforeMoveIn ? (
-          <StatusBadge status="NA" />
-        ) : row.isVacant ? (
+        {row.isVacant ? (
           <span className="text-foreground/35">—</span>
+        ) : electricityStatus === "NA" ? (
+          <StatusBadge status="NA" />
         ) : (
           <>
             <div className="flex items-center gap-1.5">
@@ -549,8 +549,11 @@ function ReadRow({
               <StatusBadge status={electricityStatus} />
             </div>
             <p className="text-muted">
-              {prevReading} → {currReading} ({computeElectricityUnits(prevReading, currReading)} units)
+              {currReading > 0 ? `${prevReading} → ${currReading} (${computeElectricityUnits(prevReading, currReading)} units)` : "Default bill · no reading"}
             </p>
+            {electricity.balance > 0 && electricity.covered > 0 && (
+              <p className="font-semibold text-unpaid">{rupee(electricity.balance)} balance</p>
+            )}
           </>
         )}
       </td>
@@ -590,15 +593,15 @@ function MobileRowCard({
   onEdit: () => void;
   onDetails: () => void;
 }) {
-  const rentAmount = row.payment?.rentAmount ?? row.expectedRent;
-  const maintenanceAmount = row.payment?.maintenanceAmount ?? row.expectedMaintenance;
-  const rentSum = rentAmount + maintenanceAmount;
-  const balanceDue = row.payment?.balanceDue ?? 0;
-  const status = row.isBeforeMoveIn ? "NA" : row.isVacant ? "VACANT" : row.effectiveStatus;
+  // Rent and electricity come from the tenant's ledger (row.view), the same figures as every other tab.
+  const { rent, electricity } = row.view;
+  const rentSum = rent.due;
+  const balanceDue = rent.balance;
+  const status = row.isVacant ? "VACANT" : rent.status;
   const prevReading = row.payment?.prevReading ?? 0;
   const currReading = row.payment?.currReading ?? 0;
-  const electricityAmount = row.payment?.electricityAmount ?? 0;
-  const electricityStatus = row.isBeforeMoveIn ? "NA" : row.payment?.electricityPaid ? "PAID" : "UNPAID";
+  const electricityAmount = electricity.bill;
+  const electricityStatus = electricity.status;
 
   return (
     <li className={`rounded-card border border-line bg-white p-4 shadow-card ${attentionOf(row) === "bad" ? "border-l-4 border-l-unpaid" : attentionOf(row) === "warn" ? "border-l-4 border-l-partial" : ""}`}>
@@ -614,31 +617,41 @@ function MobileRowCard({
         <p className="mt-2.5 text-sm text-foreground/50">No tenant. Nothing due.</p>
       ) : (
       <>
+      {rent.status === "NA" ? (
+        <p className="mt-2.5 text-sm text-foreground/50">
+          No rent due this month.
+          {(row.payment?.amountPaid ?? 0) > 0 ? ` ${rupee(row.payment!.amountPaid)} paid ahead.` : ""}
+        </p>
+      ) : (
       <div className="mt-2.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-sm text-foreground/70">
         <span className="font-semibold text-foreground">{rupee(rentSum)} due</span>
         <span>
-          {rupee((row.payment?.amountPaid ?? 0))} paid
+          {rupee(rent.received)} paid
           {row.payment?.paidDate ? ` · ${formatDate(row.payment.paidDate)}` : ""}
         </span>
         <span className={`font-semibold ${balanceDue > 0 ? "text-unpaid" : "text-foreground/50"}`}>
           {rupee(balanceDue)} balance
         </span>
       </div>
+      )}
 
       <div className="mt-2.5 flex items-center justify-between gap-2 rounded-control bg-background px-3 py-2">
         <div className="min-w-0 text-sm">
-          {row.isBeforeMoveIn ? (
+          {electricityStatus === "NA" ? (
             <span className="text-foreground/50">Electricity N/A</span>
           ) : (
             <>
               <span className="font-semibold text-foreground">{rupee(electricityAmount)}</span>
               <span className="ml-1.5 text-foreground/50">
-                ({prevReading} → {currReading})
+                ({currReading > 0 ? `${prevReading} → ${currReading}` : "default, no reading"})
               </span>
+              {electricity.balance > 0 && electricity.covered > 0 && (
+                <span className="ml-1.5 font-semibold text-unpaid">{rupee(electricity.balance)} balance</span>
+              )}
             </>
           )}
         </div>
-        {!row.isBeforeMoveIn && <StatusBadge status={electricityStatus} />}
+        {electricityStatus !== "NA" && <StatusBadge status={electricityStatus} />}
       </div>
       </>
       )}

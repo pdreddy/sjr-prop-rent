@@ -43,13 +43,14 @@ export default function Home() {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("ALL");
   const [electricityFilter, setElectricityFilter] = useState<
-    "ALL" | "PAID" | "UNPAID" | "NA"
+    "ALL" | PublicPlot["electricityStatus"]
   >("ALL");
   const [attentionOnly, setAttentionOnly] = useState(false);
   const needsAttention = (plot: PublicPlot) =>
     plot.status === "UNPAID" ||
     plot.status === "PARTIAL" ||
-    plot.electricityStatus === "UNPAID";
+    plot.electricityStatus === "UNPAID" ||
+    plot.electricityStatus === "PARTIAL";
   const attentionCount = data?.plots.filter(needsAttention).length ?? 0;
   const rentCounts = {
     ALL: data?.plots.length ?? 0,
@@ -63,6 +64,7 @@ export default function Home() {
     ALL: data?.plots.length ?? 0,
     PAID: 0,
     UNPAID: 0,
+    PARTIAL: 0,
     NA: 0,
   };
   for (const plot of data?.plots ?? []) {
@@ -70,6 +72,8 @@ export default function Home() {
     electricityCounts[plot.electricityStatus ?? "NA"] += 1;
   }
   const rentAttentionCount = rentCounts.UNPAID + rentCounts.PARTIAL;
+  const electricityAttentionCount =
+    electricityCounts.UNPAID + electricityCounts.PARTIAL;
 
   const electricityEligible =
     data?.plots.filter(
@@ -341,6 +345,9 @@ export default function Home() {
                   <option value="UNPAID">
                     Unpaid ({ready ? electricityCounts.UNPAID : "—"})
                   </option>
+                  <option value="PARTIAL">
+                    Partial ({ready ? electricityCounts.PARTIAL : "—"})
+                  </option>
                   <option value="NA">
                     N/A ({ready ? electricityCounts.NA : "—"})
                   </option>
@@ -359,7 +366,7 @@ export default function Home() {
                   <span className="attention-breakdown">
                     Rent <strong>{ready ? rentAttentionCount : "—"}</strong> ·
                     Electricity{" "}
-                    <strong>{ready ? electricityCounts.UNPAID : "—"}</strong>
+                    <strong>{ready ? electricityAttentionCount : "—"}</strong>
                   </span>
                   <span className="attention-note">
                     A plot can be counted for both.

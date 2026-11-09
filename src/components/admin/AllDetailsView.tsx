@@ -332,8 +332,10 @@ function DetailTableRow({
     );
   }
 
-  const rentAmount = row.payment?.rentAmount ?? row.unit.monthlyRent;
-  const maintenanceAmount = row.payment?.maintenanceAmount ?? row.unit.maintenanceAmount;
+  // The plot's agreed monthly rent - the same value edit mode loads and saves - not the month's record,
+  // which is prorated in a tenant's first rent month.
+  const rentAmount = row.unit.monthlyRent;
+  const maintenanceAmount = row.unit.maintenanceAmount;
   const rentSum = rentAmount + maintenanceAmount;
 
   return (
@@ -421,8 +423,10 @@ function DetailCard({
     );
   }
 
-  const rentAmount = row.payment?.rentAmount ?? row.unit.monthlyRent;
-  const maintenanceAmount = row.payment?.maintenanceAmount ?? row.unit.maintenanceAmount;
+  // The plot's agreed monthly rent - the same value edit mode loads and saves - not the month's record,
+  // which is prorated in a tenant's first rent month.
+  const rentAmount = row.unit.monthlyRent;
+  const maintenanceAmount = row.unit.maintenanceAmount;
   const rentSum = rentAmount + maintenanceAmount;
 
   return (
