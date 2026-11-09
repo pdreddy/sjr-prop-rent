@@ -6,8 +6,33 @@ import { NextResponse } from "next/server";
 // `next dev` never shows stale styles or scripts.
 export const dynamic = "force-dynamic";
 
-const PRODUCTION_WORKER =
-  '/* Only an informational offline page and app icons are stored on device.\n   Resident data, API responses and authenticated pages always use the network. */\nconst CACHE = "sjr-public-offline-v1";\nconst OFFLINE = "/offline.html";\nself.addEventListener("install", (event) => {\n  event.waitUntil(\n    caches\n      .open(CACHE)\n      .then((cache) =>\n        cache.addAll([\n          OFFLINE,\n          "/icons/icon-192.png",\n          "/icons/icon-512.png",\n          "/icons/icon-maskable-512.png",\n          "/icons/apple-touch-icon.png",\n        ]),\n      ),\n  );\n});\nself.addEventListener("activate", (event) => {\n  event.waitUntil(\n    caches\n      .keys()\n      .then((keys) =>\n        Promise.all(\n          keys\n            .filter(\n              (key) => key.startsWith("sjr-public-offline-") && key !== CACHE,\n            )\n            .map((key) => caches.delete(key)),\n        ),\n      )\n      .then(() => self.clients.claim()),\n  );\n});\nself.addEventListener("fetch", (event) => {\n  const url = new URL(event.request.url);\n  if (event.request.method !== "GET" || url.origin !== self.location.origin)\n    return;\n  // Never intercept API, admin, or Next.js data requests.\n  if (event.request.mode === "navigate" && url.pathname === "/") {\n    event.respondWith(\n      fetch(event.request).catch(() =>\n        caches.match(OFFLINE).then((page) => page || Response.error()),\n      ),\n    );\n  }\n});\n';
+const PRODUCTION_WORKER = `
+/* Never store resident data, API responses, authenticated pages or app HTML. */
+const CACHE = "sjr-public-offline-v2";
+const OFFLINE = "/offline.html";
+self.addEventListener("install", (event) => {
+  event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll([
+    OFFLINE, "/icons/icon-192.png", "/icons/icon-512.png",
+    "/icons/icon-maskable-512.png", "/icons/apple-touch-icon.png",
+  ])).then(() => self.skipWaiting()));
+});
+self.addEventListener("activate", (event) => {
+  event.waitUntil(caches.keys().then((keys) => Promise.all(
+    keys.filter((key) => key.startsWith("sjr-") && key !== CACHE)
+      .map((key) => caches.delete(key)),
+  )).then(() => self.clients.claim()));
+});
+self.addEventListener("fetch", (event) => {
+  const url = new URL(event.request.url);
+  if (event.request.method !== "GET" || url.origin !== self.location.origin) return;
+  // All API, admin, and framework requests pass straight through to the network.
+  if (event.request.mode === "navigate" && url.pathname === "/") {
+    event.respondWith(fetch(event.request).catch(() =>
+      caches.match(OFFLINE).then((page) => page || Response.error()),
+    ));
+  }
+});
+`;
 
 const KILL_SWITCH = `
 self.addEventListener("install", () => self.skipWaiting());

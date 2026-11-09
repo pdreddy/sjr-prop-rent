@@ -89,7 +89,7 @@ export default function Home() {
     ) ?? [];
 
   return (
-    <div className="public-site">
+    <div className="public-site resident-portal">
       <a className="skip-link" href="#resident-list">
         Skip to rent status
       </a>
@@ -119,11 +119,7 @@ export default function Home() {
       <main className="public-container public-main">
         <div className="page-intro">
           <div>
-            <p className="eyebrow">YOUR BUILDING · MONTH BY MONTH</p>
             <h1>Monthly rent status</h1>
-            <p className="intro-copy">
-              See payment status, find your plot, and check previous months.
-            </p>
           </div>
           <InstallApp />
         </div>
@@ -194,7 +190,6 @@ export default function Home() {
         >
           <div className="directory-heading">
             <div>
-              <p className="eyebrow">THE BUILDING, AT A GLANCE</p>
               <h2 id="directory-title">
                 Resident directory
                 <span className="plot-count">
@@ -312,7 +307,7 @@ export default function Home() {
                       <th scope="col">PLOT</th>
                       <th scope="col">RESIDENT</th>
                       <th scope="col">MOVE-IN DATE</th>
-                      <th scope="col">RENT STATUS</th>
+                      <th scope="col">PAYMENTS</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -362,19 +357,24 @@ export default function Home() {
                             </span>
                             <span>
                               <small>Electricity</small>
-                              <StatusBadge
-                                status={plot.electricityStatus ?? "NA"}
-                              />
+                              {plot.electricityMonths?.length > 0 ? (
+                                <button
+                                  className="payment-history-button"
+                                  onClick={() => setHistoryPlot(plot)}
+                                  aria-label={`Electricity history for plot ${plot.plotNumber}`}
+                                >
+                                  <StatusBadge
+                                    status={plot.electricityStatus ?? "NA"}
+                                  />
+                                  <Icon name="arrow" />
+                                </button>
+                              ) : (
+                                <StatusBadge
+                                  status={plot.electricityStatus ?? "NA"}
+                                />
+                              )}
                             </span>
                           </div>
-                          {plot.electricityMonths?.length > 0 && (
-                            <button
-                              className="history-link"
-                              onClick={() => setHistoryPlot(plot)}
-                            >
-                              Electricity history <Icon name="arrow" />
-                            </button>
-                          )}
                         </td>
                       </tr>
                     ))}

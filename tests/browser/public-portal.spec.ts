@@ -118,6 +118,15 @@ for (const width of [320, 390, 768, 1440]) {
         () => document.documentElement.scrollWidth <= innerWidth,
       ),
     ).toBe(true);
+    const firstRow = await page.locator("tbody tr").first().boundingBox();
+    expect(firstRow!.y).toBeLessThan(width <= 520 ? 620 : 550);
+    expect(firstRow!.height).toBeLessThan(110);
+    if (width <= 520)
+      expect(
+        await page
+          .getByRole("searchbox")
+          .evaluate((input) => getComputedStyle(input).fontSize),
+      ).toBe("16px");
     await page.getByRole("searchbox").focus();
     await page.keyboard.type("ravi");
     await expect(page.locator("tbody tr")).toHaveCount(1);
@@ -152,10 +161,23 @@ test("manifest and icons are valid; offline fallback never stores records or adm
   ).json();
   expect(manifest.display).toBe("standalone");
   expect(manifest.start_url).toBe("/");
+  expect(manifest.scope).toBe("/");
+  expect(
+    manifest.icons.some(
+      (icon: { purpose: string }) => icon.purpose === "maskable",
+    ),
+  ).toBe(true);
+  const worker = await page.request.get("/sw.js");
+  expect(worker.headers()["cache-control"]).toContain("no-store");
+  expect(
+    await page.locator('meta[name="theme-color"]').getAttribute("content"),
+  ).toBe(manifest.theme_color);
   for (const icon of manifest.icons) {
     const image = await page.request.get(icon.src);
     expect(image.ok()).toBe(true);
     expect(image.headers()["content-type"]).toContain("image/png");
+    const png = await image.body();
+    expect(png.readUInt32BE(16)).toBe(Number(icon.sizes.split("x")[0]));
   }
   await page.evaluate(async () => {
     await navigator.serviceWorker.ready;
@@ -245,4 +267,70 @@ test("banner is absent and due, partial and N/A statuses remain distinct", async
   await page.getByRole("button", { name: "Partial", exact: true }).click();
   await expect(page.locator("tbody tr")).toHaveCount(1);
   await expect(page.locator("tbody")).toContainText("Partial");
+});
+
+test("electricity history opens from the status without adding a row of controls", async ({
+  page,
+}) => {
+  await page.route("**/api/public/status?*", (route) =>
+    route.fulfill({
+      json: {
+        ...fixture,
+        plots: [
+          {
+            ...fixture.plots[0],
+            electricityStatus: "UNPAID",
+            electricityMonths: [
+              {
+                month: "2026-11",
+                units: 100,
+                isDefault: false,
+                bill: 700,
+                paid: 500,
+                balance: 200,
+                status: "PARTIAL",
+              },
+            ],
+          },
+        ],
+        totalPlots: 1,
+        paidCount: 1,
+      },
+    }),
+  );
+  await page.goto("/");
+  await page
+    .getByRole("button", { name: "Electricity history for plot 101" })
+    .click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await expect(page.getByRole("dialog")).toContainText("November 2026");
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+});
+
+test("native install prompts work and the button disappears after installation", async ({
+  page,
+}) => {
+  await mockStatus(page);
+  await page.goto("/");
+  await expect(page.locator("tbody tr")).toHaveCount(4);
+  await page.evaluate(() => {
+    const event = new Event("beforeinstallprompt", { cancelable: true });
+    Object.assign(event, {
+      prompt: async () => {
+        document.documentElement.dataset.installPrompted = "yes";
+      },
+      userChoice: Promise.resolve({ outcome: "accepted" }),
+    });
+    window.dispatchEvent(event);
+  });
+  await page.getByRole("button", { name: "Get the app" }).click();
+  await expect(page.locator("html")).toHaveAttribute(
+    "data-install-prompted",
+    "yes",
+  );
+  await page.evaluate(() => window.dispatchEvent(new Event("appinstalled")));
+  await expect(page.getByRole("button", { name: "Get the app" })).toHaveCount(
+    0,
+  );
 });

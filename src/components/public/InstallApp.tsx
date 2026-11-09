@@ -64,7 +64,7 @@ export default function InstallApp() {
         className="install-button"
         onClick={install}
         aria-expanded={showHelp}
-        aria-controls="install-help"
+        aria-controls={showHelp ? "install-help" : undefined}
       >
         <Icon name="download" /> Get the app
       </button>
