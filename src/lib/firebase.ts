@@ -83,6 +83,14 @@ function decode(value: unknown): FirebaseValue {
 // of every collection under /<prefix>/... instead of the live data at the database root.
 export function dbPrefix() { return (process.env.FIREBASE_DB_PREFIX ?? "").trim().replace(/^\/+|\/+$/g, ""); }
 
+/** Where this deployment's data lives: the live database, a prefixed test copy, or a local stand-in. */
+export function dataSourceInfo(): { mode: "live" | "test-copy" | "local-mock"; prefix: string | null; database: string } {
+  const prefix = dbPrefix() || null;
+  const emulator = process.env.FIREBASE_DATABASE_EMULATOR_HOST;
+  if (emulator) return { mode: "local-mock", prefix, database: emulator };
+  return { mode: prefix ? "test-copy" : "live", prefix, database: new URL(requireConfig().databaseUrl).host };
+}
+
 export async function rawRequest(path: string, init?: RequestInit) {
   // Realtime Database emulator (or the local mock in scripts/mock-firebase.ts): no credentials needed.
   // Set FIREBASE_DATABASE_EMULATOR_HOST=127.0.0.1:9000 and, optionally, FIREBASE_PROJECT_ID.

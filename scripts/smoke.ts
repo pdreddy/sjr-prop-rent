@@ -110,6 +110,9 @@ async function main() {
   const rp = await api("/api/admin/rent-paid");
   check("rent-paid: 101 balance reflects unpaid current month", rp.json?.tenants?.find((t: any) => t.plotNumber === "101")?.totalPaid === 42000, rp.json?.tenants?.[0]);
 
+  const source = await api("/api/admin/data-source");
+  check("data source names the database and counts this month's records", source.status === 200 && source.json?.mode === "local-mock" && source.json?.recordsThisMonth === 1 && source.json?.records === 3 && source.json?.latestRecordMonth === M, source.json);
+
   console.log("\nBuilding's power bill");
   check("public page shows no building bill until one is entered", pub.json?.buildingElectricity?.actualBill === null && pub.json?.buildingElectricity?.billedToTenants === 750, pub.json?.buildingElectricity);
   check("billed to tenants matches the Summary tab", pub.json?.buildingElectricity?.billedToTenants === sum.json?.electricity?.billed, [pub.json?.buildingElectricity, sum.json?.electricity?.billed]);

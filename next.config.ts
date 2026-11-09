@@ -8,6 +8,11 @@ const nextConfig: NextConfig = {
   // Lets you open the dev server from another device on your network (e.g. a phone at
   // http://192.168.1.231:3000). Dev only; add your machine's LAN IP or set DEV_ORIGINS=ip1,ip2.
   allowedDevOrigins: ["192.168.1.231", ...(process.env.DEV_ORIGINS?.split(",").map((o) => o.trim()).filter(Boolean) ?? [])],
+  // Which build is running, shown in admin Settings (Netlify sets BRANCH and COMMIT_REF while building).
+  env: {
+    NEXT_PUBLIC_BUILD_BRANCH: process.env.BRANCH ?? "",
+    NEXT_PUBLIC_BUILD_COMMIT: (process.env.COMMIT_REF ?? "").slice(0, 7),
+  },
   async headers() {
     return [
       // The service worker must always be fetched fresh so updates reach installed apps.

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { FORMULA_KEYS, FORMULA_LABELS, formatPlotFixed, isMonthKey, type FormulaKey } from "@/lib/config";
 import { electricityBreakdown } from "@/lib/electricity";
-import { getCurrentMonth } from "@/lib/month";
+import { formatMonthLabel, getCurrentMonth } from "@/lib/month";
 import type { ElectricityConfig, GeneralSettings } from "@/lib/types";
 
 const inputClass =
@@ -171,6 +171,8 @@ export default function SettingsView({ onUnauthorized, onNotify }: Props) {
           {error}
         </p>
       )}
+
+      <DataSourceCard />
 
       <section className="rounded-card border border-line bg-white p-4 shadow-card">
         <h2 className="text-base font-bold text-ink">Electricity</h2>
@@ -493,6 +495,57 @@ function FormulaPreview({ form }: { form: Form }) {
       ) : (
         <p className="mt-3 text-xs text-unpaid">Enter a month and a valid number of units.</p>
       )}
+    </section>
+  );
+}
+
+interface DataSource {
+  mode: "live" | "test-copy" | "local-mock";
+  prefix: string | null;
+  database: string;
+  serverMonth: string;
+  plots: number;
+  records: number;
+  recordsThisMonth: number;
+  recordsLastMonth: number;
+  latestRecordMonth: string | null;
+  build: { branch: string | null; commit: string | null };
+}
+const SOURCE_LABEL: Record<DataSource["mode"], string> = { live: "Live data", "test-copy": "Test copy", "local-mock": "Local demo data" };
+
+// Which database this site is reading. If two sites (your computer and the hosted one) show different
+// data, compare this card on both: they are usually pointed at different copies.
+function DataSourceCard() {
+  const [source, setSource] = useState<DataSource | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/admin/data-source", { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((json) => { if (!cancelled) setSource(json); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
+  if (!source) return null;
+  return (
+    <section className="rounded-card border border-line bg-white p-4 shadow-card">
+      <div className="flex flex-wrap items-center gap-2">
+        <h2 className="text-base font-bold text-ink">Data source</h2>
+        <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${source.mode === "live" ? "bg-paid-bg text-paid" : "bg-partial-bg text-partial"}`}>{SOURCE_LABEL[source.mode]}</span>
+      </div>
+      <p className="mt-1 text-sm text-foreground/75">
+        Reading <b>{source.database}</b>
+        {source.prefix ? <> under <b>/{source.prefix}</b> (a test copy, not the live data)</> : source.mode === "live" ? " (the live data)" : ""}.
+      </p>
+      <p className="mt-1 text-sm text-foreground/75">
+        {source.plots} plots · {source.records} monthly records · {source.recordsThisMonth} for {formatMonthLabel(source.serverMonth)} · {source.recordsLastMonth} for the month before
+        {source.latestRecordMonth ? ` · latest record: ${formatMonthLabel(source.latestRecordMonth)}` : ""}
+      </p>
+      {(source.build.branch || source.build.commit) && (
+        <p className="mt-1 text-xs text-foreground/55">Build: {source.build.branch ?? "unknown branch"}{source.build.commit ? ` @ ${source.build.commit}` : ""}</p>
+      )}
+      <p className="mt-1 text-xs text-foreground/55">
+        If your computer and the hosted site show different data, compare this card on both. The copy is chosen by the FIREBASE_DB_PREFIX and FIREBASE_DATABASE_URL settings of each.
+      </p>
     </section>
   );
 }
