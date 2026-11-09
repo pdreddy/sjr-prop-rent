@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- a test script reading loosely typed JSON responses */
-import { createUnit, savePayment } from "../src/lib/store";
+import { createUnit, savePayment, setElectricityConfig } from "../src/lib/store";
+import { DEFAULT_ELECTRICITY_CONFIG } from "../src/lib/config";
 import { getCurrentMonth, getPreviousMonth } from "../src/lib/month";
 
 // End-to-end data check against the local mock database (see scripts/mock-firebase.ts):
@@ -43,6 +44,9 @@ async function main() {
   await pay(M1, 21000, 140, 190, `${M1}-05T00:00:00.000Z`);
   await pay(M, 0, 0, 0, null); // no reading yet -> fixed default bill (101 is a "high" plot: 750)
   void u2;
+  // Pin the schedule relative to today so the checks do not depend on the calendar:
+  // flat up to and including M2, slab (7.5 up to 200 units, then 10) from M1 onward.
+  await setElectricityConfig({ ...DEFAULT_ELECTRICITY_CONFIG, schedule: [{ fromMonth: "2000-01", formula: "flat" }, { fromMonth: M1, formula: "slab" }] }, "smoke");
   console.log(`Seeded plots 101 (moved in ${M3}), 102 (moved in ${M}), 103 (vacant); months ${M2}, ${M1}, ${M}\n`);
 
   console.log("Public status (no login)");
@@ -58,9 +62,9 @@ async function main() {
   check("103 (vacant) N/A for rent and electricity", p("103")?.status === "NA" && p("103")?.electricityStatus === "NA");
   const months = p("101")?.electricityMonths ?? [];
   check("101 has 3 electricity months", months.length === 3, months.length);
-  check("units math: 40 units = ₹280, 50 units = ₹350", months.find((m: any) => m.month === M2)?.bill === 280 && months.find((m: any) => m.month === M1)?.bill === 350, months.map((m: any) => [m.month, m.bill]));
+  check("units math: 40 units flat = ₹280 (before the slab month), 50 units slab = ₹375", months.find((m: any) => m.month === M2)?.bill === 280 && months.find((m: any) => m.month === M1)?.bill === 375, months.map((m: any) => [m.month, m.bill]));
   check("no-reading month bills fixed ₹750 (high plot)", months.find((m: any) => m.month === M)?.bill === 750 && months.find((m: any) => m.month === M)?.isDefault === true);
-  check("electricity total due = 280 + 350 + 750", p("101")?.electricityTotals?.due === 1380, p("101")?.electricityTotals);
+  check("electricity total due = 280 + 375 + 750", p("101")?.electricityTotals?.due === 1405, p("101")?.electricityTotals);
   check("no rent money, payment dates, contacts, notes or audit fields exposed", !/monthlyRent|rentAmount|rentTotals|maintenanceAmount|amountPaid|paidDate|phoneNumbers|notes|updatedBy|advance/.test(pub.text));
   check("public rent history contains all 3 rent months", p("101")?.rentMonths?.length === 3);
   check("public rent history is strictly month and status", p("101")?.rentMonths?.every((entry: any) => Object.keys(entry).sort().join(",") === "month,status"));
@@ -83,13 +87,13 @@ async function main() {
   check("dashboard 200", dash.status === 200, dash.text.slice(0, 120));
   check("dashboard lists 3 rows", dash.json?.rows?.length === 3, dash.json?.rows?.length);
   check("totals count only the tenant whose rent has started (1)", dash.json?.totals?.totalUnits === 1, dash.json?.totals);
-  check("dashboard carries electricity config", dash.json?.electricityConfig?.ratePerUnit === 7);
+  check("dashboard carries electricity config with the schedule", dash.json?.electricityConfig?.formulas?.flat?.ratePerUnit === 7 && dash.json?.electricityConfig?.schedule?.length === 2, dash.json?.electricityConfig);
   check("dashboard has no NaN/undefined", noNaN(dash.json));
   const hist = await api("/api/admin/payment-history");
   const t101 = hist.json?.tenants?.find((t: any) => t.plotNumber === "101");
   check("payment-history 200 with plot 101", hist.status === 200 && !!t101, hist.text.slice(0, 120));
   check("rent paid = 42,000 over 2 paid months", t101?.totals?.rentPaid === 42000, t101?.totals);
-  check("electricity billed = 1,380", t101?.totals?.electricityBill === 1380, t101?.totals?.electricityBill);
+  check("electricity billed = 1,405", t101?.totals?.electricityBill === 1405, t101?.totals?.electricityBill);
   check("admin retains rent amounts", t101?.totals?.rentDue === 63000 && t101?.totals?.rentBalance === 21000);
   check("payment-history has no NaN/undefined", noNaN(hist.json));
   for (const path of ["/api/admin/rent-paid", "/api/admin/electricity/statement", "/api/admin/rental-history", "/api/admin/move-in-proration", `/api/admin/electricity?month=${M}`, "/api/admin/units", "/api/admin/settings"]) {
@@ -101,13 +105,23 @@ async function main() {
 
   console.log("\nSettings round-trip");
   const settings = (await api("/api/admin/settings")).json;
-  const put = await api("/api/admin/settings", { method: "PUT", body: JSON.stringify({ electricity: { ...settings.electricity, ratePerUnit: 8, highPlots: "", plotFixed: "101=900" }, general: { ...settings.general, buildingName: "Test Building", showTenantNames: false } }) });
+  const put = await api("/api/admin/settings", { method: "PUT", body: JSON.stringify({ electricity: { ...settings.electricity, formulas: { ...settings.electricity.formulas, flat: { ...settings.electricity.formulas.flat, ratePerUnit: 8 } }, highPlots: "", plotFixed: "101=900" }, general: { ...settings.general, buildingName: "Test Building", showTenantNames: false } }) });
   check("settings saved", put.status === 200, put.json ?? put.text.slice(0, 120));
   const after = (await api("/api/admin/settings")).json;
-  check("rate, per-plot fixed amount and empty high-plot list persisted", after?.electricity?.ratePerUnit === 8 && after?.electricity?.plotFixed?.["101"] === 900 && after?.electricity?.highPlots?.length === 0, after?.electricity);
+  check("rate, per-plot fixed amount and empty high-plot list persisted", after?.electricity?.formulas?.flat?.ratePerUnit === 8 && after?.electricity?.schedule?.length === 2 && after?.electricity?.schedule?.[1]?.fromMonth === M1 && after?.electricity?.plotFixed?.["101"] === 900 && after?.electricity?.highPlots?.length === 0, after?.electricity);
   const pub2 = await api(`/api/public/status?month=${M}`);
   const p2 = pub2.json?.plots?.find((x: any) => x.plotNumber === "101");
-  check("public page follows new rate (40 units x 8 = 320)", p2?.electricityMonths?.find((m: any) => m.month === M2)?.bill === 320, p2?.electricityMonths);
+  check("flat rate change re-prices only flat months (40 units x 8 = 320)", p2?.electricityMonths?.find((m: any) => m.month === M2)?.bill === 320, p2?.electricityMonths);
+  check("slab month is untouched by the flat rate change (50 units = 375)", p2?.electricityMonths?.find((m: any) => m.month === M1)?.bill === 375, p2?.electricityMonths);
+  const bad = (schedule: unknown) => api("/api/admin/settings", { method: "PUT", body: JSON.stringify({ electricity: { ...after.electricity, highPlots: "", plotFixed: "", schedule }, general: after.general }) });
+  check("schedule must keep at least one row", (await bad([])).status === 400);
+  check("schedule rows need unique From months", (await bad([{ fromMonth: M1, formula: "flat" }, { fromMonth: M1, formula: "slab" }])).status === 400);
+  check("schedule rows need valid YYYY-MM months", (await bad([{ fromMonth: "2026-13", formula: "flat" }])).status === 400);
+  const flatOnly = await api("/api/admin/settings", { method: "PUT", body: JSON.stringify({ electricity: { ...after.electricity, highPlots: "", plotFixed: "101=900", schedule: [{ fromMonth: "2000-01", formula: "flat" }] }, general: after.general }) });
+  check("a flat-only schedule saves", flatOnly.status === 200, flatOnly.json);
+  const flatPub = (await api(`/api/public/status?month=${M}`)).json?.plots?.find((x: any) => x.plotNumber === "101");
+  check("with only the flat row, the slab month reprices at the flat rate (50 x 8 = 400)", flatPub?.electricityMonths?.find((m: any) => m.month === M1)?.bill === 400, flatPub?.electricityMonths);
+  await api("/api/admin/settings", { method: "PUT", body: JSON.stringify({ electricity: { ...after.electricity, highPlots: "", plotFixed: "101=900" }, general: after.general }) }); // back to flat -> slab at M1
   check("per-plot fixed bill (₹900) applies to the unread month", p2?.electricityMonths?.find((m: any) => m.month === M)?.bill === 900);
   check("building name from settings", pub2.json?.buildingName === "Test Building");
   check("tenant names hidden when switched off", p2?.tenantName === null);

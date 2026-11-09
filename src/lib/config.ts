@@ -185,7 +185,8 @@ export function parseSchedule(value: unknown): FormulaScheduleEntry[] {
   } else if (value && typeof value === "object") {
     for (const [month, formula] of Object.entries(value)) {
       if (isFormulaKey(formula)) pairs.push([month, formula]);
-      else if (formula && typeof formula === "object") pairs.push([month, (formula as { formula?: unknown }).formula]);
+      // An array stored as an object ({ "0": { fromMonth, formula } }) by the database.
+      else if (formula && typeof formula === "object") pairs.push([(formula as FormulaScheduleEntry).fromMonth ?? month, (formula as FormulaScheduleEntry).formula]);
     }
   } else if (typeof value === "string") {
     for (const part of value.split(/[,;\n]+/)) {

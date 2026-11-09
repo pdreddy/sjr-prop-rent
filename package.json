@@ -26,6 +26,7 @@
     "smoke": "tsx scripts/smoke.ts",
     "local": "tsx --env-file=.env scripts/dev.ts",
     "demo": "tsx scripts/local.ts",
+    "test:unit": "tsx --test tests/unit/*.test.ts",
     "test:e2e": "playwright test"
   },
   "dependencies": {
