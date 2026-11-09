@@ -2,7 +2,7 @@ import { dbPrefix, rawRequest } from "../src/lib/firebase";
 
 // Copies the live collections (database root) into /<FIREBASE_DB_PREFIX>/ so the app can run
 // against a throwaway copy of production data. Only ever writes under the prefix.
-const COLLECTIONS = ["admins", "units", "payments", "settings", "auditLogs"];
+const COLLECTIONS = ["admins", "units", "payments", "settings", "buildingBills", "auditLogs"];
 
 async function main() {
   const prefix = dbPrefix();

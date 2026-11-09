@@ -4,7 +4,7 @@ import { dbPrefix, rawRequest } from "../src/lib/firebase";
 // Exports every collection to a JSON file: `npm run db:backup [-- <file>] [--test]`.
 // Reads the live data at the database root by default; --test reads the FIREBASE_DB_PREFIX copy.
 // Values are saved exactly as stored (dates included), so db:restore reproduces them faithfully.
-const COLLECTIONS = ["admins", "units", "payments", "settings", "auditLogs"];
+const COLLECTIONS = ["admins", "units", "payments", "settings", "buildingBills", "auditLogs"];
 
 async function main() {
   const args = process.argv.slice(2);
