@@ -6,6 +6,7 @@ import MonthYearSelector from "@/components/MonthYearSelector";
 import StatusBadge from "@/components/StatusBadge";
 import { getCurrentMonth, getMonthOptions, formatDate, formatMonthLabel } from "@/lib/month";
 import { rupee, shortMonth } from "@/lib/format";
+import InstallApp from "@/components/InstallApp";
 import type { PublicPlot, PublicStatusResponse } from "@/lib/types";
 import { IconBuilding, IconCalendar, IconSearch } from "@/components/icons";
 
@@ -116,9 +117,12 @@ export default function Home() {
               <p className="text-xs text-muted">Rent status{data ? ` · Electricity ${rupee(data.ratePerUnit)}/unit` : ""}</p>
             </div>
           </div>
-          <Link href="/admin/login" className="shrink-0 rounded-full border border-line-strong px-3.5 py-1.5 text-sm font-medium text-ink hover:bg-primary-light">
-            Admin
-          </Link>
+          <div className="flex shrink-0 items-center gap-2">
+            <InstallApp />
+            <Link href="/admin/login" className="rounded-full border border-line-strong px-3.5 py-1.5 text-sm font-medium text-ink hover:bg-primary-light">
+              Admin
+            </Link>
+          </div>
         </div>
       </header>
 

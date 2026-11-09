@@ -1,3 +1,4 @@
+import { withErrorHandling } from "@/lib/apiHandler";
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthedAdmin } from "@/lib/auth";
 import { copyMonthSchema } from "@/lib/validation";
@@ -7,7 +8,7 @@ import { expectedForMonth } from "@/lib/proration";
 import { computeElectricityAmount } from "@/lib/electricity";
 import { isBeforeFirstRentMonth } from "@/lib/month";
 
-export async function POST(request: NextRequest) {
+export const POST = withErrorHandling(async (request: NextRequest) => {
   const admin = await getAuthedAdmin();
   if (!admin) return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
   if (admin.role !== "ADMIN") return NextResponse.json({ error: "Not authorized." }, { status: 403 });
@@ -52,4 +53,4 @@ export async function POST(request: NextRequest) {
   }
   await recordAuditLog({ adminId: admin.id, adminUsername: admin.username, action: "COPY_MONTH", recordType: "Payment", newValue: { sourceMonth, targetMonth, createdCount } });
   return NextResponse.json({ createdCount, skippedCount: active.length - createdCount });
-}
+});

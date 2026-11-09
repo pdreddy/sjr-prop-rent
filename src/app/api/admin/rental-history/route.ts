@@ -1,3 +1,4 @@
+import { withErrorHandling } from "@/lib/apiHandler";
 import { NextResponse } from "next/server";
 import { getAuthedAdmin } from "@/lib/auth";
 import { allPayments, allUnits, unitSnapshots } from "@/lib/store";
@@ -9,7 +10,7 @@ import type { RentalHistoryMonth, RentalHistoryResponse } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export const GET = withErrorHandling(async () => {
   const admin = await getAuthedAdmin();
   if (!admin) return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
   if (admin.role !== "ADMIN") return NextResponse.json({ error: "Not authorized." }, { status: 403 });
@@ -87,4 +88,4 @@ export async function GET() {
 
   const response: RentalHistoryResponse = { currentMonth, plots };
   return NextResponse.json(response);
-}
+});

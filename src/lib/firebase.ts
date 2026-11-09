@@ -84,9 +84,14 @@ function decode(value: unknown): FirebaseValue {
 export function dbPrefix() { return (process.env.FIREBASE_DB_PREFIX ?? "").trim().replace(/^\/+|\/+$/g, ""); }
 
 export async function rawRequest(path: string, init?: RequestInit) {
-  const token = encodeURIComponent(await accessToken());
-  const response = await fetch(`${requireConfig().databaseUrl}/${path}.json?access_token=${token}`, {
-    ...init, headers: { "content-type": "application/json", ...init?.headers },
+  // Realtime Database emulator (or the local mock in scripts/mock-firebase.ts): no credentials needed.
+  // Set FIREBASE_DATABASE_EMULATOR_HOST=127.0.0.1:9000 and, optionally, FIREBASE_PROJECT_ID.
+  const emulator = process.env.FIREBASE_DATABASE_EMULATOR_HOST;
+  const url = emulator
+    ? `http://${emulator}/${path}.json?ns=${encodeURIComponent(process.env.FIREBASE_PROJECT_ID ?? "demo-sjr-rent-tracker")}`
+    : `${requireConfig().databaseUrl}/${path}.json?access_token=${encodeURIComponent(await accessToken())}`;
+  const response = await fetch(url, {
+    ...init, headers: { "content-type": "application/json", ...(emulator ? { Authorization: "Bearer owner" } : {}), ...init?.headers },
   });
   const result = response.status === 204 ? null : await response.json();
   if (!response.ok) throw new Error(result?.error || `Realtime Database request failed (${response.status})`);

@@ -1,16 +1,17 @@
+import { withErrorHandling } from "@/lib/apiHandler";
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthedAdmin } from "@/lib/auth";
 import { getElectricityRate, setElectricityRate } from "@/lib/store";
 import { recordAuditLog } from "@/lib/audit";
 
 // Only ADMIN may change the rate; SECURITY logins just enter meter readings.
-export async function GET() {
+export const GET = withErrorHandling(async () => {
   const admin = await getAuthedAdmin();
   if (!admin) return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
   return NextResponse.json({ ratePerUnit: await getElectricityRate() });
-}
+});
 
-export async function PUT(request: NextRequest) {
+export const PUT = withErrorHandling(async (request: NextRequest) => {
   const admin = await getAuthedAdmin();
   if (!admin) return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
   if (admin.role !== "ADMIN") return NextResponse.json({ error: "Not authorized." }, { status: 403 });
@@ -33,4 +34,4 @@ export async function PUT(request: NextRequest) {
     newValue: { ratePerUnit: rounded },
   });
   return NextResponse.json({ ratePerUnit: rounded });
-}
+});

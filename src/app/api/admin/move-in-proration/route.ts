@@ -1,3 +1,4 @@
+import { withErrorHandling } from "@/lib/apiHandler";
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthedAdmin } from "@/lib/auth";
 import { allUnits, unitById, updateUnit } from "@/lib/store";
@@ -9,7 +10,7 @@ export const dynamic = "force-dynamic";
 
 const dayOf = (date: Date | null) => date?.toISOString().slice(0, 10) ?? null;
 
-export async function GET() {
+export const GET = withErrorHandling(async () => {
   const admin = await getAuthedAdmin();
   if (!admin) return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
   if (admin.role !== "ADMIN") return NextResponse.json({ error: "Not authorized." }, { status: 403 });
@@ -33,9 +34,9 @@ export async function GET() {
       }),
   };
   return NextResponse.json(response);
-}
+});
 
-export async function PATCH(request: NextRequest) {
+export const PATCH = withErrorHandling(async (request: NextRequest) => {
   const admin = await getAuthedAdmin();
   if (!admin) return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
   if (admin.role !== "ADMIN") return NextResponse.json({ error: "Not authorized." }, { status: 403 });
@@ -61,4 +62,4 @@ export async function PATCH(request: NextRequest) {
     newValue: { paidByTenth, moveInDate: moveInDay },
   });
   return NextResponse.json({ paidByTenth });
-}
+});

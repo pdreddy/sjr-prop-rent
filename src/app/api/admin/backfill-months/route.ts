@@ -1,3 +1,4 @@
+import { withErrorHandling } from "@/lib/apiHandler";
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthedAdmin } from "@/lib/auth";
 import { backfillMonths } from "@/lib/backfillMonths";
@@ -7,7 +8,7 @@ import { recordAuditLog } from "@/lib/audit";
 // after move-in) and now, and corrects an unpaid first record that was saved at the full
 // (un-prorated) rent. Nothing that already has a payment against it is changed.
 // POST { dryRun: true } only counts.
-export async function POST(request: NextRequest) {
+export const POST = withErrorHandling(async (request: NextRequest) => {
   const admin = await getAuthedAdmin();
   if (!admin) return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
   if (admin.role !== "ADMIN") return NextResponse.json({ error: "Not authorized." }, { status: 403 });
@@ -27,4 +28,4 @@ export async function POST(request: NextRequest) {
     });
   }
   return NextResponse.json({ dryRun, created, adjusted, needsReview });
-}
+});

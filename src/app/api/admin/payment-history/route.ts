@@ -1,3 +1,4 @@
+import { withErrorHandling } from "@/lib/apiHandler";
 import { NextResponse } from "next/server";
 import { getAuthedAdmin } from "@/lib/auth";
 import { allPayments, allUnits, getElectricityConfig } from "@/lib/store";
@@ -13,7 +14,7 @@ export const dynamic = "force-dynamic";
 // Meter readings are decimals (e.g. 271.3), so round money to paise to avoid 1899.1000000000001.
 const cents = (n: number) => Math.round(n * 100) / 100;
 
-export async function GET() {
+export const GET = withErrorHandling(async () => {
   const admin = await getAuthedAdmin();
   if (!admin) return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
   if (admin.role !== "ADMIN") return NextResponse.json({ error: "Not authorized." }, { status: 403 });
@@ -92,4 +93,4 @@ export async function GET() {
 
   const response: PaymentHistoryResponse = { currentMonth, ratePerUnit: rate.ratePerUnit, config: rate, tenants };
   return NextResponse.json(response);
-}
+});

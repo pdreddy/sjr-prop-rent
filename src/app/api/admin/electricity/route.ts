@@ -1,3 +1,4 @@
+import { withErrorHandling } from "@/lib/apiHandler";
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthedAdmin } from "@/lib/auth";
 import { isValidMonth, getCurrentMonth, getPreviousMonth, isBeforeMoveInMonth, isBeforeFirstRentMonth } from "@/lib/month";
@@ -11,7 +12,7 @@ import type { ElectricityListResponse } from "@/lib/types";
 
 // Both roles (ADMIN and SECURITY) may read and write electricity readings — the
 // security login exists specifically to enter these every month.
-export async function GET(request: NextRequest) {
+export const GET = withErrorHandling(async (request: NextRequest) => {
   const admin = await getAuthedAdmin();
   if (!admin) return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
 
@@ -58,9 +59,9 @@ export async function GET(request: NextRequest) {
 
   const response: ElectricityListResponse = { month, ratePerUnit: rate.ratePerUnit, config: rate, rows };
   return NextResponse.json(response);
-}
+});
 
-export async function PUT(request: NextRequest) {
+export const PUT = withErrorHandling(async (request: NextRequest) => {
   const admin = await getAuthedAdmin();
   if (!admin) return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
 
@@ -114,4 +115,4 @@ export async function PUT(request: NextRequest) {
   });
 
   return NextResponse.json({ payment: paymentDTO(payment, rate, unit.plotNumber) });
-}
+});

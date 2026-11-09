@@ -1,10 +1,11 @@
+import { withErrorHandling } from "@/lib/apiHandler";
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthedAdmin } from "@/lib/auth";
 import { isValidMonth, getCurrentMonth, isBeforeFirstRentMonth } from "@/lib/month";
 import { expectedForMonth } from "@/lib/proration";
 import { allPayments, allUnits, getElectricityConfig, paymentDTO, unitDTO } from "@/lib/store";
 
-export async function GET(request: NextRequest) {
+export const GET = withErrorHandling(async (request: NextRequest) => {
   const admin = await getAuthedAdmin();
   if (!admin) return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
   if (admin.role !== "ADMIN") return NextResponse.json({ error: "Not authorized." }, { status: 403 });
@@ -46,4 +47,4 @@ export async function GET(request: NextRequest) {
     return acc;
   }, { totalExpected: 0, totalCollected: 0, numPaid: 0, numPartial: 0, numUnpaid: 0, applicable: 0 });
   return NextResponse.json({ month, electricityRatePerUnit: rate.ratePerUnit, electricityConfig: rate, rows, totals: { ...totals, outstandingBalance: totals.totalExpected - totals.totalCollected, totalUnits: totals.applicable } });
-}
+});

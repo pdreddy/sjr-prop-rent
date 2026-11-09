@@ -1,3 +1,4 @@
+import { withErrorHandling } from "@/lib/apiHandler";
 import { NextRequest, NextResponse } from "next/server";
 import { allPayments, allUnits, getElectricityConfig, getGeneralSettings } from "@/lib/store";
 import { isValidMonth, getCurrentMonth, isBeforeMoveInMonth, isBeforeFirstRentMonth, isRentOverdue } from "@/lib/month";
@@ -7,7 +8,7 @@ import { buildElectricityLedger, buildElectricityStatement } from "@/lib/electri
 
 export const dynamic = "force-dynamic";
 
-export async function GET(request: NextRequest) {
+export const GET = withErrorHandling(async (request: NextRequest) => {
   const monthParam = request.nextUrl.searchParams.get("month");
   const month = monthParam && isValidMonth(monthParam) ? monthParam : getCurrentMonth();
 
@@ -105,4 +106,4 @@ export async function GET(request: NextRequest) {
     paidCount,
     plots,
   });
-}
+});

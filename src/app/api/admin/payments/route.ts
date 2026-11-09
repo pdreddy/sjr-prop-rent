@@ -1,3 +1,4 @@
+import { withErrorHandling } from "@/lib/apiHandler";
 import { NextRequest, NextResponse } from "next/server";
 import { deletePayment, getElectricityConfig, paymentDTO, paymentFor, savePayment, unitById } from "@/lib/store";
 import { formatMonthLabel, isValidMonth } from "@/lib/month";
@@ -6,7 +7,7 @@ import { upsertPaymentSchema } from "@/lib/validation";
 import { recordAuditLog } from "@/lib/audit";
 import { computeElectricityAmount } from "@/lib/electricity";
 
-export async function PUT(request: NextRequest) {
+export const PUT = withErrorHandling(async (request: NextRequest) => {
   const admin = await getAuthedAdmin();
   if (!admin) {
     return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
@@ -75,10 +76,10 @@ export async function PUT(request: NextRequest) {
   });
 
   return NextResponse.json({ payment: paymentDTO(payment, rate, unit.plotNumber) });
-}
+});
 
 // Deletes one month's record (e.g. entered by mistake): /api/admin/payments?unitId=...&month=YYYY-MM
-export async function DELETE(request: NextRequest) {
+export const DELETE = withErrorHandling(async (request: NextRequest) => {
   const admin = await getAuthedAdmin();
   if (!admin) return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
   if (admin.role !== "ADMIN") return NextResponse.json({ error: "Not authorized." }, { status: 403 });
@@ -104,4 +105,4 @@ export async function DELETE(request: NextRequest) {
     newValue: null,
   });
   return NextResponse.json({ deleted: true });
-}
+});

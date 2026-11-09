@@ -1,8 +1,9 @@
+import { withErrorHandling } from "@/lib/apiHandler";
 import { NextRequest, NextResponse } from "next/server";
 import { auditLogs } from "@/lib/store";
 import { getAuthedAdmin } from "@/lib/auth";
 
-export async function GET(request: NextRequest) {
+export const GET = withErrorHandling(async (request: NextRequest) => {
   const admin = await getAuthedAdmin();
   if (!admin) {
     return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
@@ -26,4 +27,4 @@ export async function GET(request: NextRequest) {
       createdAt: log.createdAt,
     })),
   });
-}
+});

@@ -520,7 +520,7 @@ function ReadRow({
         <p className="font-bold text-ink">{row.unit.tenantName || "Vacant"}</p>
       </td>
       <td className="px-3 py-3">
-        {row.isVacant ? (
+        {row.isVacant || row.isBeforeMoveIn ? (
           <span className="text-foreground/35">—</span>
         ) : (
           <>

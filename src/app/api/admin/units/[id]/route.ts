@@ -1,3 +1,4 @@
+import { withErrorHandling } from "@/lib/apiHandler";
 import { NextRequest, NextResponse } from "next/server";
 import { unitById, unitByPlot, unitDTO, updateUnit } from "@/lib/store";
 import { getAuthedAdmin } from "@/lib/auth";
@@ -6,10 +7,10 @@ import { recordAuditLog } from "@/lib/audit";
 import { formatMonthLabel, isBeforeBuildingOpened } from "@/lib/month";
 import { BUILDING_READY_MONTH } from "@/lib/constants";
 
-export async function PATCH(
+export const PATCH = withErrorHandling(async (
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
-) {
+) => {
   const admin = await getAuthedAdmin();
   if (!admin) {
     return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
@@ -92,4 +93,4 @@ export async function PATCH(
   });
 
   return NextResponse.json({ unit: unitDTO(unit) });
-}
+});

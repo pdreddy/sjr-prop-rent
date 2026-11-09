@@ -1,3 +1,4 @@
+import { withErrorHandling } from "@/lib/apiHandler";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getAuthedAdmin } from "@/lib/auth";
@@ -31,14 +32,14 @@ async function requireAdmin() {
   return { admin };
 }
 
-export async function GET() {
+export const GET = withErrorHandling(async () => {
   const { admin, error } = await requireAdmin();
   if (!admin) return error;
   const [electricity, general] = await Promise.all([getElectricityConfig(), getGeneralSettings()]);
   return NextResponse.json({ electricity, general });
-}
+});
 
-export async function PUT(request: NextRequest) {
+export const PUT = withErrorHandling(async (request: NextRequest) => {
   const { admin, error } = await requireAdmin();
   if (!admin) return error;
   const parsed = schema.safeParse(await request.json().catch(() => null));
@@ -57,4 +58,4 @@ export async function PUT(request: NextRequest) {
     newValue: { electricity, general },
   });
   return NextResponse.json({ electricity, general });
-}
+});
