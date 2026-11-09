@@ -12,7 +12,7 @@ interface Props {
 export default function MonthYearSelector({ month, options, onChange }: Props) {
   return (
     <label className="flex flex-col gap-1">
-      <span className="text-sm font-medium text-primary-dark">Month</span>
+      <span className="label-caps">Month</span>
       <div className="relative">
         <IconCalendar className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-primary/50" />
         <select
@@ -20,7 +20,7 @@ export default function MonthYearSelector({ month, options, onChange }: Props) {
           onChange={(e) => onChange(e.target.value)}
           aria-label="Select month and year"
           suppressHydrationWarning
-          className="min-h-11 w-full appearance-none rounded-xl border border-primary/15 bg-white py-2 pl-9 pr-8 text-base text-foreground shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+          className="min-h-11 w-full appearance-none rounded-control border border-line bg-white py-2 pl-9 pr-8 text-base text-foreground shadow-card focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
         >
           {options.map((opt) => (
             <option key={opt} value={opt}>

@@ -5,10 +5,10 @@ import { formatPlotFixed } from "@/lib/config";
 import type { ElectricityConfig, GeneralSettings } from "@/lib/types";
 
 const inputClass =
-  "min-h-11 w-full rounded-xl border border-primary/20 bg-white px-3 py-2 text-base focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30";
-const labelClass = "flex flex-col gap-1 text-sm font-medium text-primary-dark";
+  "min-h-11 w-full rounded-control border border-line-strong bg-white px-3 py-2 text-base focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30";
+const labelClass = "flex flex-col gap-1 text-sm font-medium text-ink";
 const hintClass = "text-xs font-normal text-foreground/50";
-const buttonClass = "min-h-11 rounded-xl bg-primary px-4 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-50";
+const buttonClass = "min-h-11 rounded-control bg-primary px-4 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-50";
 
 interface Props {
   onUnauthorized: () => void;
@@ -80,17 +80,17 @@ export default function SettingsView({ onUnauthorized, onNotify }: Props) {
   }
 
   if (!form || !general) {
-    return error ? <p className="mb-4 rounded-xl border border-unpaid/30 bg-unpaid-bg px-3.5 py-2.5 text-sm font-medium text-unpaid">{error}</p> : <div className="h-40 animate-pulse rounded-2xl bg-primary-light" aria-busy="true" />;
+    return error ? <p className="mb-4 rounded-control border border-unpaid/30 bg-unpaid-bg px-3.5 py-2.5 text-sm font-medium text-unpaid">{error}</p> : <div className="h-40 animate-pulse rounded-card bg-primary-light" aria-busy="true" />;
   }
 
   const field = (key: keyof Form) => ({ value: form[key], onChange: (e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, [key]: e.target.value }) });
 
   return (
     <div className="mb-4 flex flex-col gap-4">
-      {error && <p className="rounded-xl border border-unpaid/30 bg-unpaid-bg px-3.5 py-2.5 text-sm font-medium text-unpaid">{error}</p>}
+      {error && <p className="rounded-control border border-unpaid/30 bg-unpaid-bg px-3.5 py-2.5 text-sm font-medium text-unpaid">{error}</p>}
 
-      <section className="rounded-2xl border border-primary/10 bg-white p-4 shadow-sm">
-        <h2 className="text-base font-bold text-primary-dark">Electricity</h2>
+      <section className="rounded-card border border-line bg-white p-4 shadow-card">
+        <h2 className="text-base font-bold text-ink">Electricity</h2>
         <p className="mb-3 text-xs text-foreground/55">
           With a current meter reading the bill is (current − previous) × rate. Until a reading is entered, the fixed bill below applies. Changes apply to past months too.
         </p>
@@ -125,8 +125,8 @@ export default function SettingsView({ onUnauthorized, onNotify }: Props) {
         </div>
       </section>
 
-      <section className="rounded-2xl border border-primary/10 bg-white p-4 shadow-sm">
-        <h2 className="text-base font-bold text-primary-dark">Building &amp; public page</h2>
+      <section className="rounded-card border border-line bg-white p-4 shadow-card">
+        <h2 className="text-base font-bold text-ink">Building &amp; public page</h2>
         <div className="mt-3 grid grid-cols-1 gap-3">
           <label className={labelClass}>
             Building name
@@ -137,10 +137,17 @@ export default function SettingsView({ onUnauthorized, onNotify }: Props) {
             <textarea className={`${inputClass} min-h-24`} maxLength={500} placeholder="e.g. Rent is due by the 5th of every month." value={general.notice} onChange={(e) => setGeneral({ ...general, notice: e.target.value })} />
             <span className={hintClass}>Shown at the top of the public status page. Leave empty for no notice.</span>
           </label>
+          <label className="flex items-start gap-2.5 text-sm font-medium text-ink">
+            <input type="checkbox" className="mt-1 h-4 w-4" checked={general.showTenantNames} onChange={(e) => setGeneral({ ...general, showTenantNames: e.target.checked })} />
+            <span>
+              Show tenant names on the public page
+              <span className={`block ${hintClass}`}>When off, only plot numbers are shown. Names are removed on the server, not just hidden.</span>
+            </span>
+          </label>
         </div>
       </section>
 
-      <div className="sticky bottom-3 z-10 flex flex-wrap items-center gap-3 rounded-2xl border border-primary/15 bg-white/95 p-3 shadow-lg backdrop-blur">
+      <div className="sticky bottom-20 z-10 md:bottom-3 flex flex-wrap items-center gap-3 rounded-card border border-line bg-white/95 p-3 shadow-lg backdrop-blur">
         <button type="button" onClick={save} disabled={saving || invalid} className={buttonClass}>
           {saving ? "Saving…" : "Save settings"}
         </button>

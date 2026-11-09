@@ -21,15 +21,19 @@ import {
   getPreviousMonth,
   formatMonthLabel,
   formatDate,
-  isBeforeBuildingOpened,
 } from "@/lib/month";
 import type { DashboardResponse, DashboardRow, DashboardTotals } from "@/lib/types";
 import { BUILDING_READY_MONTH, ELECTRICITY_RATE_PER_UNIT } from "@/lib/constants";
 import { computeElectricityUnits } from "@/lib/electricity";
 import { rupee } from "@/lib/format";
 import {
+  IconBolt,
   IconBuilding,
   IconCopy,
+  IconGrid,
+  IconSettings,
+  IconUser,
+  IconWallet,
   IconEdit,
   IconInfo,
   IconLock,
@@ -41,9 +45,17 @@ import {
 const monthOptions = getMonthOptions();
 const STATUS_FILTERS = ["ALL", "PAID", "UNPAID", "PARTIAL", "VACANT"] as const;
 type StatusFilter = (typeof STATUS_FILTERS)[number];
-const TABS = ["overview", "all-details", "electricity", "history", "proration", "rent-paid", "payment-history", "settings"] as const;
-type Tab = (typeof TABS)[number];
-const TAB_LABELS: Record<Tab, string> = { overview: "Overview", "all-details": "All details", electricity: "Electricity bills", history: "Rental history", proration: "Move-in Proration", "rent-paid": "Rent paid", "payment-history": "Payment history", settings: "Settings" };
+type Tab = "overview" | "all-details" | "electricity" | "history" | "proration" | "rent-paid" | "payment-history" | "settings";
+const TAB_LABELS: Record<Tab, string> = { overview: "Overview", "all-details": "All details", electricity: "Electricity bills", history: "Rental history", proration: "Move-in proration", "rent-paid": "Rent paid", "payment-history": "Payment history", settings: "Settings" };
+
+// Navigation: eight screens grouped into five sections (sidebar on desktop, bottom bar on phones).
+const NAV_GROUPS: { id: string; label: string; icon: typeof IconGrid; tabs: Tab[] }[] = [
+  { id: "overview", label: "Overview", icon: IconGrid, tabs: ["overview"] },
+  { id: "electricity", label: "Electricity", icon: IconBolt, tabs: ["electricity"] },
+  { id: "payments", label: "Payments", icon: IconWallet, tabs: ["payment-history", "rent-paid", "proration"] },
+  { id: "plots", label: "Plots", icon: IconUser, tabs: ["all-details", "history"] },
+  { id: "settings", label: "Settings", icon: IconSettings, tabs: ["settings"] },
+];
 
 export default function AdminDashboard({ username }: { username: string }) {
   const router = useRouter();
@@ -142,14 +154,14 @@ export default function AdminDashboard({ username }: { username: string }) {
 
   return (
     <div className="flex flex-1 flex-col bg-background">
-      <header className="sticky top-0 z-20 border-b border-primary/10 bg-white/90 px-4 py-3 backdrop-blur sm:px-6">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3">
+      <header className="sticky top-0 z-20 border-b border-line bg-white/90 px-4 py-3 backdrop-blur sm:px-6">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-2.5">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-white">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-control bg-primary text-white">
               <IconBuilding className="h-5 w-5" />
             </span>
             <div className="min-w-0">
-              <h1 className="text-base font-bold leading-tight text-primary-dark sm:text-lg">
+              <h1 className="text-base font-bold leading-tight text-ink sm:text-lg">
                 SJR Rent Tracker
               </h1>
               <p className="truncate text-xs text-foreground/45">Signed in as {username}</p>
@@ -158,21 +170,21 @@ export default function AdminDashboard({ username }: { username: string }) {
           <div className="flex flex-wrap gap-2">
             <Link
               href="/admin/electricity"
-              className="inline-flex min-h-10 items-center gap-1.5 rounded-full border border-primary/20 px-3.5 py-1.5 text-sm font-medium text-primary-dark hover:bg-primary-light"
+              className="inline-flex min-h-10 items-center gap-1.5 rounded-full border border-line-strong px-3.5 py-1.5 text-sm font-medium text-ink hover:bg-primary-light"
             >
               <span className="hidden sm:inline">Meter readings</span>
               <span className="sm:hidden">Readings</span>
             </Link>
             <button
               onClick={() => setShowChangePassword(true)}
-              className="inline-flex min-h-10 items-center gap-1.5 rounded-full border border-primary/20 px-3.5 py-1.5 text-sm font-medium text-primary-dark hover:bg-primary-light"
+              className="inline-flex min-h-10 items-center gap-1.5 rounded-full border border-line-strong px-3.5 py-1.5 text-sm font-medium text-ink hover:bg-primary-light"
             >
               <IconLock className="h-4 w-4" />
               <span className="hidden sm:inline">Change password</span>
             </button>
             <button
               onClick={handleLogout}
-              className="inline-flex min-h-10 items-center gap-1.5 rounded-full border border-primary/20 px-3.5 py-1.5 text-sm font-medium text-primary-dark hover:bg-primary-light"
+              className="inline-flex min-h-10 items-center gap-1.5 rounded-full border border-line-strong px-3.5 py-1.5 text-sm font-medium text-ink hover:bg-primary-light"
             >
               <IconLogout className="h-4 w-4" />
               <span className="hidden sm:inline">Log out</span>
@@ -181,31 +193,64 @@ export default function AdminDashboard({ username }: { username: string }) {
         </div>
       </header>
 
-      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-3 py-5 sm:px-6">
+      <div className="mx-auto flex w-full max-w-7xl flex-1 gap-6 px-3 sm:px-6">
+      <aside className="hidden w-52 shrink-0 md:block">
+        <nav aria-label="Sections" className="sticky top-20 flex flex-col gap-4 py-5">
+          {NAV_GROUPS.map((g) => (
+            <div key={g.id}>
+              <button
+                onClick={() => setTab(g.tabs[0])}
+                className={`flex w-full items-center gap-2.5 rounded-control px-3 py-2 text-sm font-semibold transition-colors ${g.tabs.includes(tab) ? "bg-primary text-white" : "text-ink hover:bg-primary-light"}`}
+              >
+                <g.icon className="h-4 w-4" />
+                {g.label}
+              </button>
+              {g.tabs.length > 1 && (
+                <ul className="mt-1 ml-5 flex flex-col border-l border-line pl-2">
+                  {g.tabs.map((t) => (
+                    <li key={t}>
+                      <button
+                        onClick={() => setTab(t)}
+                        className={`w-full rounded-lg px-2.5 py-1.5 text-left text-sm transition-colors ${tab === t ? "bg-primary-light font-semibold text-ink" : "text-muted hover:text-ink"}`}
+                      >
+                        {TAB_LABELS[t]}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          ))}
+        </nav>
+      </aside>
+      <main className="flex min-w-0 flex-1 flex-col py-5 pb-24 md:pb-5">
         {message && (
-          <div className="mb-4 rounded-xl border border-paid/30 bg-paid-bg px-3.5 py-2.5 text-sm font-medium text-paid">
+          <div className="mb-4 rounded-control border border-paid/30 bg-paid-bg px-3.5 py-2.5 text-sm font-medium text-paid">
             {message}
           </div>
         )}
         {error && (
-          <div className="mb-4 rounded-xl border border-unpaid/30 bg-unpaid-bg px-3.5 py-2.5 text-sm font-medium text-unpaid">
+          <div className="mb-4 rounded-control border border-unpaid/30 bg-unpaid-bg px-3.5 py-2.5 text-sm font-medium text-unpaid">
             {error}
           </div>
         )}
 
-        <div className="mb-4 flex max-w-full gap-1.5 overflow-x-auto rounded-full border border-primary/10 bg-white p-1 shadow-sm w-fit [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {TABS.map((t) => (
-            <button
-              key={t}
-              onClick={() => setTab(t)}
-              className={`min-h-9 shrink-0 whitespace-nowrap rounded-full px-4 text-sm font-semibold transition-colors ${
-                tab === t ? "bg-primary text-white" : "text-foreground/60 hover:bg-primary-light"
-              }`}
-            >
-              {TAB_LABELS[t]}
-            </button>
-          ))}
-        </div>
+        {(() => {
+          const group = NAV_GROUPS.find((g) => g.tabs.includes(tab));
+          return group && group.tabs.length > 1 ? (
+            <div className="mb-4 flex gap-1.5 overflow-x-auto md:hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {group.tabs.map((t) => (
+                <button
+                  key={t}
+                  onClick={() => setTab(t)}
+                  className={`min-h-9 shrink-0 whitespace-nowrap rounded-full border px-4 text-sm font-semibold transition-colors ${tab === t ? "border-primary bg-primary text-white" : "border-line-strong bg-white text-muted"}`}
+                >
+                  {TAB_LABELS[t]}
+                </button>
+              ))}
+            </div>
+          ) : null;
+        })()}
 
         {tab === "overview" && totals && <StatsPanel totals={totals} month={month} />}
 
@@ -216,24 +261,24 @@ export default function AdminDashboard({ username }: { username: string }) {
         {tab === "payment-history" && <PaymentHistoryView onUnauthorized={handleUnauthorized} />}
         {tab === "settings" && <SettingsView onUnauthorized={handleUnauthorized} onNotify={(msg) => { setMessage(msg); load(); }} />}
 
-        <div className={`mb-4 flex flex-wrap items-end gap-3 rounded-2xl border border-primary/10 bg-white p-3 shadow-sm sm:p-4 ${standaloneTab ? "hidden" : ""}`}>
+        <div className={`mb-4 flex flex-wrap items-end gap-3 rounded-card border border-line bg-white p-3 shadow-card sm:p-4 ${standaloneTab ? "hidden" : ""}`}>
           <MonthYearSelector month={month} options={monthOptions} onChange={setMonth} />
 
           <label className="flex flex-1 min-w-[160px] flex-col gap-1">
-            <span className="text-sm font-medium text-primary-dark">Search</span>
+            <span className="label-caps">Search</span>
             <div className="relative">
               <IconSearch className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-primary/50" />
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Plot, tenant or phone"
-                className="min-h-11 w-full rounded-xl border border-primary/20 bg-white py-2 pl-9 pr-3 text-base focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                className="min-h-11 w-full rounded-control border border-line-strong bg-white py-2 pl-9 pr-3 text-base focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
               />
             </div>
           </label>
 
           <div className="flex w-full flex-col gap-1 sm:w-auto">
-            <span className="text-sm font-medium text-primary-dark">Filter</span>
+            <span className="label-caps">Filter</span>
             <div className="flex flex-wrap gap-1.5">
               {STATUS_FILTERS.map((s) => (
                 <button
@@ -242,7 +287,7 @@ export default function AdminDashboard({ username }: { username: string }) {
                   className={`min-h-9 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
                     statusFilter === s
                       ? "border-primary bg-primary text-white"
-                      : "border-primary/20 bg-white text-foreground/70 hover:bg-primary-light"
+                      : "border-line-strong bg-white text-foreground/70 hover:bg-primary-light"
                   }`}
                 >
                   {s.charAt(0) + s.slice(1).toLowerCase()}
@@ -263,7 +308,7 @@ export default function AdminDashboard({ username }: { username: string }) {
               onClick={handleCopyPreviousMonth}
               disabled={copying || month <= BUILDING_READY_MONTH}
               title={month <= BUILDING_READY_MONTH ? "No earlier month exists — the building opened this month." : undefined}
-              className="inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-full border border-primary/30 bg-white px-4 py-2.5 text-sm font-semibold text-primary-dark hover:bg-primary-light disabled:opacity-60 sm:flex-none"
+              className="inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-full border border-line-strong bg-white px-4 py-2.5 text-sm font-semibold text-ink hover:bg-primary-light disabled:opacity-60 sm:flex-none"
             >
               <IconCopy className="h-4 w-4" />
               {copying ? "Copying..." : "Copy last month"}
@@ -274,13 +319,13 @@ export default function AdminDashboard({ username }: { username: string }) {
         {loading && !standaloneTab && (
           <div className="flex flex-col gap-2" aria-busy="true">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="h-14 animate-pulse rounded-xl bg-primary-light" />
+              <div key={i} className="h-14 animate-pulse rounded-control bg-primary-light" />
             ))}
           </div>
         )}
 
         {!loading && data && tab === "overview" && data.rows.length === 0 && (
-          <div className="rounded-2xl border border-primary/15 bg-white p-8 text-center text-foreground/60">
+          <div className="rounded-card border border-line bg-white p-8 text-center text-foreground/60">
             No plots match your search or filter.
           </div>
         )}
@@ -298,19 +343,16 @@ export default function AdminDashboard({ username }: { username: string }) {
               ))}
             </ul>
 
-            <div className="hidden min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-primary/10 bg-white shadow-sm sm:flex">
+            <div className="hidden min-h-0 flex-1 flex-col overflow-hidden rounded-card border border-line bg-white shadow-card sm:flex">
               <div className="max-h-[68vh] overflow-auto">
                 <table className="w-full text-left text-sm">
-                  <thead className="sticky top-0 z-20 bg-primary-dark text-white shadow-[0_1px_0_rgba(0,0,0,0.08)]">
+                  <thead className="sticky top-0 z-20 bg-primary-light text-muted shadow-[0_1px_0_var(--color-line)]">
                     <tr>
-                      <th className="sticky left-0 z-20 min-w-[150px] bg-primary-dark px-4 py-3 font-semibold">Plot &amp; tenant</th>
-                      <th className="min-w-[130px] px-3 py-3 font-semibold">This month</th>
-                      <th className="min-w-[110px] px-3 py-3 font-semibold">Status</th>
-                      <th className="min-w-[100px] px-3 py-3 font-semibold">Balance</th>
-                      <th className="min-w-[150px] px-3 py-3 font-semibold">Electricity</th>
-                      <th className="min-w-[170px] px-3 py-3 font-semibold">Notes</th>
-                      <th className="min-w-[170px] px-3 py-3 font-semibold">Plot info</th>
-                      <th className="sticky right-0 z-20 min-w-[100px] bg-primary-dark px-3 py-3 text-right font-semibold">Actions</th>
+                      <th className="label-caps sticky left-0 z-20 min-w-[170px] bg-primary-light px-4 py-3">Plot &amp; tenant</th>
+                      <th className="label-caps min-w-[170px] px-3 py-3">Rent</th>
+                      <th className="label-caps min-w-[190px] px-3 py-3">Electricity</th>
+                      <th className="label-caps min-w-[110px] px-3 py-3">Status</th>
+                      <th className="label-caps sticky right-0 z-20 min-w-[100px] bg-primary-light px-3 py-3 text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -342,6 +384,24 @@ export default function AdminDashboard({ username }: { username: string }) {
           />
         )}
       </main>
+      </div>
+
+      <nav aria-label="Sections" className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-line bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
+        {NAV_GROUPS.map((g) => {
+          const active = g.tabs.includes(tab);
+          return (
+            <button
+              key={g.id}
+              onClick={() => setTab(active ? tab : g.tabs[0])}
+              aria-current={active ? "page" : undefined}
+              className={`flex min-h-14 flex-col items-center justify-center gap-0.5 text-[11px] font-semibold ${active ? "text-primary" : "text-muted"}`}
+            >
+              <g.icon className="h-5 w-5" />
+              {g.label}
+            </button>
+          );
+        })}
+      </nav>
 
       {detailsRow !== null && (
         <PlotDetailsModal
@@ -380,16 +440,16 @@ function StatsPanel({ totals, month }: { totals: DashboardTotals; month: string 
   const collectedPct =
     totals.totalExpected > 0 ? Math.round((totals.totalCollected / totals.totalExpected) * 100) : 0;
   return (
-    <div className="mb-4 rounded-2xl border border-primary/10 bg-white p-4 shadow-sm sm:p-5">
+    <div className="mb-4 rounded-card border border-line bg-white p-4 shadow-card sm:p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-sm font-medium text-foreground/60">Collections for {formatMonthLabel(month)}</p>
-          <p className="mt-1 text-2xl font-bold text-primary-dark">
+          <p className="label-caps">Collections for {formatMonthLabel(month)}</p>
+          <p className="money-lg mt-1">
             {rupee(totals.totalCollected)}
-            <span className="text-base font-medium text-foreground/40"> / {rupee(totals.totalExpected)} expected</span>
+            <span className="text-base font-medium text-muted"> / {rupee(totals.totalExpected)} expected</span>
           </p>
         </div>
-        <div className="flex items-center gap-2 rounded-full bg-primary-light px-3.5 py-1.5 text-sm font-bold text-primary-dark">
+        <div className="flex items-center gap-2 rounded-full bg-primary-light px-3.5 py-1.5 text-sm font-bold text-ink">
           {collectedPct}% collected
         </div>
       </div>
@@ -397,7 +457,7 @@ function StatsPanel({ totals, month }: { totals: DashboardTotals; month: string 
         <div className="h-full rounded-full bg-paid transition-all" style={{ width: `${Math.min(100, collectedPct)}%` }} />
       </div>
       <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-5">
-        <StatCard label="Plots" value={totals.totalUnits} colorClass="bg-primary-light text-primary-dark" />
+        <StatCard label="Plots" value={totals.totalUnits} colorClass="bg-primary-light text-ink" />
         <StatCard label="Paid" value={totals.numPaid} colorClass="bg-paid-bg text-paid" />
         <StatCard label="Partial" value={totals.numPartial} colorClass="bg-partial-bg text-partial" />
         <StatCard label="Unpaid" value={totals.numUnpaid} colorClass="bg-unpaid-bg text-unpaid" />
@@ -409,12 +469,26 @@ function StatsPanel({ totals, month }: { totals: DashboardTotals; month: string 
 
 function StatCard({ label, value, colorClass }: { label: string; value: string | number; colorClass: string }) {
   return (
-    <div className={`rounded-xl px-3 py-2.5 text-center ${colorClass}`}>
+    <div className={`rounded-control px-3 py-2.5 text-center ${colorClass}`}>
       <p className="text-lg font-bold leading-tight">{value}</p>
-      <p className="text-[11px] font-medium uppercase tracking-wide opacity-80">{label}</p>
+      <p className="text-[11px] font-semibold uppercase tracking-wide opacity-80">{label}</p>
     </div>
   );
 }
+
+type Attention = "bad" | "warn" | null;
+/** Rows that need the owner's eye: unpaid or partial rent, or unpaid electricity. */
+function attentionOf(row: DashboardRow): Attention {
+  if (row.isVacant || row.isBeforeMoveIn) return null;
+  if (row.effectiveStatus === "UNPAID") return "bad";
+  if (row.effectiveStatus === "PARTIAL") return "warn";
+  if ((row.payment?.electricityAmount ?? 0) > 0 && !row.payment?.electricityPaid) return "warn";
+  return null;
+}
+const ATTENTION_EDGE: Record<"bad" | "warn", string> = {
+  bad: "shadow-[inset_4px_0_0_var(--color-unpaid)]",
+  warn: "shadow-[inset_4px_0_0_var(--color-partial)]",
+};
 
 function ReadRow({
   row,
@@ -436,28 +510,28 @@ function ReadRow({
   const currReading = row.payment?.currReading ?? 0;
   const electricityAmount = row.payment?.electricityAmount ?? 0;
   const electricityStatus = row.isBeforeMoveIn ? "NA" : row.payment?.electricityPaid ? "PAID" : "UNPAID";
-  const rowBg = striped ? "bg-primary-light/25" : "bg-white";
+  const rowBg = striped ? "bg-primary-light/40" : "bg-white";
+  const attention = attentionOf(row);
 
   return (
-    <tr className={`border-t border-primary/5 align-top transition-colors hover:bg-primary-light/40 ${rowBg}`}>
-      <td className={`sticky left-0 z-10 px-4 py-3 ${rowBg}`}>
-        <p className="text-xs font-semibold uppercase tracking-wide text-foreground/40">Plot {row.unit.plotNumber}</p>
-        <p className="font-bold text-foreground">{row.unit.tenantName || "Vacant"}</p>
+    <tr className={`border-t border-line align-top transition-colors hover:bg-primary-light ${rowBg}`}>
+      <td className={`sticky left-0 z-10 px-4 py-3 ${rowBg} ${attention ? ATTENTION_EDGE[attention] : ""}`}>
+        <p className="label-caps">Plot {row.unit.plotNumber}</p>
+        <p className="font-bold text-ink">{row.unit.tenantName || "Vacant"}</p>
       </td>
       <td className="px-3 py-3">
-        <p className="font-semibold text-foreground">{rupee(rentSum)} due</p>
-        <p className="text-foreground/60">
-          {rupee((row.payment?.amountPaid ?? 0))} paid
-          {row.payment?.paidDate ? ` · ${formatDate(row.payment.paidDate)}` : ""}
-        </p>
-      </td>
-      <td className="px-3 py-3">
-        <StatusBadge status={status} />
-      </td>
-      <td className="px-3 py-3">
-        <span className={`font-semibold ${balanceDue > 0 ? "text-unpaid" : "text-foreground/50"}`}>
-          {row.isVacant ? "—" : rupee(balanceDue)}
-        </span>
+        {row.isVacant ? (
+          <span className="text-foreground/35">—</span>
+        ) : (
+          <>
+            <p className="money">{rupee(rentSum)}</p>
+            <p className="text-muted">
+              {rupee(row.payment?.amountPaid ?? 0)} paid
+              {row.payment?.paidDate ? ` · ${formatDate(row.payment.paidDate)}` : ""}
+            </p>
+            {balanceDue > 0 && <p className="font-semibold text-unpaid">{rupee(balanceDue)} balance</p>}
+          </>
+        )}
       </td>
       <td className="px-3 py-3">
         {row.isBeforeMoveIn ? (
@@ -467,22 +541,17 @@ function ReadRow({
         ) : (
           <>
             <div className="flex items-center gap-1.5">
-              <span className="font-semibold text-foreground">{rupee(electricityAmount)}</span>
+              <span className="money">{rupee(electricityAmount)}</span>
               <StatusBadge status={electricityStatus} />
             </div>
-            <p className="text-foreground/60">
+            <p className="text-muted">
               {prevReading} → {currReading} ({computeElectricityUnits(prevReading, currReading)} units)
             </p>
           </>
         )}
       </td>
-      <td className="max-w-[200px] whitespace-pre-line px-3 py-3 text-foreground/70 line-clamp-2">{row.payment?.notes || "—"}</td>
-      <td className="px-3 py-3 text-foreground/70">
-        <p>
-          Joined {formatDate(row.unit.moveInDate)}
-          {isBeforeBuildingOpened(row.unit.moveInDate) && <span className="block text-xs font-semibold text-unpaid">before building opened - check year</span>}
-        </p>
-        <p>Total rent {rupee(rentSum)}</p>
+      <td className="px-3 py-3">
+        <StatusBadge status={status} />
       </td>
       <td className={`sticky right-0 z-10 px-3 py-3 ${rowBg}`}>
         <div className="flex justify-end gap-1.5">
@@ -490,15 +559,15 @@ function ReadRow({
             onClick={onEdit}
             aria-label={`Edit plot ${row.unit.plotNumber}`}
             title="Edit"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-primary/25 text-primary-dark hover:bg-primary-light"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-line-strong bg-white text-ink hover:bg-primary-light"
           >
             <IconEdit className="h-4 w-4" />
           </button>
           <button
             onClick={onDetails}
-            aria-label={`Plot details and deactivate for plot ${row.unit.plotNumber}`}
-            title="Plot details / deactivate"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-primary/25 text-primary-dark hover:bg-primary-light"
+            aria-label={`Plot details for plot ${row.unit.plotNumber}`}
+            title="Plot details (joined date, rent, notes) and deactivate"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-line-strong bg-white text-ink hover:bg-primary-light"
           >
             <IconInfo className="h-4 w-4" />
           </button>
@@ -528,10 +597,10 @@ function MobileRowCard({
   const electricityStatus = row.isBeforeMoveIn ? "NA" : row.payment?.electricityPaid ? "PAID" : "UNPAID";
 
   return (
-    <li className="rounded-2xl border border-primary/10 bg-white p-4 shadow-sm">
+    <li className={`rounded-card border border-line bg-white p-4 shadow-card ${attentionOf(row) === "bad" ? "border-l-4 border-l-unpaid" : attentionOf(row) === "warn" ? "border-l-4 border-l-partial" : ""}`}>
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="text-xs font-semibold uppercase tracking-wide text-foreground/40">Plot {row.unit.plotNumber}</p>
+          <p className="label-caps">Plot {row.unit.plotNumber}</p>
           <p className="truncate font-bold text-foreground">{row.unit.tenantName || "Vacant"}</p>
         </div>
         <StatusBadge status={status} />
@@ -552,7 +621,7 @@ function MobileRowCard({
         </span>
       </div>
 
-      <div className="mt-2.5 flex items-center justify-between gap-2 rounded-xl bg-background px-3 py-2">
+      <div className="mt-2.5 flex items-center justify-between gap-2 rounded-control bg-background px-3 py-2">
         <div className="min-w-0 text-sm">
           {row.isBeforeMoveIn ? (
             <span className="text-foreground/50">Electricity N/A</span>
@@ -574,17 +643,17 @@ function MobileRowCard({
         <p className="mt-2.5 whitespace-pre-line text-sm text-foreground/60">{row.payment.notes}</p>
       )}
 
-      <div className="mt-3 flex gap-2 border-t border-primary/10 pt-3">
+      <div className="mt-3 flex gap-2 border-t border-line pt-3">
         <button
           onClick={onEdit}
-          className="inline-flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-lg border border-primary/25 text-sm font-semibold text-primary-dark hover:bg-primary-light"
+          className="inline-flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-lg border border-line-strong text-sm font-semibold text-ink hover:bg-primary-light"
         >
           <IconEdit className="h-4 w-4" />
           Edit
         </button>
         <button
           onClick={onDetails}
-          className="inline-flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-lg border border-primary/25 text-sm font-semibold text-primary-dark hover:bg-primary-light"
+          className="inline-flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-lg border border-line-strong text-sm font-semibold text-ink hover:bg-primary-light"
         >
           <IconInfo className="h-4 w-4" />
           Details

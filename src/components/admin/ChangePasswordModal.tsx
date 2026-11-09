@@ -50,7 +50,7 @@ export default function ChangePasswordModal({ onClose }: { onClose: () => void }
           <button
             type="button"
             onClick={onClose}
-            className="min-h-11 rounded-xl bg-primary px-4 py-2.5 text-base font-semibold text-white hover:bg-primary-dark"
+            className="min-h-11 rounded-control bg-primary px-4 py-2.5 text-base font-semibold text-white hover:bg-primary-dark"
           >
             Done
           </button>
@@ -70,7 +70,7 @@ export default function ChangePasswordModal({ onClose }: { onClose: () => void }
               autoComplete="current-password"
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
-              className="min-h-11 rounded-xl border border-primary/20 px-3 py-2 text-base focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="min-h-11 rounded-control border border-line-strong px-3 py-2 text-base focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
           </label>
           <label className="flex flex-col gap-1">
@@ -82,7 +82,7 @@ export default function ChangePasswordModal({ onClose }: { onClose: () => void }
               autoComplete="new-password"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
-              className="min-h-11 rounded-xl border border-primary/20 px-3 py-2 text-base focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="min-h-11 rounded-control border border-line-strong px-3 py-2 text-base focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
           </label>
           <label className="flex flex-col gap-1">
@@ -94,13 +94,13 @@ export default function ChangePasswordModal({ onClose }: { onClose: () => void }
               autoComplete="new-password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="min-h-11 rounded-xl border border-primary/20 px-3 py-2 text-base focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="min-h-11 rounded-control border border-line-strong px-3 py-2 text-base focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
           </label>
           <button
             type="submit"
             disabled={submitting}
-            className="min-h-11 rounded-xl bg-primary px-4 py-2.5 text-base font-semibold text-white hover:bg-primary-dark disabled:opacity-60"
+            className="min-h-11 rounded-control bg-primary px-4 py-2.5 text-base font-semibold text-white hover:bg-primary-dark disabled:opacity-60"
           >
             {submitting ? "Saving..." : "Update password"}
           </button>

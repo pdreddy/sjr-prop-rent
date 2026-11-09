@@ -85,27 +85,27 @@ export default function ElectricityStatementView({ onUnauthorized }: { onUnautho
     return (
       <div className="flex flex-col gap-2" aria-busy="true">
         {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="h-16 animate-pulse rounded-xl bg-primary-light" />
+          <div key={i} className="h-16 animate-pulse rounded-control bg-primary-light" />
         ))}
       </div>
     );
   }
   if (error || !data) {
-    return <div className="rounded-xl border border-unpaid/30 bg-unpaid-bg px-3.5 py-2.5 text-sm font-medium text-unpaid">{error}</div>;
+    return <div className="rounded-control border border-unpaid/30 bg-unpaid-bg px-3.5 py-2.5 text-sm font-medium text-unpaid">{error}</div>;
   }
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="rounded-2xl border border-primary/10 bg-white p-3.5 shadow-sm sm:p-4">
+      <div className="rounded-card border border-line bg-white p-3.5 shadow-card sm:p-4">
         <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-primary-dark">Search</span>
+          <span className="text-sm font-medium text-ink">Search</span>
           <div className="relative">
             <IconSearch className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-primary/50" />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Plot or tenant"
-              className="min-h-11 w-full rounded-xl border border-primary/20 bg-white py-2 pl-9 pr-3 text-base focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="min-h-11 w-full rounded-control border border-line-strong bg-white py-2 pl-9 pr-3 text-base focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
           </div>
         </label>
@@ -117,7 +117,7 @@ export default function ElectricityStatementView({ onUnauthorized }: { onUnautho
       </div>
 
       {tenants.length === 0 && (
-        <div className="rounded-2xl border border-primary/15 bg-white p-8 text-center text-foreground/60">
+        <div className="rounded-card border border-line bg-white p-8 text-center text-foreground/60">
           No tenants match your search.
         </div>
       )}
@@ -156,7 +156,7 @@ function TenantStatement({
   const [openMonth, setOpenMonth] = useState<string | null>(null);
   const historyTenant = history?.tenants.find((t) => t.unitId === tenant.unitId) ?? null;
   return (
-    <section className="rounded-2xl border border-primary/10 bg-white shadow-sm">
+    <section className="rounded-card border border-line bg-white shadow-card">
       <button type="button" onClick={onToggle} aria-expanded={expanded} className="flex w-full flex-wrap items-center justify-between gap-3 p-3.5 text-left sm:p-4">
         <div className="min-w-0">
           <p className="text-xs font-semibold uppercase tracking-wide text-foreground/40">Plot {tenant.plotNumber}</p>
@@ -173,12 +173,12 @@ function TenantStatement({
       </button>
 
       {expanded && (
-        <div className="overflow-x-auto border-t border-primary/10">
+        <div className="overflow-x-auto border-t border-line">
           {tenant.months.length === 0 ? (
             <p className="p-4 text-sm text-foreground/60">No months to show yet.</p>
           ) : (
             <table className="w-full min-w-[760px] text-left text-sm">
-              <thead className="bg-primary-light text-xs uppercase tracking-wide text-primary-dark">
+              <thead className="bg-primary-light text-xs uppercase tracking-wide text-ink">
                 <tr>
                   <th className="px-3 py-2 font-semibold">Month</th>
                   <th className="px-3 py-2 text-right font-semibold">Rent due</th>
@@ -190,7 +190,7 @@ function TenantStatement({
                   <th className="px-3 py-2 font-semibold">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-primary/10">
+              <tbody className="divide-y divide-line">
                 {tenant.months.map((m) => [
                   <tr
                     key={m.month}

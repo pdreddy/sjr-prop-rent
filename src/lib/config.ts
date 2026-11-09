@@ -19,6 +19,8 @@ export interface ElectricityConfig {
 
 export interface GeneralSettings {
   buildingName: string;
+  /** Show each plot's tenant name on the public page. */
+  showTenantNames: boolean;
   /** Optional message shown at the top of the public page (e.g. "Rent is due by the 5th"). */
   notice: string;
 }
@@ -34,6 +36,7 @@ export const DEFAULT_ELECTRICITY_CONFIG: ElectricityConfig = {
 
 export const DEFAULT_GENERAL_SETTINGS: GeneralSettings = {
   buildingName: process.env.BUILDING_NAME || "SJR Building",
+  showTenantNames: true,
   notice: "",
 };
 
@@ -83,6 +86,7 @@ export function normalizeGeneralSettings(value: Partial<Record<keyof GeneralSett
   const name = typeof value?.buildingName === "string" ? value.buildingName.trim().slice(0, 100) : "";
   return {
     buildingName: name || d.buildingName,
+    showTenantNames: typeof value?.showTenantNames === "boolean" ? value.showTenantNames : d.showTenantNames,
     notice: typeof value?.notice === "string" ? value.notice.trim().slice(0, 500) : d.notice,
   };
 }

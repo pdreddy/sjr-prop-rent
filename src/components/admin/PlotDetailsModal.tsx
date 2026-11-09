@@ -3,6 +3,8 @@
 import { useState, type FormEvent } from "react";
 import type { DashboardRow } from "@/lib/types";
 import ModalShell from "./ModalShell";
+import { formatDate, isBeforeBuildingOpened } from "@/lib/month";
+import { rupee } from "@/lib/format";
 import { IconTrash } from "@/components/icons";
 
 interface Props {
@@ -12,7 +14,7 @@ interface Props {
 }
 
 const inputClass =
-  "min-h-11 w-full rounded-xl border border-primary/20 px-3 py-2 text-base focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30";
+  "min-h-11 w-full rounded-control border border-line-strong px-3 py-2 text-base focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30";
 const labelClass = "text-sm font-medium text-foreground/80";
 
 export default function PlotDetailsModal({ row, onClose, onSaved }: Props) {
@@ -106,6 +108,26 @@ export default function PlotDetailsModal({ row, onClose, onSaved }: Props) {
           </div>
         )}
 
+        {!isNew && (
+          <dl className="grid grid-cols-2 gap-2 rounded-control bg-primary-light p-3 text-sm">
+            <div>
+              <dt className="label-caps">Joined</dt>
+              <dd className="font-semibold text-ink">{formatDate(row!.unit.moveInDate)}</dd>
+              {isBeforeBuildingOpened(row!.unit.moveInDate) && <dd className="text-xs font-semibold text-unpaid">before building opened - check year</dd>}
+            </div>
+            <div>
+              <dt className="label-caps">Total rent / month</dt>
+              <dd className="money">{rupee(row!.unit.monthlyRent + row!.unit.maintenanceAmount)}</dd>
+            </div>
+            {row!.payment?.notes && (
+              <div className="col-span-2">
+                <dt className="label-caps">This month&apos;s notes</dt>
+                <dd className="whitespace-pre-line text-foreground/80">{row!.payment.notes}</dd>
+              </div>
+            )}
+          </dl>
+        )}
+
         <label className="flex flex-col gap-1">
           <span className={labelClass}>Plot / flat number</span>
           <input required value={plotNumber} onChange={(e) => setPlotNumber(e.target.value)} className={inputClass} />
@@ -163,13 +185,13 @@ export default function PlotDetailsModal({ row, onClose, onSaved }: Props) {
           Phone numbers and advance details are managed on the &quot;All details&quot; tab.
         </p>
 
-        <div className="flex gap-3 border-t border-primary/10 pt-4">
+        <div className="flex gap-3 border-t border-line pt-4">
           {!isNew && (
             <button
               type="button"
               onClick={handleDeactivate}
               disabled={deactivating || submitting}
-              className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-unpaid/30 px-3.5 py-2.5 text-sm font-medium text-unpaid hover:bg-unpaid-bg disabled:opacity-60"
+              className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-control border border-unpaid/30 px-3.5 py-2.5 text-sm font-medium text-unpaid hover:bg-unpaid-bg disabled:opacity-60"
             >
               <IconTrash className="h-4 w-4" />
               {deactivating ? "Deactivating…" : "Deactivate"}
@@ -178,14 +200,14 @@ export default function PlotDetailsModal({ row, onClose, onSaved }: Props) {
           <button
             type="button"
             onClick={onClose}
-            className="min-h-11 flex-1 rounded-xl border border-primary/20 px-4 py-2.5 text-base font-semibold text-foreground/70"
+            className="min-h-11 flex-1 rounded-control border border-line-strong px-4 py-2.5 text-base font-semibold text-foreground/70"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={submitting || deactivating}
-            className="min-h-11 flex-1 rounded-xl bg-primary px-4 py-2.5 text-base font-semibold text-white hover:bg-primary-dark disabled:opacity-60"
+            className="min-h-11 flex-1 rounded-control bg-primary px-4 py-2.5 text-base font-semibold text-white hover:bg-primary-dark disabled:opacity-60"
           >
             {submitting ? "Saving..." : "Save"}
           </button>

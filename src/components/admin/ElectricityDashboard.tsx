@@ -91,14 +91,14 @@ export default function ElectricityDashboard({ username, role }: { username: str
 
   return (
     <div className="flex flex-1 flex-col bg-background">
-      <header className="sticky top-0 z-20 border-b border-primary/10 bg-white/90 px-4 py-3 backdrop-blur sm:px-6">
+      <header className="sticky top-0 z-20 border-b border-line bg-white/90 px-4 py-3 backdrop-blur sm:px-6">
         <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-2.5">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-white">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-control bg-primary text-white">
               <IconBuilding className="h-5 w-5" />
             </span>
             <div className="min-w-0">
-              <h1 className="text-base font-bold leading-tight text-primary-dark sm:text-lg">Meter readings</h1>
+              <h1 className="text-base font-bold leading-tight text-ink sm:text-lg">Meter readings</h1>
               <p className="truncate text-xs text-foreground/45">
                 Signed in as {username}
                 {role === "SECURITY" ? " · Security" : ""}
@@ -109,21 +109,21 @@ export default function ElectricityDashboard({ username, role }: { username: str
             {role === "ADMIN" && (
               <Link
                 href="/admin"
-                className="inline-flex min-h-10 items-center gap-1.5 rounded-full border border-primary/20 px-3.5 py-1.5 text-sm font-medium text-primary-dark hover:bg-primary-light"
+                className="inline-flex min-h-10 items-center gap-1.5 rounded-full border border-line-strong px-3.5 py-1.5 text-sm font-medium text-ink hover:bg-primary-light"
               >
                 Full dashboard
               </Link>
             )}
             <button
               onClick={() => setShowChangePassword(true)}
-              className="inline-flex min-h-10 items-center gap-1.5 rounded-full border border-primary/20 px-3.5 py-1.5 text-sm font-medium text-primary-dark hover:bg-primary-light"
+              className="inline-flex min-h-10 items-center gap-1.5 rounded-full border border-line-strong px-3.5 py-1.5 text-sm font-medium text-ink hover:bg-primary-light"
             >
               <IconLock className="h-4 w-4" />
               <span className="hidden sm:inline">Change password</span>
             </button>
             <button
               onClick={handleLogout}
-              className="inline-flex min-h-10 items-center gap-1.5 rounded-full border border-primary/20 px-3.5 py-1.5 text-sm font-medium text-primary-dark hover:bg-primary-light"
+              className="inline-flex min-h-10 items-center gap-1.5 rounded-full border border-line-strong px-3.5 py-1.5 text-sm font-medium text-ink hover:bg-primary-light"
             >
               <IconLogout className="h-4 w-4" />
               <span className="hidden sm:inline">Log out</span>
@@ -159,12 +159,12 @@ export default function ElectricityDashboard({ username, role }: { username: str
         )}
 
         {totals && (
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-primary/10 bg-white p-3.5 shadow-sm sm:p-4">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-card border border-line bg-white p-3.5 shadow-card sm:p-4">
             <div>
               <p className="text-sm font-medium text-foreground/60">
                 Total electricity for {formatMonthLabel(month)}
               </p>
-              <p className="mt-1 text-2xl font-bold text-primary-dark">₹{totals.amount.toFixed(0)}</p>
+              <p className="mt-1 text-2xl font-bold text-ink">₹{totals.amount.toFixed(0)}</p>
             </div>
             <div className="flex items-center gap-2 rounded-full bg-paid-bg px-3.5 py-1.5 text-sm font-bold text-paid">
               ₹{totals.paid.toFixed(0)} paid
@@ -173,27 +173,27 @@ export default function ElectricityDashboard({ username, role }: { username: str
         )}
 
         {message && (
-          <div className="mb-4 rounded-xl border border-paid/30 bg-paid-bg px-3.5 py-2.5 text-sm font-medium text-paid">
+          <div className="mb-4 rounded-control border border-paid/30 bg-paid-bg px-3.5 py-2.5 text-sm font-medium text-paid">
             {message}
           </div>
         )}
         {error && (
-          <div className="mb-4 rounded-xl border border-unpaid/30 bg-unpaid-bg px-3.5 py-2.5 text-sm font-medium text-unpaid">
+          <div className="mb-4 rounded-control border border-unpaid/30 bg-unpaid-bg px-3.5 py-2.5 text-sm font-medium text-unpaid">
             {error}
           </div>
         )}
 
-        <div className="mb-4 flex flex-wrap items-end gap-3 rounded-2xl border border-primary/10 bg-white p-3 shadow-sm sm:p-4">
+        <div className="mb-4 flex flex-wrap items-end gap-3 rounded-card border border-line bg-white p-3 shadow-card sm:p-4">
           <MonthYearSelector month={month} options={monthOptions} onChange={setMonth} />
           <label className="flex flex-1 min-w-[160px] flex-col gap-1">
-            <span className="text-sm font-medium text-primary-dark">Search</span>
+            <span className="text-sm font-medium text-ink">Search</span>
             <div className="relative">
               <IconSearch className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-primary/50" />
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Plot or tenant"
-                className="min-h-11 w-full rounded-xl border border-primary/20 bg-white py-2 pl-9 pr-3 text-base focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                className="min-h-11 w-full rounded-control border border-line-strong bg-white py-2 pl-9 pr-3 text-base focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
               />
             </div>
           </label>
@@ -202,13 +202,13 @@ export default function ElectricityDashboard({ username, role }: { username: str
         {loading && (
           <div className="flex flex-col gap-2" aria-busy="true">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="h-16 animate-pulse rounded-xl bg-primary-light" />
+              <div key={i} className="h-16 animate-pulse rounded-control bg-primary-light" />
             ))}
           </div>
         )}
 
         {!loading && data && data.rows.length === 0 && (
-          <div className="rounded-2xl border border-primary/15 bg-white p-8 text-center text-foreground/60">
+          <div className="rounded-card border border-line bg-white p-8 text-center text-foreground/60">
             No plots match your search.
           </div>
         )}
@@ -267,7 +267,7 @@ function ElectricityRowCard({
   const recorded = row.currReading > row.prevReading;
 
   const inputClass =
-    "min-h-10 w-full rounded-lg border border-primary/25 bg-white px-2.5 py-1.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20";
+    "min-h-10 w-full rounded-lg border border-line-strong bg-white px-2.5 py-1.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20";
   const labelClass = "text-xs font-semibold uppercase tracking-wide text-foreground/45";
 
   async function save() {
@@ -301,7 +301,7 @@ function ElectricityRowCard({
 
   if (row.isBeforeMoveIn) {
     return (
-      <li className="flex items-center justify-between gap-3 rounded-2xl border border-primary/10 bg-white p-4 shadow-sm">
+      <li className="flex items-center justify-between gap-3 rounded-card border border-line bg-white p-4 shadow-card">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-foreground/40">Plot {row.plotNumber}</p>
           <p className="font-bold text-foreground">{row.tenantName || "Vacant"}</p>
@@ -312,7 +312,7 @@ function ElectricityRowCard({
   }
 
   return (
-    <li className={`rounded-2xl border p-4 shadow-sm ${recorded ? "border-paid/20 bg-paid-bg/20" : "border-primary/10 bg-white"}`}>
+    <li className={`rounded-card border p-4 shadow-card ${recorded ? "border-paid/20 bg-paid-bg/20" : "border-line bg-white"}`}>
       <div className="mb-3 flex items-center justify-between gap-2">
         <div>
           <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-foreground/40">
@@ -321,7 +321,7 @@ function ElectricityRowCard({
           </p>
           <p className="font-bold text-foreground">{row.tenantName || "Vacant"}</p>
         </div>
-        <div className="flex overflow-hidden rounded-lg border border-primary/25">
+        <div className="flex overflow-hidden rounded-lg border border-line-strong">
           <button
             type="button"
             onClick={() => setElectricityPaid(true)}
@@ -366,9 +366,9 @@ function ElectricityRowCard({
         </label>
         <div className="flex flex-col gap-1">
           <span className={labelClass}>Electricity (₹)</span>
-          <div className="flex min-h-10 items-center rounded-lg bg-primary-light px-2.5 text-sm font-semibold text-primary-dark">
+          <div className="flex min-h-10 items-center rounded-lg bg-primary-light px-2.5 text-sm font-semibold text-ink">
             ₹{electricityAmount.toFixed(0)}
-            <span className="ml-1.5 font-normal text-primary-dark/60">({currReadingNumber > 0 ? `${electricityUnits} units` : "default, no reading"})</span>
+            <span className="ml-1.5 font-normal text-ink/60">({currReadingNumber > 0 ? `${electricityUnits} units` : "default, no reading"})</span>
           </div>
         </div>
         <button
@@ -441,9 +441,9 @@ function RateEditor({
   }
 
   return (
-    <div className="mb-4 flex flex-wrap items-end gap-3 rounded-2xl border border-primary/10 bg-white p-3.5 shadow-sm sm:p-4">
+    <div className="mb-4 flex flex-wrap items-end gap-3 rounded-card border border-line bg-white p-3.5 shadow-card sm:p-4">
       <label className="flex flex-col gap-1">
-        <span className="text-sm font-medium text-primary-dark">Rate per unit (₹)</span>
+        <span className="text-sm font-medium text-ink">Rate per unit (₹)</span>
         <input
           type="number"
           inputMode="decimal"
@@ -451,14 +451,14 @@ function RateEditor({
           step="0.01"
           value={value}
           onChange={(e) => setValue(e.target.value)}
-          className="min-h-11 w-32 rounded-xl border border-primary/20 bg-white px-3 py-2 text-base focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+          className="min-h-11 w-32 rounded-control border border-line-strong bg-white px-3 py-2 text-base focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
         />
       </label>
       <button
         type="button"
         onClick={save}
         disabled={saving || invalid || rate === ratePerUnit}
-        className="min-h-11 rounded-xl bg-primary px-4 text-sm font-semibold text-white disabled:opacity-50"
+        className="min-h-11 rounded-control bg-primary px-4 text-sm font-semibold text-white disabled:opacity-50"
       >
         {saving ? "Saving…" : "Save rate"}
       </button>
@@ -540,11 +540,11 @@ function BulkEntry({
   }
 
   return (
-    <div className="mb-4 rounded-2xl border border-primary/10 bg-white p-3.5 shadow-sm sm:p-4">
+    <div className="mb-4 rounded-card border border-line bg-white p-3.5 shadow-card sm:p-4">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center justify-between text-left text-sm font-semibold text-primary-dark"
+        className="flex w-full items-center justify-between text-left text-sm font-semibold text-ink"
       >
         Paste readings as text
         <span className="text-foreground/40">{open ? "−" : "+"}</span>
@@ -560,17 +560,17 @@ function BulkEntry({
             onChange={(e) => setText(e.target.value)}
             rows={6}
             placeholder={"101: 1234\n102: 880\nPlot 103 - 1500"}
-            className="w-full rounded-xl border border-primary/20 bg-white px-3 py-2 font-mono text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+            className="w-full rounded-control border border-line-strong bg-white px-3 py-2 font-mono text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
           />
           {preview.problems.length > 0 && (
-            <ul className="rounded-xl bg-unpaid-bg px-3 py-2 text-xs text-unpaid">
+            <ul className="rounded-control bg-unpaid-bg px-3 py-2 text-xs text-unpaid">
               {preview.problems.map((p) => (
                 <li key={p}>{p}</li>
               ))}
             </ul>
           )}
           {preview.matched.length > 0 && (
-            <ul className="divide-y divide-primary/10 rounded-xl bg-background text-sm">
+            <ul className="divide-y divide-line rounded-control bg-background text-sm">
               {preview.matched.map(({ row, prev, curr }) => (
                 <li key={row.unitId} className="flex items-center justify-between gap-2 px-3 py-1.5">
                   <span className="font-medium">Plot {row.plotNumber}</span>
@@ -586,7 +586,7 @@ function BulkEntry({
             type="button"
             onClick={saveAll}
             disabled={saving || preview.matched.length === 0}
-            className="min-h-11 self-start rounded-xl bg-primary px-4 text-sm font-semibold text-white disabled:opacity-50"
+            className="min-h-11 self-start rounded-control bg-primary px-4 text-sm font-semibold text-white disabled:opacity-50"
           >
             {saving ? "Saving…" : `Save ${preview.matched.length} reading${preview.matched.length === 1 ? "" : "s"}`}
           </button>

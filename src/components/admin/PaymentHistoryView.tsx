@@ -52,12 +52,12 @@ export default function PaymentHistoryView({ onUnauthorized }: { onUnauthorized:
       return next;
     });
 
-  if (error) return <div className="rounded-xl border border-unpaid/30 bg-unpaid-bg px-3.5 py-2.5 text-sm font-medium text-unpaid">{error}</div>;
+  if (error) return <div className="rounded-control border border-unpaid/30 bg-unpaid-bg px-3.5 py-2.5 text-sm font-medium text-unpaid">{error}</div>;
   if (!data) {
     return (
       <div className="flex flex-col gap-2" aria-busy="true">
         {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="h-16 animate-pulse rounded-xl bg-primary-light" />
+          <div key={i} className="h-16 animate-pulse rounded-control bg-primary-light" />
         ))}
       </div>
     );
@@ -65,24 +65,24 @@ export default function PaymentHistoryView({ onUnauthorized }: { onUnauthorized:
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="rounded-2xl border border-primary/10 bg-white p-3.5 shadow-sm sm:p-4">
+      <div className="rounded-card border border-line bg-white p-3.5 shadow-card sm:p-4">
         <div className="flex flex-wrap items-end gap-3">
           <label className="flex min-w-[200px] flex-1 flex-col gap-1">
-            <span className="text-sm font-medium text-primary-dark">Search</span>
+            <span className="text-sm font-medium text-ink">Search</span>
             <div className="relative">
               <IconSearch className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-primary/50" />
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Plot or tenant"
-                className="min-h-11 w-full rounded-xl border border-primary/20 bg-white py-2 pl-9 pr-3 text-base focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                className="min-h-11 w-full rounded-control border border-line-strong bg-white py-2 pl-9 pr-3 text-base focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
               />
             </div>
           </label>
           <button
             type="button"
             onClick={() => setOpen(open.size === tenants.length ? new Set() : new Set(tenants.map((t) => t.unitId)))}
-            className="min-h-11 rounded-xl border border-primary/30 bg-white px-4 text-sm font-semibold text-primary-dark hover:bg-primary-light"
+            className="min-h-11 rounded-control border border-line-strong bg-white px-4 text-sm font-semibold text-ink hover:bg-primary-light"
           >
             {open.size === tenants.length && tenants.length > 0 ? "Collapse all" : "Expand all"}
           </button>
@@ -99,25 +99,25 @@ export default function PaymentHistoryView({ onUnauthorized }: { onUnauthorized:
 
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
         <Summary label="Total received" value={rupees(grand.totalReceived)} cls="bg-paid-bg text-paid" />
-        <Summary label="Rent due" value={rupees(grand.rentDue)} cls="bg-primary-light text-primary-dark" />
+        <Summary label="Rent due" value={rupees(grand.rentDue)} cls="bg-primary-light text-ink" />
         <Summary label="Rent paid" value={rupees(grand.rentPaid)} cls="bg-paid-bg text-paid" />
         <Summary label="Rent balance" value={rupees(grand.rentBalance)} cls="bg-unpaid-bg text-unpaid" />
-        <Summary label="Electricity billed" value={rupees(grand.electricityBill)} cls="bg-primary-light text-primary-dark" />
+        <Summary label="Electricity billed" value={rupees(grand.electricityBill)} cls="bg-primary-light text-ink" />
         <Summary label="Electricity paid" value={rupees(grand.electricityPaid)} cls="bg-paid-bg text-paid" />
         <Summary label="Electricity balance" value={rupees(grand.electricityBalance)} cls="bg-unpaid-bg text-unpaid" />
       </div>
 
-      {tenants.length === 0 && <div className="rounded-2xl border border-primary/15 bg-white p-8 text-center text-foreground/60">No tenants match your search.</div>}
+      {tenants.length === 0 && <div className="rounded-card border border-line bg-white p-8 text-center text-foreground/60">No tenants match your search.</div>}
 
       {tenants.map((t) => {
         const expanded = open.has(t.unitId);
         const owing = t.totals.rentBalance + t.totals.electricityBalance;
         return (
-          <section key={t.unitId} className={`rounded-2xl border border-l-4 border-primary/10 bg-white shadow-sm ${owing > 0 ? "border-l-unpaid" : "border-l-paid"}`}>
+          <section key={t.unitId} className={`rounded-card border border-l-4 border-line bg-white shadow-card ${owing > 0 ? "border-l-unpaid" : "border-l-paid"}`}>
             <button type="button" onClick={() => toggle(t.unitId)} aria-expanded={expanded} className="flex w-full flex-col gap-2 p-3.5 text-left sm:p-4">
               <div className="flex w-full items-center justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="text-xl font-extrabold leading-tight text-primary-dark">Plot {t.plotNumber}</p>
+                  <p className="text-xl font-extrabold leading-tight text-ink">Plot {t.plotNumber}</p>
                   <p className="truncate text-sm text-foreground/60">
                     {t.tenantName} · Moved in {t.moveInDate ? formatDate(t.moveInDate) : "date not set"}
                     {isBeforeBuildingOpened(t.moveInDate) && <b className="text-unpaid"> (before building opened - check year)</b>}
@@ -137,7 +137,7 @@ export default function PaymentHistoryView({ onUnauthorized }: { onUnauthorized:
               </div>
             </button>
             {expanded && (
-              <div className="overflow-x-auto border-t border-primary/10">
+              <div className="overflow-x-auto border-t border-line">
                 <table className="w-full min-w-[980px] text-left text-sm">
                   <thead className="text-xs uppercase tracking-wide text-foreground/45">
                     <tr>
@@ -154,7 +154,7 @@ export default function PaymentHistoryView({ onUnauthorized }: { onUnauthorized:
                       <th className="px-3 py-2 text-right font-semibold">Elec. balance</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-primary/10">
+                  <tbody className="divide-y divide-line">
                     {t.months.map((m) => {
                       const key = `${t.unitId}|${m.month}`;
                       const monthOpen = openMonth === key;
@@ -192,7 +192,7 @@ export default function PaymentHistoryView({ onUnauthorized }: { onUnauthorized:
                       ];
                     })}
                   </tbody>
-                  <tfoot className="border-t-2 border-primary/20 bg-primary-light font-bold text-primary-dark">
+                  <tfoot className="border-t-2 border-line-strong bg-primary-light font-bold text-ink">
                     <tr>
                       <td className="px-3 py-2">Total</td>
                       <td className="px-3 py-2 text-right">{rupees(t.totals.rentDue)}</td>
@@ -219,7 +219,7 @@ export default function PaymentHistoryView({ onUnauthorized }: { onUnauthorized:
 
 function Summary({ label, value, cls }: { label: string; value: string; cls: string }) {
   return (
-    <div className={`rounded-xl px-3 py-2.5 text-center ${cls}`}>
+    <div className={`rounded-control px-3 py-2.5 text-center ${cls}`}>
       <p className="text-base font-bold leading-tight sm:text-lg">{value}</p>
       <p className="text-[11px] font-medium uppercase tracking-wide opacity-80">{label}</p>
     </div>

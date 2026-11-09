@@ -7,7 +7,7 @@ import { formatMonthLabel } from "@/lib/month";
 import type { RentalHistoryPlot } from "@/lib/types";
 
 const inputClass =
-  "min-h-11 w-full rounded-xl border border-primary/20 px-3 py-2 text-base focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30";
+  "min-h-11 w-full rounded-control border border-line-strong px-3 py-2 text-base focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30";
 const labelClass = "text-sm font-medium text-foreground/80";
 
 // Edits the current tenant's move-in date and the plot's agreed rent. A changed move-in date also fills
@@ -82,11 +82,11 @@ export default function HistoryTenantEditModal({ plot, onClose, onSaved }: { plo
           The agreed rent applies to months from now on. Months already recorded keep the rent saved for them; click a month in the history to change that month&apos;s rent.
           To rename the tenant, use the plot&apos;s info button on the Overview tab.
         </p>
-        <div className="flex justify-end gap-2 border-t border-primary/10 pt-3">
-          <button type="button" onClick={onClose} disabled={saving} className="min-h-10 rounded-xl border border-primary/25 px-4 text-sm font-semibold text-foreground/70 hover:bg-primary-light disabled:opacity-60">
+        <div className="flex justify-end gap-2 border-t border-line pt-3">
+          <button type="button" onClick={onClose} disabled={saving} className="min-h-10 rounded-control border border-line-strong px-4 text-sm font-semibold text-foreground/70 hover:bg-primary-light disabled:opacity-60">
             Cancel
           </button>
-          <button type="button" onClick={save} disabled={saving} className="min-h-10 rounded-xl bg-primary px-5 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-60">
+          <button type="button" onClick={save} disabled={saving} className="min-h-10 rounded-control bg-primary px-5 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-60">
             {saving ? "Saving…" : "Save"}
           </button>
         </div>

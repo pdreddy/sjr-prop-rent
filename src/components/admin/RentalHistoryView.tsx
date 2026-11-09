@@ -116,27 +116,27 @@ export default function RentalHistoryView({ onUnauthorized, onChanged }: { onUna
     return (
       <div className="flex flex-col gap-2" aria-busy="true">
         {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="h-16 animate-pulse rounded-xl bg-primary-light" />
+          <div key={i} className="h-16 animate-pulse rounded-control bg-primary-light" />
         ))}
       </div>
     );
   }
   if (error || !data) {
-    return <div className="rounded-xl border border-unpaid/30 bg-unpaid-bg px-3.5 py-2.5 text-sm font-medium text-unpaid">{error}</div>;
+    return <div className="rounded-control border border-unpaid/30 bg-unpaid-bg px-3.5 py-2.5 text-sm font-medium text-unpaid">{error}</div>;
   }
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="rounded-2xl border border-primary/10 bg-white p-3.5 shadow-sm sm:p-4">
+      <div className="rounded-card border border-line bg-white p-3.5 shadow-card sm:p-4">
         <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-primary-dark">Search</span>
+          <span className="text-sm font-medium text-ink">Search</span>
           <div className="relative">
             <IconSearch className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-primary/50" />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Plot or any past/current tenant"
-              className="min-h-11 w-full rounded-xl border border-primary/20 bg-white py-2 pl-9 pr-3 text-base focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="min-h-11 w-full rounded-control border border-line-strong bg-white py-2 pl-9 pr-3 text-base focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
           </div>
         </label>
@@ -145,7 +145,7 @@ export default function RentalHistoryView({ onUnauthorized, onChanged }: { onUna
             type="button"
             onClick={fillMissingMonths}
             disabled={fixing}
-            className="min-h-10 rounded-xl border border-primary/30 bg-white px-4 text-sm font-semibold text-primary-dark hover:bg-primary-light disabled:opacity-60"
+            className="min-h-10 rounded-control border border-line-strong bg-white px-4 text-sm font-semibold text-ink hover:bg-primary-light disabled:opacity-60"
           >
             {fixing ? "Checking…" : "Fill missing months"}
           </button>
@@ -160,7 +160,7 @@ export default function RentalHistoryView({ onUnauthorized, onChanged }: { onUna
       </div>
 
       {plots.length === 0 && (
-        <div className="rounded-2xl border border-primary/15 bg-white p-8 text-center text-foreground/60">No plots match your search.</div>
+        <div className="rounded-card border border-line bg-white p-8 text-center text-foreground/60">No plots match your search.</div>
       )}
 
       {plots.map((plot) => (
@@ -210,11 +210,11 @@ function PlotHistory({ plot, expanded, onToggle, onEditMonth, onEditTenant }: { 
   const shown = overdue.slice(0, 6);
 
   return (
-    <section className={`rounded-2xl border border-l-4 border-primary/10 shadow-sm ${months.length ? CARD_STYLE[overall] : "border-l-primary/20 bg-white"}`}>
+    <section className={`rounded-card border border-l-4 border-line shadow-card ${months.length ? CARD_STYLE[overall] : "border-l-primary/20 bg-white"}`}>
       <button type="button" onClick={onToggle} aria-expanded={expanded} className="flex w-full flex-col gap-2.5 p-3.5 text-left sm:p-4">
         <div className="flex w-full items-center justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-xl font-extrabold leading-tight text-primary-dark">Plot {plot.plotNumber}</p>
+            <p className="text-xl font-extrabold leading-tight text-ink">Plot {plot.plotNumber}</p>
             <p className="truncate text-sm text-foreground/60">{plot.currentTenant ?? "Vacant"}</p>
           </div>
           <div className="flex shrink-0 items-center gap-3 text-sm text-foreground/60">
@@ -252,7 +252,7 @@ function PlotHistory({ plot, expanded, onToggle, onEditMonth, onEditTenant }: { 
         )}
       </button>
       {expanded && (
-        <div className="flex flex-col gap-4 border-t border-primary/10 p-3.5 sm:p-4">
+        <div className="flex flex-col gap-4 border-t border-line p-3.5 sm:p-4">
           {plot.stays.length === 0 && <p className="text-sm text-foreground/60">No tenant history recorded for this plot.</p>}
           {plot.stays.map((stay, i) => (
             <Stay
@@ -272,21 +272,21 @@ function PlotHistory({ plot, expanded, onToggle, onEditMonth, onEditTenant }: { 
 function Stay({ stay, onEditMonth, onEditTenant }: { stay: RentalStay; onEditMonth: (m: RentalHistoryMonth) => void; onEditTenant?: () => void }) {
   const current = stay.endMonth === null;
   return (
-    <div className="rounded-xl border border-primary/10">
+    <div className="rounded-control border border-line">
       <div className="flex flex-wrap items-center justify-between gap-2 rounded-t-xl bg-primary-light px-3 py-2.5">
         <div>
-          <p className="font-bold text-primary-dark">{stay.tenantName}</p>
-          <p className="text-xs text-primary-dark/70">
+          <p className="font-bold text-ink">{stay.tenantName}</p>
+          <p className="text-xs text-ink/70">
             Moved in {formatDate(stay.moveInDate)} ·{" "}
             {current ? "Current tenant" : `Moved out ${formatDate(stay.movedOutDate)}`}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <p className="text-xs font-medium text-primary-dark">
+          <p className="text-xs font-medium text-ink">
             {stay.monthsPaid} of {stay.months.length} months paid · {rupees(stay.totalPaid)} received
           </p>
           {onEditTenant && (
-            <button type="button" onClick={onEditTenant} className="inline-flex min-h-8 items-center gap-1 rounded-full border border-primary/30 bg-white px-3 text-xs font-semibold text-primary-dark hover:bg-primary-light">
+            <button type="button" onClick={onEditTenant} className="inline-flex min-h-8 items-center gap-1 rounded-full border border-line-strong bg-white px-3 text-xs font-semibold text-ink hover:bg-primary-light">
               <IconEdit className="h-3.5 w-3.5" />
               Edit move-in &amp; rent
             </button>
@@ -305,7 +305,7 @@ function Stay({ stay, onEditMonth, onEditTenant }: { stay: RentalStay; onEditMon
               <th className="px-3 py-2 text-right font-semibold">Balance</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-primary/10">
+          <tbody className="divide-y divide-line">
             {stay.months.map((m) => {
               const tone = rowTone(m);
               return (
@@ -349,21 +349,21 @@ function Stay({ stay, onEditMonth, onEditTenant }: { stay: RentalStay; onEditMon
 // Records that fall outside every tenant stay - typically a payment entered under the wrong month.
 function OtherRecords({ plot, onEditMonth }: { plot: RentalHistoryPlot; onEditMonth: (m: RentalHistoryMonth) => void }) {
   return (
-    <div className="rounded-xl border border-partial/40 bg-partial-bg/40">
+    <div className="rounded-control border border-partial/40 bg-partial-bg/40">
       <div className="px-3 py-2.5">
         <p className="font-bold text-partial">Other records for plot {plot.plotNumber}</p>
         <p className="text-xs text-foreground/60">These months fall outside any tenant&apos;s stay, so they are not counted. Click one to move it to the right month, correct it, or delete it.</p>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full min-w-[480px] text-left text-sm">
-          <tbody className="divide-y divide-primary/10">
+          <tbody className="divide-y divide-line">
             {plot.otherRecords.map((m) => (
               <tr key={m.month} onClick={() => onEditMonth(m)} title="Click to edit this month" className="cursor-pointer hover:bg-white/60">
                 <td className="px-3 py-2 font-medium">{formatMonthLabel(m.month)}</td>
                 <td className="px-3 py-2 text-right">Due {rupees(m.due)}</td>
                 <td className="px-3 py-2 text-right">Paid {rupees(m.amountPaid)}</td>
                 <td className="px-3 py-2">{m.paidDate ? formatDate(m.paidDate) : "—"}</td>
-                <td className="px-3 py-2 text-right text-xs font-semibold text-primary-dark">Edit</td>
+                <td className="px-3 py-2 text-right text-xs font-semibold text-ink">Edit</td>
               </tr>
             ))}
           </tbody>

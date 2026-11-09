@@ -9,7 +9,7 @@ import { moveInProration, prorate } from "@/lib/proration";
 import type { RentalHistoryMonth, RentalHistoryPlot } from "@/lib/types";
 
 const inputClass =
-  "min-h-11 w-full rounded-xl border border-primary/20 px-3 py-2 text-base focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30";
+  "min-h-11 w-full rounded-control border border-line-strong px-3 py-2 text-base focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30";
 const labelClass = "text-sm font-medium text-foreground/80";
 const rupees = (n: number) => `₹${n.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
 
@@ -155,7 +155,7 @@ export default function HistoryMonthEditModal({ plot, moveInDate, tenantName, mo
             Due this month <b className="text-foreground">{rupees(due)}</b>
             {proration.prorated ? ` · part month: ${proration.days}/30 days` : ""}
           </span>
-          <button type="button" onClick={useAgreedRent} className="rounded-full border border-primary/25 px-3 py-1 font-semibold text-primary-dark hover:bg-primary-light">
+          <button type="button" onClick={useAgreedRent} className="rounded-full border border-line-strong px-3 py-1 font-semibold text-ink hover:bg-primary-light">
             Use agreed rent{proration.prorated ? " (prorated)" : ""}
           </button>
         </div>
@@ -170,7 +170,7 @@ export default function HistoryMonthEditModal({ plot, moveInDate, tenantName, mo
             <input type="date" value={paidDate} onChange={(e) => setPaidDate(e.target.value)} className={inputClass} />
           </label>
         </div>
-        <div className="flex items-center justify-between rounded-xl bg-primary-light px-3 py-2 text-sm">
+        <div className="flex items-center justify-between rounded-control bg-primary-light px-3 py-2 text-sm">
           <span className="text-foreground/65">
             Status <b className="text-foreground">{status}</b>
           </span>
@@ -198,19 +198,19 @@ export default function HistoryMonthEditModal({ plot, moveInDate, tenantName, mo
           <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} className={`${inputClass} min-h-0`} />
         </label>
 
-        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-primary/10 pt-3">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line pt-3">
           {!isNew ? (
-            <button type="button" onClick={remove} disabled={saving} className="min-h-10 rounded-xl border border-unpaid/40 px-4 text-sm font-semibold text-unpaid hover:bg-unpaid-bg disabled:opacity-60">
+            <button type="button" onClick={remove} disabled={saving} className="min-h-10 rounded-control border border-unpaid/40 px-4 text-sm font-semibold text-unpaid hover:bg-unpaid-bg disabled:opacity-60">
               Delete record
             </button>
           ) : (
             <span />
           )}
           <div className="flex gap-2">
-            <button type="button" onClick={onClose} disabled={saving} className="min-h-10 rounded-xl border border-primary/25 px-4 text-sm font-semibold text-foreground/70 hover:bg-primary-light disabled:opacity-60">
+            <button type="button" onClick={onClose} disabled={saving} className="min-h-10 rounded-control border border-line-strong px-4 text-sm font-semibold text-foreground/70 hover:bg-primary-light disabled:opacity-60">
               Cancel
             </button>
-            <button type="button" onClick={save} disabled={saving} className="min-h-10 rounded-xl bg-primary px-5 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-60">
+            <button type="button" onClick={save} disabled={saving} className="min-h-10 rounded-control bg-primary px-5 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-60">
               {saving ? "Saving…" : "Save"}
             </button>
           </div>

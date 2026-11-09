@@ -17,7 +17,7 @@ export interface TenantContext {
 export default function PaymentMonthDetail({ tenant, month, ratePerUnit, monthLabel }: { tenant: TenantContext; month: PaymentHistoryMonth | null; ratePerUnit: ElectricityConfigInput; monthLabel: string }) {
   return (
     <div className="sticky left-0 w-[min(calc(100vw-3rem),64rem)] max-w-full bg-background px-3 py-3.5 sm:px-4">
-      <p className="mb-2.5 text-sm font-bold text-primary-dark">
+      <p className="mb-2.5 text-sm font-bold text-ink">
         Plot {tenant.plotNumber} · {tenant.tenantName} · {monthLabel}
         <span className="ml-2 font-normal text-foreground/55">
           Moved in {tenant.moveInDate ? formatDate(tenant.moveInDate) : "(date not set)"}
@@ -26,7 +26,7 @@ export default function PaymentMonthDetail({ tenant, month, ratePerUnit, monthLa
       </p>
 
       {!month ? (
-        <p className="rounded-xl border border-primary/10 bg-white px-3 py-2.5 text-sm text-foreground/65">
+        <p className="rounded-control border border-line bg-white px-3 py-2.5 text-sm text-foreground/65">
           No rent is due for this month{tenant.firstRentMonth ? ` — rent starts ${formatMonthLabel(tenant.firstRentMonth)}, the month after move-in` : ""}.
         </p>
       ) : (
@@ -83,7 +83,7 @@ export default function PaymentMonthDetail({ tenant, month, ratePerUnit, monthLa
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-primary/10 bg-white p-3">
+    <div className="rounded-control border border-line bg-white p-3">
       <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-foreground/45">{title}</p>
       <dl className="flex flex-col gap-1 text-sm">{children}</dl>
     </div>

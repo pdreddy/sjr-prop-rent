@@ -72,12 +72,12 @@ export default function MoveInProrationView({ onUnauthorized }: { onUnauthorized
   }, [tenants, inputs, search]);
   const totals = useMemo(() => sumMoveIn(rows.map((r) => r.calc)), [rows]);
 
-  if (error) return <div className="rounded-xl border border-unpaid/30 bg-unpaid-bg px-3.5 py-2.5 text-sm font-medium text-unpaid">{error}</div>;
+  if (error) return <div className="rounded-control border border-unpaid/30 bg-unpaid-bg px-3.5 py-2.5 text-sm font-medium text-unpaid">{error}</div>;
   if (!tenants) {
     return (
       <div className="flex flex-col gap-2" aria-busy="true">
         {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="h-14 animate-pulse rounded-xl bg-primary-light" />
+          <div key={i} className="h-14 animate-pulse rounded-control bg-primary-light" />
         ))}
       </div>
     );
@@ -85,16 +85,16 @@ export default function MoveInProrationView({ onUnauthorized }: { onUnauthorized
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="rounded-2xl border border-primary/10 bg-white p-3.5 shadow-sm sm:p-4">
+      <div className="rounded-card border border-line bg-white p-3.5 shadow-card sm:p-4">
         <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-primary-dark">Search</span>
+          <span className="text-sm font-medium text-ink">Search</span>
           <div className="relative">
             <IconSearch className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-primary/50" />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Plot or tenant"
-              className="min-h-11 w-full rounded-xl border border-primary/20 bg-white py-2 pl-9 pr-3 text-base focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="min-h-11 w-full rounded-control border border-line-strong bg-white py-2 pl-9 pr-3 text-base focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
           </div>
         </label>
@@ -108,19 +108,19 @@ export default function MoveInProrationView({ onUnauthorized }: { onUnauthorized
       </div>
 
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <Summary label="Prorated rent" value={rupees(totals.proratedRent)} cls="bg-primary-light text-primary-dark" />
+        <Summary label="Prorated rent" value={rupees(totals.proratedRent)} cls="bg-primary-light text-ink" />
         <Summary label="Payments received" value={rupees(totals.paid)} cls="bg-paid-bg text-paid" />
         <Summary label="Electricity credits" value={rupees(totals.electricityCredit)} cls="bg-partial-bg text-partial" />
         <Summary label="Remaining rent balance" value={rupees(totals.remainingBalance)} cls="bg-unpaid-bg text-unpaid" />
       </div>
 
       {rows.length === 0 ? (
-        <div className="rounded-2xl border border-primary/15 bg-white p-8 text-center text-foreground/60">No tenants with a partial first month match.</div>
+        <div className="rounded-card border border-line bg-white p-8 text-center text-foreground/60">No tenants with a partial first month match.</div>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-primary/10 bg-white shadow-sm">
+        <div className="overflow-hidden rounded-card border border-line bg-white shadow-card">
           <div className="max-h-[68vh] overflow-auto">
             <table className="w-full min-w-[1100px] text-left text-sm">
-              <thead className="sticky top-0 z-20 bg-primary-dark text-white">
+              <thead className="sticky top-0 z-20 bg-primary-light text-muted">
                 <tr>
                   <th className="px-3 py-3 font-semibold">Plot</th>
                   <th className="px-3 py-3 font-semibold">Tenant</th>
@@ -137,8 +137,8 @@ export default function MoveInProrationView({ onUnauthorized }: { onUnauthorized
               </thead>
               <tbody>
                 {rows.map(({ t, calc }, i) => (
-                  <tr key={t.unitId} className={`border-t border-primary/5 align-top ${i % 2 ? "bg-primary-light/25" : "bg-white"}`}>
-                    <td className="px-3 py-3 font-bold text-primary-dark">{t.plotNumber}</td>
+                  <tr key={t.unitId} className={`border-t border-line align-top ${i % 2 ? "bg-primary-light/25" : "bg-white"}`}>
+                    <td className="px-3 py-3 font-bold text-ink">{t.plotNumber}</td>
                     <td className="px-3 py-3 font-semibold text-foreground">{t.tenantName}</td>
                     <td className="px-3 py-3">{t.moveInDate ? formatDate(t.moveInDate) : <span className="text-unpaid">Not set</span>}</td>
                     <td className="px-3 py-3">{calc ? formatMonthLabel(calc.moveInMonth) : "—"}</td>
@@ -158,7 +158,7 @@ export default function MoveInProrationView({ onUnauthorized }: { onUnauthorized
                             onBlur={() => savePayment(t.unitId)}
                             aria-label={`Rent received by the 10th for plot ${t.plotNumber}`}
                             placeholder="Not entered"
-                            className="min-h-10 w-28 rounded-lg border border-primary/20 bg-white px-2 text-right focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                            className="min-h-10 w-28 rounded-lg border border-line-strong bg-white px-2 text-right focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
                           />
                           {rowError[t.unitId] && <p className="mt-1 text-xs text-unpaid">{rowError[t.unitId]}</p>}
                         </>
@@ -173,7 +173,7 @@ export default function MoveInProrationView({ onUnauthorized }: { onUnauthorized
                   </tr>
                 ))}
               </tbody>
-              <tfoot className="border-t-2 border-primary/20 bg-primary-light font-bold text-primary-dark">
+              <tfoot className="border-t-2 border-line-strong bg-primary-light font-bold text-ink">
                 <tr>
                   <td className="px-3 py-3" colSpan={7}>Total ({rows.filter((r) => r.calc).length} tenants)</td>
                   <td className="px-3 py-3 text-right">{rupees(totals.proratedRent)}</td>
@@ -192,7 +192,7 @@ export default function MoveInProrationView({ onUnauthorized }: { onUnauthorized
 
 function Summary({ label, value, cls }: { label: string; value: string; cls: string }) {
   return (
-    <div className={`rounded-xl px-3 py-2.5 text-center ${cls}`}>
+    <div className={`rounded-control px-3 py-2.5 text-center ${cls}`}>
       <p className="text-lg font-bold leading-tight">{value}</p>
       <p className="text-[11px] font-medium uppercase tracking-wide opacity-80">{label}</p>
     </div>

@@ -19,7 +19,7 @@ interface Props {
 }
 
 const inputClass =
-  "min-h-11 w-full rounded-xl border border-primary/20 px-3 py-2 text-base focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30";
+  "min-h-11 w-full rounded-control border border-line-strong px-3 py-2 text-base focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30";
 const labelClass = "text-sm font-medium text-foreground/80";
 
 export default function EditPaymentModal({ row, month, ratePerUnit, onClose, onSaved }: Props) {
@@ -152,7 +152,7 @@ export default function EditPaymentModal({ row, month, ratePerUnit, onClose, onS
           <input type="date" value={moveInDate} onChange={(e) => setMoveInDate(e.target.value)} className={inputClass} />
         </label>
 
-        <div className="border-t border-primary/10 pt-4">
+        <div className="border-t border-line pt-4">
           <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-foreground/45">Rent</p>
           <div className="grid grid-cols-2 gap-3">
             <label className="flex flex-col gap-1">
@@ -172,13 +172,13 @@ export default function EditPaymentModal({ row, month, ratePerUnit, onClose, onS
           )}
           <div className="mt-3 flex flex-col gap-1">
             <span className={labelClass}>{proration.prorated ? "Rent sum (prorated)" : "Rent sum"}</span>
-            <div className="flex min-h-11 items-center rounded-xl bg-primary-light px-3 text-base font-semibold text-primary-dark">
+            <div className="flex min-h-11 items-center rounded-control bg-primary-light px-3 text-base font-semibold text-ink">
               ₹{rentSum.toFixed(0)}
             </div>
           </div>
         </div>
 
-        <div className="border-t border-primary/10 pt-4">
+        <div className="border-t border-line pt-4">
           <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-foreground/45">Electricity meter</p>
           <div className="grid grid-cols-2 gap-3">
             <label className="flex flex-col gap-1">
@@ -203,14 +203,14 @@ export default function EditPaymentModal({ row, month, ratePerUnit, onClose, onS
           <div className="mt-3 grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1">
               <span className={labelClass}>Electricity (₹)</span>
-              <div className="flex min-h-11 items-center rounded-xl bg-primary-light px-3 text-base font-semibold text-primary-dark">
+              <div className="flex min-h-11 items-center rounded-control bg-primary-light px-3 text-base font-semibold text-ink">
                 ₹{electricityAmount.toFixed(0)}
-                <span className="ml-1.5 text-sm font-normal text-primary-dark/60">({currReadingNumber > 0 ? `${electricityUnits} units` : "default, no reading"})</span>
+                <span className="ml-1.5 text-sm font-normal text-ink/60">({currReadingNumber > 0 ? `${electricityUnits} units` : "default, no reading"})</span>
               </div>
             </div>
             <div className="flex flex-col gap-1">
               <span className={labelClass}>Elec. status</span>
-              <div className="flex min-h-11 overflow-hidden rounded-xl border border-primary/25">
+              <div className="flex min-h-11 overflow-hidden rounded-control border border-line-strong">
                 <button
                   type="button"
                   onClick={() => setElectricityPaid(true)}
@@ -234,7 +234,7 @@ export default function EditPaymentModal({ row, month, ratePerUnit, onClose, onS
           </div>
         </div>
 
-        <div className="border-t border-primary/10 pt-4">
+        <div className="border-t border-line pt-4">
           <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-foreground/45">Payment</p>
           <label className="flex flex-col gap-1">
             <span className={labelClass}>Amount paid (₹)</span>
@@ -254,7 +254,7 @@ export default function EditPaymentModal({ row, month, ratePerUnit, onClose, onS
                   if (!paidDate) setPaidDate(new Date().toISOString().slice(0, 10));
                 }}
                 title="Fill full rent sum as paid"
-                className="min-h-11 shrink-0 whitespace-nowrap rounded-xl border border-paid/40 bg-paid-bg px-3 text-sm font-semibold text-paid hover:bg-paid/20"
+                className="min-h-11 shrink-0 whitespace-nowrap rounded-control border border-paid/40 bg-paid-bg px-3 text-sm font-semibold text-paid hover:bg-paid/20"
               >
                 Full
               </button>
@@ -279,7 +279,7 @@ export default function EditPaymentModal({ row, month, ratePerUnit, onClose, onS
             <div className="flex flex-col gap-1">
               <span className={labelClass}>Balance due</span>
               <div
-                className={`flex min-h-11 items-center rounded-xl px-3 text-base font-semibold ${
+                className={`flex min-h-11 items-center rounded-control px-3 text-base font-semibold ${
                   balanceDue > 0 ? "bg-unpaid-bg text-unpaid" : "bg-paid-bg text-paid"
                 }`}
               >
@@ -298,12 +298,12 @@ export default function EditPaymentModal({ row, month, ratePerUnit, onClose, onS
           </label>
         </div>
 
-        <div className="flex gap-3 border-t border-primary/10 pt-4">
+        <div className="flex gap-3 border-t border-line pt-4">
           <button
             type="button"
             onClick={onClose}
             disabled={saving}
-            className="min-h-11 flex-1 rounded-xl border border-primary/20 px-4 py-2.5 text-base font-semibold text-foreground/70 disabled:opacity-60"
+            className="min-h-11 flex-1 rounded-control border border-line-strong px-4 py-2.5 text-base font-semibold text-foreground/70 disabled:opacity-60"
           >
             Cancel
           </button>
@@ -311,7 +311,7 @@ export default function EditPaymentModal({ row, month, ratePerUnit, onClose, onS
             type="button"
             onClick={save}
             disabled={saving || readingError}
-            className="min-h-11 flex-1 rounded-xl bg-primary px-4 py-2.5 text-base font-semibold text-white hover:bg-primary-dark disabled:opacity-60"
+            className="min-h-11 flex-1 rounded-control bg-primary px-4 py-2.5 text-base font-semibold text-white hover:bg-primary-dark disabled:opacity-60"
           >
             {saving ? "Saving..." : "Save changes"}
           </button>

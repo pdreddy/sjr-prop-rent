@@ -27,9 +27,9 @@ export default function ModalShell({ titleId, title, subtitle, onClose, children
         className={`flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:rounded-3xl ${widths[maxWidth]}`}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-start justify-between gap-3 border-b border-primary/10 px-5 py-4">
+        <div className="flex items-start justify-between gap-3 border-b border-line px-5 py-4">
           <div>
-            <h2 id={titleId} className="text-lg font-bold text-primary-dark">
+            <h2 id={titleId} className="text-lg font-bold text-ink">
               {title}
             </h2>
             {subtitle && <p className="mt-0.5 text-sm text-foreground/50">{subtitle}</p>}

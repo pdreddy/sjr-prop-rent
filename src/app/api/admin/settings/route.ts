@@ -19,6 +19,7 @@ const schema = z.object({
   }),
   general: z.object({
     buildingName: z.string().trim().min(1, "Building name is required").max(100),
+    showTenantNames: z.boolean(),
     notice: z.string().trim().max(500),
   }),
 });

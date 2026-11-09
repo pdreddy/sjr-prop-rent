@@ -31,7 +31,7 @@ function buildEditableRow(row: DashboardRow): EditableRow {
 }
 
 const inputClass =
-  "min-h-9 w-full rounded-lg border border-primary/25 bg-white px-2 py-1 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20";
+  "min-h-9 w-full rounded-lg border border-line-strong bg-white px-2 py-1 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20";
 
 export default function AllDetailsView({
   rows,
@@ -142,7 +142,7 @@ export default function AllDetailsView({
 
   return (
     <div className="flex flex-1 flex-col">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-primary/10 bg-white p-3.5 shadow-sm">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-card border border-line bg-white p-3.5 shadow-card">
         <p className="text-sm text-foreground/60">
           Full plot details for <span className="font-semibold text-foreground">{formatMonthLabel(month)}</span> —
           amount paid, paid date and notes below are about the advance, not rent.
@@ -152,7 +152,7 @@ export default function AllDetailsView({
             <button
               onClick={() => setEditMode(false)}
               disabled={saving}
-              className="min-h-10 rounded-full border border-primary/20 bg-white px-4 text-sm font-semibold text-foreground/70 hover:bg-primary-light disabled:opacity-60"
+              className="min-h-10 rounded-full border border-line-strong bg-white px-4 text-sm font-semibold text-foreground/70 hover:bg-primary-light disabled:opacity-60"
             >
               Cancel
             </button>
@@ -167,7 +167,7 @@ export default function AllDetailsView({
         ) : (
           <button
             onClick={() => setEditMode(true)}
-            className="inline-flex min-h-10 items-center gap-1.5 rounded-full border border-primary/20 bg-white px-4 text-sm font-semibold text-primary-dark hover:bg-primary-light"
+            className="inline-flex min-h-10 items-center gap-1.5 rounded-full border border-line-strong bg-white px-4 text-sm font-semibold text-ink hover:bg-primary-light"
           >
             <IconEdit className="h-4 w-4" />
             Edit all
@@ -176,7 +176,7 @@ export default function AllDetailsView({
       </div>
 
       {rows.length === 0 ? (
-        <div className="rounded-2xl border border-primary/15 bg-white p-8 text-center text-foreground/60">
+        <div className="rounded-card border border-line bg-white p-8 text-center text-foreground/60">
           No plots match your search or filter.
         </div>
       ) : (
@@ -193,12 +193,12 @@ export default function AllDetailsView({
             ))}
           </ul>
 
-          <div className="hidden min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-primary/10 bg-white shadow-sm sm:flex">
+          <div className="hidden min-h-0 flex-1 flex-col overflow-hidden rounded-card border border-line bg-white shadow-card sm:flex">
             <div className="max-h-[68vh] overflow-auto">
               <table className="w-full text-left text-sm">
-                <thead className="sticky top-0 z-20 bg-primary-dark text-white shadow-[0_1px_0_rgba(0,0,0,0.08)]">
+                <thead className="sticky top-0 z-20 bg-primary-light text-muted shadow-[0_1px_0_var(--color-line)]">
                   <tr>
-                    <th className="sticky left-0 z-20 min-w-[150px] bg-primary-dark px-4 py-3 font-semibold">Plot &amp; tenant</th>
+                    <th className="sticky left-0 z-20 min-w-[150px] bg-primary-light px-4 py-3 font-semibold">Plot &amp; tenant</th>
                     <th className="min-w-[170px] px-3 py-3 font-semibold">Phone numbers</th>
                     <th className="min-w-[100px] px-3 py-3 font-semibold">Advance</th>
                     <th className="min-w-[100px] px-3 py-3 font-semibold">Rent</th>
@@ -265,7 +265,7 @@ function PhoneNumbersField({
       <button
         type="button"
         onClick={() => onChange([...phoneNumbers, ""])}
-        className="inline-flex min-h-8 items-center justify-center gap-1 rounded-lg border border-primary/25 px-2 text-xs font-semibold text-primary-dark hover:bg-primary-light"
+        className="inline-flex min-h-8 items-center justify-center gap-1 rounded-lg border border-line-strong px-2 text-xs font-semibold text-ink hover:bg-primary-light"
       >
         <IconPlus className="h-3.5 w-3.5" />
         Add number
@@ -295,7 +295,7 @@ function DetailTableRow({
     const rentSum = Number(editable.rent || 0) + Number(editable.maintenance || 0);
 
     return (
-      <tr className="border-t border-primary/10 bg-primary-light/30 align-top">
+      <tr className="border-t border-line bg-primary-light/30 align-top">
         <td className="sticky left-0 z-10 bg-[#f5f8f7] px-4 py-2.5">
           <p className="text-xs font-semibold uppercase tracking-wide text-foreground/40">Plot {row.unit.plotNumber}</p>
           <p className="font-bold text-foreground">{row.unit.tenantName || "Vacant"}</p>
@@ -337,7 +337,7 @@ function DetailTableRow({
   const rentSum = rentAmount + maintenanceAmount;
 
   return (
-    <tr className={`border-t border-primary/5 align-top ${rowBg}`}>
+    <tr className={`border-t border-line align-top ${rowBg}`}>
       <td className={`sticky left-0 z-10 px-4 py-3 ${rowBg}`}>
         <p className="text-xs font-semibold uppercase tracking-wide text-foreground/40">Plot {row.unit.plotNumber}</p>
         <p className="font-bold text-foreground">{row.unit.tenantName || "Vacant"}</p>
@@ -372,7 +372,7 @@ function DetailCard({
     const rentSum = Number(editable.rent || 0) + Number(editable.maintenance || 0);
 
     return (
-      <li className="rounded-2xl border border-primary/10 bg-white p-4 shadow-sm">
+      <li className="rounded-card border border-line bg-white p-4 shadow-card">
         <p className="text-xs font-semibold uppercase tracking-wide text-foreground/40">Plot {row.unit.plotNumber}</p>
         <p className="mb-3 font-bold text-foreground">{row.unit.tenantName || "Vacant"}</p>
 
@@ -396,7 +396,7 @@ function DetailCard({
           </label>
           <div className="flex flex-col gap-1">
             <span className={labelClass}>Total</span>
-            <div className="flex min-h-9 items-center rounded-lg bg-primary-light px-2 text-sm font-semibold text-primary-dark">₹{rentSum.toFixed(0)}</div>
+            <div className="flex min-h-9 items-center rounded-lg bg-primary-light px-2 text-sm font-semibold text-ink">₹{rentSum.toFixed(0)}</div>
           </div>
           <label className="flex flex-col gap-1">
             <span className={labelClass}>Amount paid (advance)</span>
@@ -426,7 +426,7 @@ function DetailCard({
   const rentSum = rentAmount + maintenanceAmount;
 
   return (
-    <li className="rounded-2xl border border-primary/10 bg-white p-4 shadow-sm">
+    <li className="rounded-card border border-line bg-white p-4 shadow-card">
       <p className="text-xs font-semibold uppercase tracking-wide text-foreground/40">Plot {row.unit.plotNumber}</p>
       <p className="font-bold text-foreground">{row.unit.tenantName || "Vacant"}</p>
       <p className="mt-2 text-sm text-foreground/70">
