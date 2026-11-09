@@ -58,9 +58,9 @@ async function main() {
   check("103 (vacant) N/A for rent and electricity", p("103")?.status === "NA" && p("103")?.electricityStatus === "NA");
   const months = p("101")?.electricityMonths ?? [];
   check("101 has 3 electricity months", months.length === 3, months.length);
-  check("units math: 40 units = ₹280, 50 units = ₹350", months.find((m: any) => m.month === M2)?.bill === 280 && months.find((m: any) => m.month === M1)?.bill === 350, months.map((m: any) => [m.month, m.bill]));
+  check("units math: 40 units = ₹300, 50 units = ₹375", months.find((m: any) => m.month === M2)?.bill === 300 && months.find((m: any) => m.month === M1)?.bill === 375, months.map((m: any) => [m.month, m.bill]));
   check("no-reading month bills fixed ₹750 (high plot)", months.find((m: any) => m.month === M)?.bill === 750 && months.find((m: any) => m.month === M)?.isDefault === true);
-  check("electricity total due = 280 + 350 + 750", p("101")?.electricityTotals?.due === 1380, p("101")?.electricityTotals);
+  check("electricity total due = 300 + 375 + 750", p("101")?.electricityTotals?.due === 1425, p("101")?.electricityTotals);
   check("no private fields leaked (rent amounts, phones)", !/monthlyRent|phoneNumbers|rentAmount|advance/.test(pub.text));
   check("public info has no NaN/undefined", noNaN(pub.json));
   const home = await api("/");
@@ -79,13 +79,13 @@ async function main() {
   check("dashboard 200", dash.status === 200, dash.text.slice(0, 120));
   check("dashboard lists 3 rows", dash.json?.rows?.length === 3, dash.json?.rows?.length);
   check("totals count only the tenant whose rent has started (1)", dash.json?.totals?.totalUnits === 1, dash.json?.totals);
-  check("dashboard carries electricity config", dash.json?.electricityConfig?.ratePerUnit === 7);
+  check("dashboard carries electricity config", dash.json?.electricityConfig?.ratePerUnit === 7.5);
   check("dashboard has no NaN/undefined", noNaN(dash.json));
   const hist = await api("/api/admin/payment-history");
   const t101 = hist.json?.tenants?.find((t: any) => t.plotNumber === "101");
   check("payment-history 200 with plot 101", hist.status === 200 && !!t101, hist.text.slice(0, 120));
   check("rent paid = 42,000 over 2 paid months", t101?.totals?.rentPaid === 42000, t101?.totals);
-  check("electricity billed = 1,380", t101?.totals?.electricityBill === 1380, t101?.totals?.electricityBill);
+  check("electricity billed = 1,425", t101?.totals?.electricityBill === 1425, t101?.totals?.electricityBill);
   check("payment-history has no NaN/undefined", noNaN(hist.json));
   for (const path of ["/api/admin/rent-paid", "/api/admin/electricity/statement", "/api/admin/rental-history", "/api/admin/move-in-proration", `/api/admin/electricity?month=${M}`, "/api/admin/units", "/api/admin/settings"]) {
     const r = await api(path);
