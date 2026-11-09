@@ -27,8 +27,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("Login failed with an unexpected error:", err);
+    // In development, say what actually went wrong (missing SESSION_SECRET, Firebase credentials, ...).
+    const detail = process.env.NODE_ENV !== "production" && err instanceof Error ? err.message : null;
     return NextResponse.json(
-      { error: "Server error while signing in. Check the server logs for details." },
+      { error: detail ? `Server error while signing in: ${detail}` : "Server error while signing in. Check the server logs for details." },
       { status: 500 }
     );
   }

@@ -20,7 +20,8 @@
     "setup:data": "npm run db:seed && npm run import:tenants",
     "import:tenants": "tsx --env-file=.env scripts/import-tenants.ts",
     "admin:set-password": "tsx --env-file=.env scripts/set-admin-password.ts",
-    "sync:payment-notes": "tsx --env-file=.env scripts/sync-payment-notes.ts"
+    "sync:payment-notes": "tsx --env-file=.env scripts/sync-payment-notes.ts",
+    "auth:check": "tsx --env-file=.env scripts/check-login.ts"
   },
   "dependencies": {
     "next": "16.2.12",
