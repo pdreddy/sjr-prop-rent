@@ -1,6 +1,6 @@
 import "server-only";
 import { createHmac, timingSafeEqual } from "node:crypto";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { SESSION_COOKIE_NAME, SESSION_DURATION_SECONDS } from "./constants";
 
 export interface SessionPayload { adminId: string; username: string; expiresAt: number }
@@ -33,9 +33,19 @@ export function verifySessionToken(token: string): SessionPayload | null {
   } catch { return null; }
 }
 
+// Mark the cookie Secure only when the request really arrived over HTTPS. Tying it to NODE_ENV broke
+// login whenever the production build was served over plain http (e.g. `next start` on a LAN IP or
+// localhost): the browser silently discards a Secure cookie there, so sign-in "worked" but never stuck.
+async function isHttps() {
+  const h = await headers();
+  const proto = h.get("x-forwarded-proto")?.split(",")[0].trim();
+  if (proto) return proto === "https";
+  return process.env.NODE_ENV === "production" && h.get("origin")?.startsWith("https:") === true;
+}
+
 export async function setSessionCookie(adminId: string, username: string) {
   (await cookies()).set(SESSION_COOKIE_NAME, createSessionToken(adminId, username), {
-    httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", maxAge: SESSION_DURATION_SECONDS,
+    httpOnly: true, secure: await isHttps(), sameSite: "lax", path: "/", maxAge: SESSION_DURATION_SECONDS,
   });
 }
 

@@ -1,12 +1,10 @@
 "use client";
 
 import { useState, useSyncExternalStore, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { IconArrowLeft, IconBuilding, IconLock, IconUser } from "@/components/icons";
 
 export default function AdminLoginPage() {
-  const router = useRouter();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -32,8 +30,10 @@ export default function AdminLoginPage() {
         setError(json.error ?? "Login failed.");
         return;
       }
-      router.push("/admin");
-      router.refresh();
+      // Full navigation (not router.push): guarantees the browser sends the new session cookie and
+      // avoids a cached "redirect to login" from the client router, which also bites installed PWAs.
+      window.location.assign("/admin");
+      return;
     } catch {
       setError("Something went wrong. Please try again.");
     } finally {

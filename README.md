@@ -97,3 +97,9 @@ npm run import:tenants
 - **Building & public page**: building name and an optional notice shown on the public status page.
 
 Once a month has a current meter reading, the bill is (current − previous) × rate; until then the fixed bill applies. Settings are stored in Realtime Database under `settings/electricity` and `settings/general`; existing rates carry over and missing values fall back to the previous defaults (₹7/unit, ₹750/₹500, ₹1,500). The public home page lists every plot's rent and electricity status; tenant names are shown by default and can be switched off in Settings (names are then stripped on the server). `PUBLIC_SHOW_TENANT_NAME` is no longer used.
+
+## Install as an app (PWA)
+
+The site is an installable Progressive Web App: Chrome/Edge/Android show **Install app**, and on iPhone/iPad use Safari **Share → Add to Home Screen**. It ships a manifest (`src/app/manifest.ts`), icons (`public/icons/`), and a service worker (`public/sw.js`, registered only in production builds). The service worker caches only public static files and shows `public/offline.html` when the network is down; it never caches `/api/*` or any page, so rent data and admin screens are not stored on the device. Browser support follows Tailwind CSS 4: Chrome/Edge 111+, Safari 16.4+, Firefox 128+.
+
+If sign-in appears to do nothing: the session cookie is now marked `Secure` only when the request is HTTPS (previously any production build on plain `http://`, such as `next start` on a LAN IP, silently dropped it). When running `npm run dev` from another device, list its address in `DEV_ORIGINS` (see `next.config.ts`).
