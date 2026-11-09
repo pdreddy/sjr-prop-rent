@@ -8,9 +8,11 @@ import StatusBadge from "@/components/StatusBadge";
 
 export default function ElectricityHistory({
   plot,
+  selectedMonth,
   onClose,
 }: {
   plot: PublicPlot;
+  selectedMonth: string;
   onClose: () => void;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
@@ -44,7 +46,8 @@ export default function ElectricityHistory({
           </button>
         </div>
         <p className="history-dialog-note">
-          Recorded meter bills and credits, month by month.
+          Recorded meter bills and credits. Viewing{" "}
+          {formatMonthLabel(selectedMonth)}.
         </p>
         <div className="history-table-scroll">
           <table>
@@ -60,8 +63,23 @@ export default function ElectricityHistory({
             </thead>
             <tbody>
               {plot.electricityMonths.map((entry) => (
-                <tr key={entry.month}>
-                  <th scope="row">{formatMonthLabel(entry.month)}</th>
+                <tr
+                  key={entry.month}
+                  className={
+                    entry.month === selectedMonth
+                      ? "is-selected-month"
+                      : undefined
+                  }
+                  aria-current={
+                    entry.month === selectedMonth ? "true" : undefined
+                  }
+                >
+                  <th scope="row">
+                    {formatMonthLabel(entry.month)}
+                    {entry.month === selectedMonth && (
+                      <span className="selected-month-label">Selected</span>
+                    )}
+                  </th>
                   <td>
                     {entry.isDefault ? "Flat rate" : entry.units}
                     {!entry.isDefault && (

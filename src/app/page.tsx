@@ -34,6 +34,26 @@ export default function Home() {
     plot.status === "PARTIAL" ||
     plot.electricityStatus === "UNPAID";
   const attentionCount = data?.plots.filter(needsAttention).length ?? 0;
+  const rentCounts = {
+    ALL: data?.plots.length ?? 0,
+    PAID: 0,
+    UNPAID: 0,
+    DUE: 0,
+    PARTIAL: 0,
+    NA: 0,
+  };
+  const electricityCounts = {
+    ALL: data?.plots.length ?? 0,
+    PAID: 0,
+    UNPAID: 0,
+    NA: 0,
+  };
+  for (const plot of data?.plots ?? []) {
+    rentCounts[plot.status] += 1;
+    electricityCounts[plot.electricityStatus ?? "NA"] += 1;
+  }
+  const rentAttentionCount = rentCounts.UNPAID + rentCounts.PARTIAL;
+
   const electricityEligible =
     data?.plots.filter(
       (plot) => plot.electricityStatus && plot.electricityStatus !== "NA",
@@ -254,6 +274,7 @@ export default function Home() {
                 <button
                   key={value}
                   aria-pressed={filter === value}
+                  aria-describedby={`rent-status-count-${value}`}
                   onClick={() => setFilter(value)}
                   className={filter === value ? "selected" : ""}
                 >
@@ -261,6 +282,14 @@ export default function Home() {
                     <span className={`filter-dot ${value.toLowerCase()}`} />
                   )}
                   {label}
+                  <span id={`rent-status-count-${value}`} hidden>
+                    {ready
+                      ? `${rentCounts[value]} plots in ${formatMonthLabel(month)}`
+                      : "Loading counts"}
+                  </span>
+                  <span className="status-count" aria-hidden="true">
+                    {ready ? rentCounts[value] : "—"}
+                  </span>
                 </button>
               ))}
             </div>
@@ -287,10 +316,18 @@ export default function Home() {
                   )
                 }
               >
-                <option value="ALL">All statuses</option>
-                <option value="PAID">Paid</option>
-                <option value="UNPAID">Unpaid</option>
-                <option value="NA">N/A</option>
+                <option value="ALL">
+                  All ({ready ? electricityCounts.ALL : "—"})
+                </option>
+                <option value="PAID">
+                  Paid ({ready ? electricityCounts.PAID : "—"})
+                </option>
+                <option value="UNPAID">
+                  Unpaid ({ready ? electricityCounts.UNPAID : "—"})
+                </option>
+                <option value="NA">
+                  N/A ({ready ? electricityCounts.NA : "—"})
+                </option>
               </select>
             </label>
             <label className="attention-toggle">
@@ -299,7 +336,19 @@ export default function Home() {
                 checked={attentionOnly}
                 onChange={(event) => setAttentionOnly(event.target.checked)}
               />
-              Needs attention <span>{attentionCount}</span>
+              <span className="attention-copy">
+                <span>
+                  Needs attention <b>{ready ? attentionCount : "—"}</b>
+                </span>
+                <span
+                  className="attention-breakdown"
+                  title="A plot can need attention for both rent and electricity."
+                >
+                  Rent <strong>{ready ? rentAttentionCount : "—"}</strong> ·
+                  Electricity{" "}
+                  <strong>{ready ? electricityCounts.UNPAID : "—"}</strong>
+                </span>
+              </span>
             </label>
           </div>
           {data && (!online || error) && (
@@ -515,6 +564,7 @@ export default function Home() {
       </main>
       {historyPlot && (
         <ElectricityHistory
+          selectedMonth={month}
           plot={
             data?.plots.find(
               (plot) => plot.plotNumber === historyPlot.plotNumber,

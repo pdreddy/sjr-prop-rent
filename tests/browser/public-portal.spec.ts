@@ -460,3 +460,141 @@ test("worker updates offer a refresh without automatically reloading the page", 
   await page.getByRole("button", { name: "Dismiss app update" }).click();
   await expect(page.locator(".app-update-notice")).toHaveCount(0);
 });
+
+test("monthly status counts and attention breakdown stay stable while filtering", async ({
+  page,
+}) => {
+  const statuses = ["PAID", "DUE", "UNPAID", "PARTIAL", "NA"];
+  await page.route("**/api/public/status?*", (route) =>
+    route.fulfill({
+      json: {
+        ...fixture,
+        totalPlots: 5,
+        paidCount: 1,
+        plots: statuses.map((status, index) => ({
+          ...fixture.plots[index % fixture.plots.length],
+          plotNumber: String(101 + index),
+          status,
+          electricityStatus:
+            index === 0 ? "PAID" : index === 4 ? "NA" : "UNPAID",
+        })),
+      },
+    }),
+  );
+  await page.goto("/");
+  await expect(page.locator("tbody tr")).toHaveCount(5);
+  for (const name of ["Paid", "Due", "Unpaid", "Partial", "N/A"]) {
+    await expect(
+      page.getByRole("button", { name, exact: true }).locator(".status-count"),
+    ).toHaveText("1");
+  }
+  await expect(
+    page
+      .getByRole("button", { name: "All plots", exact: true })
+      .locator(".status-count"),
+  ).toHaveText("5");
+  await expect(
+    page
+      .getByLabel("Filter electricity status")
+      .locator('option[value="PAID"]'),
+  ).toHaveText("Paid (1)");
+  await expect(
+    page
+      .getByLabel("Filter electricity status")
+      .locator('option[value="UNPAID"]'),
+  ).toHaveText("Unpaid (3)");
+  await expect(
+    page.getByLabel("Filter electricity status").locator('option[value="NA"]'),
+  ).toHaveText("N/A (1)");
+  await expect(page.locator(".attention-copy")).toContainText(
+    "Needs attention 3",
+  );
+  await expect(page.locator(".attention-breakdown")).toContainText(
+    "Rent 2 · Electricity 3",
+  );
+  await page.getByRole("searchbox").fill("Priya");
+  await expect(page.locator("tbody tr")).toHaveCount(1);
+  await expect(
+    page
+      .getByRole("button", { name: "All plots", exact: true })
+      .locator(".status-count"),
+  ).toHaveText("5");
+  await expect(page.locator(".attention-breakdown")).toContainText(
+    "Rent 2 · Electricity 3",
+  );
+});
+
+test("electricity history highlights the viewing month, including a historical selection", async ({
+  page,
+}) => {
+  await page.route("**/api/public/status?*", (route) => {
+    const month = new URL(route.request().url()).searchParams.get("month")!;
+    return route.fulfill({
+      json: {
+        ...fixture,
+        totalPlots: 1,
+        paidCount: 1,
+        plots: [
+          {
+            ...fixture.plots[0],
+            electricityStatus: "PAID",
+            electricityMonths: [
+              {
+                month: "2000-01",
+                units: 10,
+                bill: 70,
+                paid: 70,
+                balance: 0,
+                isDefault: false,
+                status: "PAID",
+              },
+              {
+                month,
+                units: 20,
+                bill: 140,
+                paid: 140,
+                balance: 0,
+                isDefault: false,
+                status: "PAID",
+              },
+            ],
+          },
+        ],
+      },
+    });
+  });
+  await page.goto("/");
+  await expect(page.locator("tbody tr")).toHaveCount(1);
+  const previousMonth = await page
+    .locator("#public-month option")
+    .nth(1)
+    .getAttribute("value");
+  for (const selected of [
+    await page.locator("#public-month").inputValue(),
+    previousMonth!,
+  ]) {
+    await page.getByLabel("VIEWING MONTH").selectOption(selected);
+    await expect(
+      page.getByRole("button", { name: "Electricity history for plot 101" }),
+    ).toBeVisible();
+    await page
+      .getByRole("button", { name: "Electricity history for plot 101" })
+      .click();
+    const current = page
+      .getByRole("dialog")
+      .locator('tbody tr[aria-current="true"]');
+    await expect(current).toHaveCount(1);
+    const label = new Date(`${selected}-01T00:00:00Z`).toLocaleDateString(
+      "en-US",
+      { month: "long", year: "numeric", timeZone: "UTC" },
+    );
+    await expect(current).toContainText(label);
+    await expect(current.locator(".selected-month-label")).toHaveText(
+      "Selected",
+    );
+    await expect(
+      page.getByRole("dialog").locator("tbody tr:not([aria-current])"),
+    ).toHaveCount(1);
+    await page.keyboard.press("Escape");
+  }
+});
