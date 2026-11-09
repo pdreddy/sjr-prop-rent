@@ -15,6 +15,7 @@ import RentPaidView from "./RentPaidView";
 import PaymentHistoryView from "./PaymentHistoryView";
 import AllDetailsView from "./AllDetailsView";
 import SettingsView from "./SettingsView";
+import SummaryView from "./SummaryView";
 import {
   getCurrentMonth,
   getMonthOptions,
@@ -45,12 +46,12 @@ import {
 const monthOptions = getMonthOptions();
 const STATUS_FILTERS = ["ALL", "PAID", "UNPAID", "PARTIAL", "VACANT"] as const;
 type StatusFilter = (typeof STATUS_FILTERS)[number];
-type Tab = "overview" | "all-details" | "electricity" | "history" | "proration" | "rent-paid" | "payment-history" | "settings";
-const TAB_LABELS: Record<Tab, string> = { overview: "Overview", "all-details": "All details", electricity: "Electricity bills", history: "Rental history", proration: "Move-in proration", "rent-paid": "Rent paid", "payment-history": "Payment history", settings: "Settings" };
+type Tab = "overview" | "summary" | "all-details" | "electricity" | "history" | "proration" | "rent-paid" | "payment-history" | "settings";
+const TAB_LABELS: Record<Tab, string> = { overview: "Overview", summary: "Summary", "all-details": "All details", electricity: "Electricity bills", history: "Rental history", proration: "Move-in proration", "rent-paid": "Rent paid", "payment-history": "Payment history", settings: "Settings" };
 
 // Navigation: eight screens grouped into five sections (sidebar on desktop, bottom bar on phones).
 const NAV_GROUPS: { id: string; label: string; icon: typeof IconGrid; tabs: Tab[] }[] = [
-  { id: "overview", label: "Overview", icon: IconGrid, tabs: ["overview"] },
+  { id: "overview", label: "Overview", icon: IconGrid, tabs: ["overview", "summary"] },
   { id: "electricity", label: "Electricity", icon: IconBolt, tabs: ["electricity"] },
   { id: "payments", label: "Payments", icon: IconWallet, tabs: ["payment-history", "rent-paid", "proration"] },
   { id: "plots", label: "Plots", icon: IconUser, tabs: ["all-details", "history"] },
@@ -150,7 +151,7 @@ export default function AdminDashboard({ username }: { username: string }) {
 
   const totals = data?.totals;
   // These tabs load their own data and ignore the month/search/filter bar.
-  const standaloneTab = tab === "electricity" || tab === "history" || tab === "proration" || tab === "rent-paid" || tab === "payment-history" || tab === "settings";
+  const standaloneTab = tab === "summary" || tab === "electricity" || tab === "history" || tab === "proration" || tab === "rent-paid" || tab === "payment-history" || tab === "settings";
 
   return (
     <div className="flex flex-1 flex-col bg-background">
@@ -254,6 +255,7 @@ export default function AdminDashboard({ username }: { username: string }) {
 
         {tab === "overview" && totals && <StatsPanel totals={totals} month={month} />}
 
+        {tab === "summary" && <SummaryView onUnauthorized={handleUnauthorized} />}
         {tab === "electricity" && <ElectricityStatementView onUnauthorized={handleUnauthorized} />}
         {tab === "history" && <RentalHistoryView onUnauthorized={handleUnauthorized} onChanged={load} />}
         {tab === "proration" && <MoveInProrationView onUnauthorized={handleUnauthorized} />}

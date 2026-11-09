@@ -77,6 +77,7 @@ async function main() {
 
   console.log("\nAdmin login");
   check("admin endpoints are protected", (await api(`/api/admin/dashboard?month=${M}`)).status === 401);
+  check("summary endpoint is protected", (await api(`/api/admin/summary?month=${M}`)).status === 401);
   check("wrong password rejected", (await api("/api/auth/login", { method: "POST", body: JSON.stringify({ username: USER, password: "definitely-wrong-1" }) })).status === 401);
   const login = await api("/api/auth/login", { method: "POST", body: JSON.stringify({ username: USER, password: PASS }) });
   check("login succeeds and sets a cookie", login.status === 200 && cookie.startsWith("sjr_session="), login.json ?? login.text.slice(0, 150));
@@ -100,6 +101,10 @@ async function main() {
     const r = await api(path);
     check(`${path} 200 and clean JSON`, r.status === 200 && !!r.json && noNaN(r.json), r.status === 200 ? undefined : r.text.slice(0, 120));
   }
+  const sum = await api(`/api/admin/summary?month=${M}`);
+  check("summary 200 and clean JSON", sum.status === 200 && noNaN(sum.json), sum.text.slice(0, 120));
+  check("summary: 2 occupied plots, 1 vacant, rent for 101 only", sum.json?.plots?.occupied === 2 && sum.json?.plots?.vacant === 1 && sum.json?.plots?.applicable === 1 && sum.json?.rent?.expected === 21000, sum.json?.plots);
+  check("summary trend ends on the selected month", sum.json?.trend?.at(-1)?.month === M && sum.json.trend.length <= 6, sum.json?.trend?.map((t: any) => t.month));
   const rp = await api("/api/admin/rent-paid");
   check("rent-paid: 101 balance reflects unpaid current month", rp.json?.tenants?.find((t: any) => t.plotNumber === "101")?.totalPaid === 42000, rp.json?.tenants?.[0]);
 

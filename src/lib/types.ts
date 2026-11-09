@@ -341,3 +341,47 @@ export interface PaymentHistoryResponse {
   config: ElectricityConfig;
   tenants: PaymentHistoryTenant[];
 }
+
+// ---- Admin summary tab ----
+export interface SummaryTrendMonth {
+  month: string;
+  rentExpected: number;
+  rentCollected: number;
+  electricityBilled: number;
+  electricityCovered: number;
+  electricityDue: number;
+}
+
+export interface SummaryDueRow {
+  plotNumber: string;
+  tenantName: string | null;
+  rentDue: number;
+  electricityDue: number;
+  total: number;
+}
+
+export interface SummaryResponse {
+  month: string;
+  plots: { total: number; occupied: number; vacant: number; notStarted: number; applicable: number };
+  rent: {
+    expected: number;
+    collected: number;
+    outstanding: number;
+    collectedPct: number;
+    counts: { paid: number; partial: number; unpaid: number };
+  };
+  electricity: {
+    billed: number;
+    covered: number;
+    due: number;
+    /** Plots with a current meter reading this month, out of the plots that apply. */
+    readingsEntered: number;
+    readingsExpected: number;
+    counts: { paid: number; partial: number; unpaid: number; none: number };
+    formula: string;
+  };
+  /** Up to 6 months ending at `month`, oldest first. */
+  trend: SummaryTrendMonth[];
+  /** Plots owing the most this month (rent + electricity), largest first. */
+  topDue: SummaryDueRow[];
+}
