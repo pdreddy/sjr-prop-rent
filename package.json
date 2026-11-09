@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "db:clone-test": "tsx --env-file=.env scripts/clone-to-test.ts",
     "db:move-month": "tsx --env-file=.env scripts/move-month.ts",
+    "db:publish-month": "tsx --env-file=.env scripts/publish-month.ts",
     "db:backup": "tsx --env-file=.env scripts/backup.ts",
     "db:restore": "tsx --env-file=.env scripts/restore.ts",
     "db:where": "tsx --env-file=.env scripts/where.ts",
