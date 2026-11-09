@@ -18,6 +18,13 @@ interface Props {
 
 interface Form {
   rate: string;
+  slab: string;
+  above: string;
+  fppca: string;
+  surcharge: string;
+  tax: string;
+  fixedCharge: string;
+  round: boolean;
   high: string;
   standard: string;
   plots: string;
@@ -44,6 +51,13 @@ export default function SettingsView({ onUnauthorized, onNotify }: Props) {
       setGeneral(settings.general);
       setForm({
         rate: String(settings.electricity.ratePerUnit),
+        slab: String(settings.electricity.slabLimit),
+        above: String(settings.electricity.rateAboveLimit),
+        fppca: String(settings.electricity.fppcaPerUnit),
+        surcharge: String(settings.electricity.surchargePerUnit),
+        tax: String(settings.electricity.taxPercent),
+        fixedCharge: String(settings.electricity.fixedCharge),
+        round: settings.electricity.roundToRupee,
         high: String(settings.electricity.defaultHigh),
         standard: String(settings.electricity.defaultStandard),
         plots: settings.electricity.highPlots.join(", "),
@@ -63,9 +77,9 @@ export default function SettingsView({ onUnauthorized, onNotify }: Props) {
   const invalid = useMemo(() => {
     if (!form) return true;
     return (
-      [form.rate, form.high, form.standard, form.limit].some(
+      [form.rate, form.slab, form.above, form.fppca, form.surcharge, form.tax, form.fixedCharge, form.high, form.standard, form.limit].some(
         (v) => v.trim() === "" || !Number.isFinite(Number(v)) || Number(v) < 0,
-      ) || Number(form.rate) > 1000
+      ) || Number(form.rate) > 1000 || Number(form.above) > 1000 || Number(form.tax) > 100
     );
   }, [form]);
 
@@ -80,6 +94,13 @@ export default function SettingsView({ onUnauthorized, onNotify }: Props) {
         body: JSON.stringify({
           electricity: {
             ratePerUnit: Number(form.rate),
+            slabLimit: Number(form.slab),
+            rateAboveLimit: Number(form.above),
+            fppcaPerUnit: Number(form.fppca),
+            surchargePerUnit: Number(form.surcharge),
+            taxPercent: Number(form.tax),
+            fixedCharge: Number(form.fixedCharge),
+            roundToRupee: form.round,
             defaultHigh: Number(form.high),
             defaultStandard: Number(form.standard),
             highPlots: form.plots,
@@ -114,7 +135,7 @@ export default function SettingsView({ onUnauthorized, onNotify }: Props) {
     );
   }
 
-  const field = (key: keyof Form) => ({
+  const field = (key: Exclude<keyof Form, "round">) => ({
     value: form[key],
     onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
       setForm({ ...form, [key]: e.target.value }),
@@ -131,22 +152,98 @@ export default function SettingsView({ onUnauthorized, onNotify }: Props) {
       <section className="rounded-card border border-line bg-white p-4 shadow-card">
         <h2 className="text-base font-bold text-ink">Electricity</h2>
         <p className="mb-3 text-xs text-foreground/55">
-          With a current meter reading the bill is (current − previous) × rate.
-          Until a reading is entered, the fixed bill below applies. Changes
+          With a current meter reading: units = current − previous; energy = first
+          slab units × rate + remaining units × rate above slab; bill = energy + units × FPPCA +
+          units × surcharge + tax % of energy + fixed charge. Until a reading is entered, the fixed bill below applies. Changes
           apply to past months too.
         </p>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <label className={labelClass}>
-            Rate per unit (₹)
+            Rate per unit — first slab (₹)
             <input
               type="number"
               inputMode="decimal"
               min={0}
-              max={1000}
               step="0.01"
               className={inputClass}
               {...field("rate")}
             />
+          </label>
+          <label className={labelClass}>
+            Slab size (units)
+            <input
+              type="number"
+              inputMode="decimal"
+              min={0}
+              step="1"
+              className={inputClass}
+              {...field("slab")}
+            />
+            <span className={hintClass}>Units billed at the first rate. 0 = one flat rate for all units.</span>
+          </label>
+          <label className={labelClass}>
+            Rate per unit — above the slab (₹)
+            <input
+              type="number"
+              inputMode="decimal"
+              min={0}
+              step="0.01"
+              className={inputClass}
+              {...field("above")}
+            />
+          </label>
+          <label className={labelClass}>
+            FPPCA per unit (₹)
+            <input
+              type="number"
+              inputMode="decimal"
+              min={0}
+              step="0.01"
+              className={inputClass}
+              {...field("fppca")}
+            />
+          </label>
+          <label className={labelClass}>
+            Surcharge per unit (₹)
+            <input
+              type="number"
+              inputMode="decimal"
+              min={0}
+              step="0.01"
+              className={inputClass}
+              {...field("surcharge")}
+            />
+          </label>
+          <label className={labelClass}>
+            Tax (% of energy charge)
+            <input
+              type="number"
+              inputMode="decimal"
+              min={0}
+              step="0.01"
+              className={inputClass}
+              {...field("tax")}
+            />
+          </label>
+          <label className={labelClass}>
+            Fixed charge per bill (₹)
+            <input
+              type="number"
+              inputMode="decimal"
+              min={0}
+              step="1"
+              className={inputClass}
+              {...field("fixedCharge")}
+            />
+            <span className={hintClass}>Added to each plot&apos;s bill in a month with a meter reading.</span>
+          </label>
+          <label className="flex min-h-11 items-center gap-2 text-sm font-medium text-ink">
+            <input
+              type="checkbox"
+              checked={form.round}
+              onChange={(e) => setForm({ ...form, round: e.target.checked })}
+            />
+            Round each bill to the nearest rupee
           </label>
           <label className={labelClass}>
             Over-payment limit (₹)

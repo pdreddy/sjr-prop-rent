@@ -443,7 +443,7 @@ function RateEditor({
   return (
     <div className="mb-4 flex flex-wrap items-end gap-3 rounded-card border border-line bg-white p-3.5 shadow-card sm:p-4">
       <label className="flex flex-col gap-1">
-        <span className="text-sm font-medium text-ink">Rate per unit (₹)</span>
+        <span className="text-sm font-medium text-ink">Rate per unit, first slab (₹)</span>
         <input
           type="number"
           inputMode="decimal"

@@ -102,7 +102,7 @@ export default function ElectricityStatementView({ onUnauthorized }: { onUnautho
         search={{ value: search, onChange: setSearch }}
         help={
           <>
-            Rate ₹{data.ratePerUnit}/unit. Each month&apos;s baseline is rent + maintenance; a small amount paid above it (under ₹{data.config.excessLimit.toLocaleString("en-IN")})
+            Rate ₹{data.config.ratePerUnit}/unit{data.config.slabLimit > 0 ? ` for the first ${data.config.slabLimit} units, then ₹${data.config.rateAboveLimit}` : ""}. Each month&apos;s baseline is rent + maintenance; a small amount paid above it (under ₹{data.config.excessLimit.toLocaleString("en-IN")})
             is credited to electricity, oldest bill first, and unused credit carries forward. A larger excess is rent paid ahead. Months run from the tenant&apos;s joining month
             to {formatMonthLabel(data.currentMonth)}.
           </>

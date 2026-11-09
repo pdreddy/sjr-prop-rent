@@ -27,6 +27,42 @@ export const electricityPortionOfExcess = (excess: number, config?: ElectricityC
 /** A current reading of 0 (or none) means the meter has not been read for the month yet. */
 export const hasMeterReading = (currReading: number | null | undefined): boolean => (currReading ?? 0) > 0;
 
+export interface ElectricityBreakdown {
+  units: number;
+  energy: number;
+  fppca: number;
+  surcharge: number;
+  tax: number;
+  fixed: number;
+  total: number;
+}
+
+const money = (n: number) => Math.round(n * 100) / 100;
+
+// The full bill for a number of units. Slab: the first slabLimit units cost ratePerUnit each, every unit
+// beyond costs rateAboveLimit (slabLimit 0 = one flat rate). Tax applies to the energy charge only.
+export function electricityBreakdown(units: number, config?: ElectricityConfigInput): ElectricityBreakdown {
+  const c = resolveConfig(config);
+  const u = Math.max(0, units);
+  const low = c.slabLimit > 0 ? Math.min(u, c.slabLimit) : u;
+  const high = u - low;
+  const energy = low * c.ratePerUnit + high * c.rateAboveLimit;
+  const fppca = u * c.fppcaPerUnit;
+  const surcharge = u * c.surchargePerUnit;
+  const tax = (energy * c.taxPercent) / 100;
+  const fixed = u > 0 ? c.fixedCharge : 0;
+  const raw = energy + fppca + surcharge + tax + fixed;
+  return {
+    units: u,
+    energy: money(energy),
+    fppca: money(fppca),
+    surcharge: money(surcharge),
+    tax: money(tax),
+    fixed: money(fixed),
+    total: c.roundToRupee ? Math.round(raw) : money(raw),
+  };
+}
+
 // Pass the plot number to apply the no-reading default; without it only the readings are used.
 export function computeElectricityAmount(
   prevReading: number,
@@ -36,7 +72,7 @@ export function computeElectricityAmount(
 ): number {
   const c = resolveConfig(config);
   if (plotNumber !== undefined && !hasMeterReading(currReading)) return defaultElectricityAmount(plotNumber, c);
-  return Math.max(0, currReading - prevReading) * c.ratePerUnit;
+  return electricityBreakdown(computeElectricityUnits(prevReading, currReading), c).total;
 }
 
 export function computeElectricityUnits(prevReading: number, currReading: number): number {

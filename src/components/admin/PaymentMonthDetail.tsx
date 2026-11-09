@@ -57,7 +57,7 @@ export default function PaymentMonthDetail({ tenant, month, ratePerUnit, monthLa
             ) : (
               <>
                 <Line label="Units used" value={String(month.electricityUnits)} />
-                <Line label="Rate" value={`₹${resolveConfig(ratePerUnit).ratePerUnit} / unit`} />
+                <Line label="Rate" value={(() => { const c = resolveConfig(ratePerUnit); return c.slabLimit > 0 ? `₹${c.ratePerUnit} up to ${c.slabLimit} units, then ₹${c.rateAboveLimit}` : `₹${c.ratePerUnit} / unit`; })()} />
               </>
             )}
             <Line label="Electricity bill" value={rupees(month.electricityBill)} strong />

@@ -3,8 +3,22 @@
 // below are the fallbacks used until the admin saves something.
 
 export interface ElectricityConfig {
-  /** ₹ per unit. */
+  /** ₹ per unit for the first `slabLimit` units (the only rate when slabLimit is 0). */
   ratePerUnit: number;
+  /** Units billed at `ratePerUnit`; units beyond this are billed at `rateAboveLimit`. 0 = single flat rate. */
+  slabLimit: number;
+  /** ₹ per unit for every unit above `slabLimit`. */
+  rateAboveLimit: number;
+  /** Fuel-cost adjustment (FPPCA), ₹ per unit consumed. */
+  fppcaPerUnit: number;
+  /** Power-purchase surcharge, ₹ per unit consumed. */
+  surchargePerUnit: number;
+  /** Tax as a percentage of the energy charge (the slab amount). */
+  taxPercent: number;
+  /** Flat ₹ added to each plot's bill in a month that has a meter reading (0 = none). */
+  fixedCharge: number;
+  /** Round each bill to the nearest rupee. */
+  roundToRupee: boolean;
   /** Flat bill (₹) for plots in `highPlots` when no meter reading has been entered. */
   defaultHigh: number;
   /** Flat bill (₹) for every other plot when no meter reading has been entered. */
@@ -28,7 +42,14 @@ export interface GeneralSettings {
 }
 
 export const DEFAULT_ELECTRICITY_CONFIG: ElectricityConfig = {
-  ratePerUnit: 7,
+  ratePerUnit: 7.5,
+  slabLimit: 200,
+  rateAboveLimit: 10,
+  fppcaPerUnit: 0,
+  surchargePerUnit: 0,
+  taxPercent: 0,
+  fixedCharge: 0,
+  roundToRupee: true,
   defaultHigh: 750,
   defaultStandard: 500,
   highPlots: ["101", "201", "301", "401", "501"],
@@ -100,8 +121,19 @@ export function normalizeElectricityConfig(
   value: Partial<Record<keyof ElectricityConfig, unknown>> | null | undefined,
 ): ElectricityConfig {
   const d = DEFAULT_ELECTRICITY_CONFIG;
+  // A document saved before slab billing existed has no slabLimit: its old flat rate is ignored so the
+  // slab defaults apply to every month until the admin saves new values.
+  const legacy = value != null && value.slabLimit === undefined;
+  const pick = <T,>(v: unknown, fallback: T, ok: (x: unknown) => x is T): T => (!legacy && ok(v) ? v : fallback);
   return {
-    ratePerUnit: num(value?.ratePerUnit, d.ratePerUnit, 0, 1000),
+    ratePerUnit: legacy ? d.ratePerUnit : num(value?.ratePerUnit, d.ratePerUnit, 0, 1000),
+    slabLimit: legacy ? d.slabLimit : num(value?.slabLimit, d.slabLimit, 0, 1_000_000),
+    rateAboveLimit: legacy ? d.rateAboveLimit : num(value?.rateAboveLimit, d.rateAboveLimit, 0, 1000),
+    fppcaPerUnit: legacy ? d.fppcaPerUnit : num(value?.fppcaPerUnit, d.fppcaPerUnit, 0, 1000),
+    surchargePerUnit: legacy ? d.surchargePerUnit : num(value?.surchargePerUnit, d.surchargePerUnit, 0, 1000),
+    taxPercent: legacy ? d.taxPercent : num(value?.taxPercent, d.taxPercent, 0, 100),
+    fixedCharge: legacy ? d.fixedCharge : num(value?.fixedCharge, d.fixedCharge, 0, 1_000_000),
+    roundToRupee: pick(value?.roundToRupee, d.roundToRupee, (x): x is boolean => typeof x === "boolean"),
     defaultHigh: num(value?.defaultHigh, d.defaultHigh),
     defaultStandard: num(value?.defaultStandard, d.defaultStandard),
     // Stored as a comma-separated string because Realtime Database drops empty arrays.

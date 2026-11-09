@@ -17,6 +17,13 @@ const amount = (max: number) => z.coerce.number().min(0).max(max);
 const schema = z.object({
   electricity: z.object({
     ratePerUnit: amount(1000),
+    slabLimit: amount(1_000_000),
+    rateAboveLimit: amount(1000),
+    fppcaPerUnit: amount(1000),
+    surchargePerUnit: amount(1000),
+    taxPercent: amount(100),
+    fixedCharge: amount(1_000_000),
+    roundToRupee: z.boolean(),
     defaultHigh: amount(1_000_000),
     defaultStandard: amount(1_000_000),
     highPlots: z
@@ -77,6 +84,13 @@ export const PUT = withErrorHandling(async (request: NextRequest) => {
   const e = parsed.data.electricity;
   const electricity = {
     ratePerUnit: round(e.ratePerUnit),
+    slabLimit: round(e.slabLimit),
+    rateAboveLimit: round(e.rateAboveLimit),
+    fppcaPerUnit: round(e.fppcaPerUnit),
+    surchargePerUnit: round(e.surchargePerUnit),
+    taxPercent: round(e.taxPercent),
+    fixedCharge: round(e.fixedCharge),
+    roundToRupee: e.roundToRupee,
     defaultHigh: round(e.defaultHigh),
     defaultStandard: round(e.defaultStandard),
     highPlots: e.highPlots,
