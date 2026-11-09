@@ -5,9 +5,10 @@ import {
   allUnits,
   getElectricityConfig,
   getGeneralSettings,
-  getBuildingBill,
+  allBuildingBills,
 } from "@/lib/store";
-import { isValidMonth, getCurrentMonth } from "@/lib/month";
+import { isValidMonth, getCurrentMonth, getPreviousMonth } from "@/lib/month";
+import { BUILDING_READY_MONTH } from "@/lib/constants";
 import { describeFormula, profileForMonth } from "@/lib/electricity";
 import { publicRentMonths, publicRentStatus } from "@/lib/publicRentHistory";
 import { publicTenantName } from "@/lib/config";
@@ -21,12 +22,12 @@ export const GET = withErrorHandling(async (request: NextRequest) => {
   const month =
     monthParam && isValidMonth(monthParam) ? monthParam : getCurrentMonth();
 
-  const [allUnitRecords, payments, rate, general, actualBill] = await Promise.all([
+  const [allUnitRecords, payments, rate, general, buildingBills] = await Promise.all([
     allUnits(),
     allPayments(),
     getElectricityConfig(),
     getGeneralSettings(),
-    getBuildingBill(month),
+    allBuildingBills(),
   ]);
   const units = allUnitRecords.filter((unit) => unit.active);
 
@@ -86,6 +87,26 @@ export const GET = withErrorHandling(async (request: NextRequest) => {
     };
   });
 
+  // Total billed to tenants in a month, from the same ledgers as the rows above.
+  const billedToTenants = (m: string) =>
+    Math.round(
+      units.reduce(
+        (sum, unit) =>
+          sum +
+          buildUnitMonthView(
+            unit,
+            ledgers.get(unit.id),
+            payments.find((p) => p.unitId === unit.id && p.month === m),
+            m,
+          ).electricity.bill,
+        0,
+      ) * 100,
+    ) / 100;
+  // The three months before the one being viewed (never earlier than the building's first month).
+  const previousMonths: string[] = [];
+  for (let m = getPreviousMonth(month); previousMonths.length < 3 && m >= BUILDING_READY_MONTH; m = getPreviousMonth(m))
+    previousMonths.push(m);
+
   const paidCount = plots.filter((p) => p.status === "PAID").length;
 
   return NextResponse.json({
@@ -99,9 +120,13 @@ export const GET = withErrorHandling(async (request: NextRequest) => {
     paidCount,
     // The building's own power bill next to the total billed to tenants, so residents can see the difference.
     buildingElectricity: {
-      actualBill,
-      billedToTenants:
-        Math.round(plots.reduce((sum, p) => sum + p.electricityAmount, 0) * 100) / 100,
+      actualBill: buildingBills.get(month) ?? null,
+      billedToTenants: billedToTenants(month),
+      previous: previousMonths.map((m) => ({
+        month: m,
+        actualBill: buildingBills.get(m) ?? null,
+        billedToTenants: billedToTenants(m),
+      })),
     },
     plots,
   });

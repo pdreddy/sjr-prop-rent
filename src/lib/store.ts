@@ -83,6 +83,11 @@ export async function getBuildingBill(month: string): Promise<number | null> {
   const doc = await getDocument<{ amount?: number }>(`buildingBills/${month}`);
   return typeof doc?.amount === "number" && Number.isFinite(doc.amount) ? doc.amount : null;
 }
+/** Every month's building bill, keyed by month. */
+export async function allBuildingBills(): Promise<Map<string, number>> {
+  const docs = await listDocuments<{ amount?: number }>("buildingBills");
+  return new Map(docs.filter((d) => typeof d.amount === "number" && Number.isFinite(d.amount)).map((d) => [d.id, d.amount as number]));
+}
 export async function setBuildingBill(month: string, amount: number | null, updatedBy: string) {
   if (amount === null) await deleteDocument(`buildingBills/${month}`);
   else await setDocument(`buildingBills/${month}`, { month, amount, updatedBy, updatedAt: new Date() });

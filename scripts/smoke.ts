@@ -116,6 +116,9 @@ async function main() {
   const billSaved = await api("/api/admin/building-bill", { method: "PUT", body: JSON.stringify({ month: M, amount: 1200.5 }) });
   check("admin saves the building's bill", billSaved.status === 200 && billSaved.json?.amount === 1200.5, billSaved.json ?? billSaved.text.slice(0, 120));
   check("public page then shows it", (await api(`/api/public/status?month=${M}`)).json?.buildingElectricity?.actualBill === 1200.5);
+  const past = (await api(`/api/public/status?month=${M}`)).json?.buildingElectricity?.previous ?? [];
+  check("public page lists the months before it, newest first", past.length >= 2 && past[0]?.month === M1 && past[1]?.month === M2, past);
+  check("each past month carries its own billed-to-tenants total", past[0]?.billedToTenants === 375 && past[1]?.billedToTenants === 280, past);
   check("it is kept per month", (await api(`/api/public/status?month=${M1}`)).json?.buildingElectricity?.actualBill === null);
   check("meter readings page shows it to the admin", (await api(`/api/admin/electricity?month=${M}`)).json?.building?.actualBill === 1200.5);
   check("a negative bill is rejected", (await api("/api/admin/building-bill", { method: "PUT", body: JSON.stringify({ month: M, amount: -1 }) })).status === 400);

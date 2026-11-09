@@ -55,6 +55,8 @@ export interface BuildingElectricity {
   actualBill: number | null;
   /** Sum of every tenant's electricity bill for the month. */
   billedToTenants: number;
+  /** The months before this one (newest first), with the same two figures. */
+  previous?: { month: string; actualBill: number | null; billedToTenants: number }[];
 }
 
 export interface ElectricityListResponse {

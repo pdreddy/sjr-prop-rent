@@ -107,6 +107,43 @@ function BuildingElectricityBand({
           </span>
         </p>
       )}
+      {building.previous && building.previous.length > 0 && (
+        <div className="building-electricity-history">
+          <h3>Previous months</h3>
+          <ul>
+            {building.previous.map((past) => {
+              const gap =
+                past.actualBill === null
+                  ? null
+                  : Math.round((past.actualBill - past.billedToTenants) * 100) / 100;
+              return (
+                <li key={past.month}>
+                  <strong>{shortMonth(past.month)}</strong>
+                  <span>
+                    <small>Building&rsquo;s bill</small>
+                    {past.actualBill === null ? (
+                      <i>Not entered</i>
+                    ) : (
+                      <b>{rupee(past.actualBill)}</b>
+                    )}
+                  </span>
+                  <span>
+                    <small>Billed to tenants</small>
+                    <b>{rupee(past.billedToTenants)}</b>
+                  </span>
+                  <span className={gap ? "is-difference" : ""}>
+                    <small>Difference</small>
+                    <b>{gap === null ? "—" : rupee(Math.abs(gap))}</b>
+                    {gap !== null && gap !== 0 && (
+                      <em>{gap > 0 ? "not billed" : "billed above"}</em>
+                    )}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
     </section>
   );
 }

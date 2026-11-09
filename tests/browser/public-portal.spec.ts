@@ -893,7 +893,12 @@ for (const width of [320, 1440]) {
 }
 
 test("building electricity shows the actual bill, the total billed to tenants and the difference", async ({ page }) => {
-  let building: { actualBill: number | null; billedToTenants: number } = { actualBill: 12400, billedToTenants: 11250.5 };
+  const previous = [
+    { month: "2026-10", actualBill: 40750, billedToTenants: 30000 },
+    { month: "2026-09", actualBill: 27490, billedToTenants: 28000 },
+    { month: "2026-08", actualBill: null, billedToTenants: 0 },
+  ];
+  let building: { actualBill: number | null; billedToTenants: number; previous: typeof previous } = { actualBill: 12400, billedToTenants: 11250.5, previous };
   await page.route("**/api/public/status?*", (route) =>
     route.fulfill({ json: { ...fixture, buildingElectricity: building } }),
   );
@@ -904,7 +909,16 @@ test("building electricity shows the actual bill, the total billed to tenants an
   await expect(band).toContainText("₹1,149.5");
   await expect(band).toContainText("not billed to tenants");
   await expect(band).toContainText("Tenant bills cover 91%");
-  building = { actualBill: null, billedToTenants: 11250.5 };
+  const strips = band.getByRole("listitem");
+  await expect(strips).toHaveCount(3);
+  await expect(strips.nth(0)).toContainText("Oct 2026");
+  await expect(strips.nth(0)).toContainText("₹40,750");
+  await expect(strips.nth(0)).toContainText("₹10,750");
+  await expect(strips.nth(0)).toContainText("not billed");
+  await expect(strips.nth(1)).toContainText("₹510");
+  await expect(strips.nth(1)).toContainText("billed above");
+  await expect(strips.nth(2)).toContainText("Not entered");
+  building = { actualBill: null, billedToTenants: 11250.5, previous };
   await page.getByRole("button", { name: "Refresh", exact: true }).click();
   await expect(band).toContainText("Not entered yet");
   await expect(band).not.toContainText("Tenant bills cover");

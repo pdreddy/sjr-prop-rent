@@ -408,10 +408,10 @@
   font-weight: 500;
   letter-spacing: 0;
 }
-.building-electricity .is-difference {
+.building-electricity dl .is-difference {
   background: var(--color-partial-bg);
 }
-.building-electricity .is-difference :is(dt, dd, small) {
+.building-electricity dl .is-difference :is(dt, dd, small) {
   color: #7a4a06;
 }
 .building-electricity-share {
@@ -422,6 +422,62 @@
   gap: 12px;
   color: var(--color-muted);
   font-size: 13px;
+}
+
+.building-electricity-history {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 6px;
+  padding-top: 10px;
+  border-top: 1px solid var(--color-line);
+}
+.building-electricity-history h3 {
+  color: var(--color-muted);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.building-electricity-history ul {
+  display: grid;
+  gap: 6px;
+}
+.building-electricity-history li {
+  display: grid;
+  grid-template-columns: 96px repeat(3, minmax(0, 1fr));
+  align-items: center;
+  gap: 4px 12px;
+  padding: 8px 12px;
+  border-radius: var(--radius-control);
+  background: var(--tint);
+}
+.building-electricity-history li strong {
+  color: var(--color-ink);
+  font-weight: 700;
+}
+.building-electricity-history li > span {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 8px;
+}
+.building-electricity-history small {
+  color: var(--color-muted);
+  font-size: 12px;
+}
+.building-electricity-history b {
+  color: var(--color-ink);
+  font-size: 15px;
+  font-weight: 700;
+}
+.building-electricity-history i,
+.building-electricity-history em {
+  color: var(--color-muted);
+  font-size: 12px;
+  font-style: normal;
+}
+.building-electricity-history .is-difference :is(b, em) {
+  color: #8a4b04;
 }
 
 /* ---- Directory card ---- */
@@ -1320,11 +1376,24 @@
   }
   .building-electricity dd.is-pending {
     font-size: 13px;
-    line-height: 24px;
+    line-height: 1.3;
   }
   .building-electricity-share {
     grid-template-columns: minmax(0, 1fr);
     gap: 4px;
+  }
+  .building-electricity-history li {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    padding: 6px 8px;
+  }
+  .building-electricity-history li strong {
+    grid-column: 1 / -1;
+  }
+  .building-electricity-history li > span {
+    display: grid;
+  }
+  .building-electricity-history small {
+    font-size: 11px;
   }
   .directory-toolbar {
     grid-template-columns: minmax(0, 1fr);
@@ -1531,5 +1600,129 @@
   .portal *::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+/* ---- Compact plot details: one-line header, inline totals, single-line ledger rows ---- */
+.plot-details {
+  gap: 8px;
+  padding: 10px 16px 12px;
+}
+.plot-details-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 10px;
+}
+.plot-details-title h2 {
+  font-size: 16px;
+}
+.plot-month-summary {
+  padding: 3px 10px;
+  font-size: 13px;
+}
+.plot-details-close {
+  width: 36px;
+  height: 36px;
+}
+.plot-details-body {
+  gap: 6px;
+}
+.plot-details-stats {
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 6px 16px;
+}
+.plot-details-stats h3 {
+  font-size: 14px;
+}
+.electricity-history-totals {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+.electricity-history-totals > div {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 3px 10px;
+}
+.electricity-history-totals dt {
+  font-size: 11px;
+}
+.electricity-history-totals dd {
+  font-size: 15px;
+  letter-spacing: 0;
+}
+.electricity-history-totals .kpi-bar {
+  display: none;
+}
+.history-table thead th {
+  padding-block: 5px;
+  font-size: 11px;
+}
+.history-table tbody :is(th, td),
+.history-table tfoot :is(th, td) {
+  padding-block: 4px;
+}
+.history-table tbody th,
+.history-table tfoot td.num {
+  white-space: nowrap;
+}
+.history-table .history-month {
+  display: inline-flex;
+  margin-right: 10px;
+  vertical-align: baseline;
+}
+.history-table .history-meter-readings {
+  display: inline;
+}
+.history-table tfoot .history-meter-readings {
+  margin-left: 6px;
+}
+.units {
+  display: inline-flex;
+  flex-direction: row-reverse;
+  align-items: center;
+  gap: 8px;
+}
+.unit-bar {
+  width: 48px;
+}
+.history-ledger-note {
+  font-size: 11px;
+  line-height: 1.4;
+}
+@media (max-width: 720px) {
+  .plot-details {
+    padding: 8px 10px 10px;
+  }
+  .plot-details-head {
+    align-items: center;
+  }
+  .plot-details-stats {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .electricity-history-totals {
+    justify-content: flex-start;
+  }
+  .electricity-history-totals dd {
+    font-size: 14px;
+  }
+  .history-table tr {
+    gap: 4px 8px;
+    padding: 8px 10px;
+  }
+  .history-table tbody :is(th, td),
+  .history-table tfoot :is(th, td) {
+    padding-block: 0;
+  }
+  /* The totals are already in the chips above the list. */
+  .history-table tfoot {
+    display: none;
+  }
+  .units {
+    flex-direction: row;
   }
 }
