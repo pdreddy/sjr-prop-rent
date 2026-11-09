@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- a test script reading loosely typed JSON responses */
 import { createUnit, savePayment } from "../src/lib/store";
 import { getCurrentMonth, getPreviousMonth } from "../src/lib/month";
 
