@@ -44,6 +44,14 @@ const paths = {
       <path d="m8 12 3 3 5-6" />
     </>
   ),
+  bolt: <path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z" />,
+  alert: (
+    <>
+      <path d="M12 3 2 20h20L12 3Z" />
+      <path d="M12 10v4M12 17h.01" />
+    </>
+  ),
+  close: <path d="M6 6l12 12M18 6 6 18" />,
   download: <path d="M12 3v12m-4-4 4 4 4-4M5 16v5h14v-5" />,
   cloud: (
     <path d="M7 18a5 5 0 0 1-1-10 7 7 0 0 1 13 1 4.5 4.5 0 0 1-1 9M3 3l18 18" />

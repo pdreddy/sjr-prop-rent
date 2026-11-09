@@ -73,7 +73,7 @@ export default function InstallApp() {
         aria-haspopup="dialog"
         aria-expanded={showHelp}
         aria-controls={showHelp ? id : undefined}
-        className="min-h-11 rounded-full border border-line-strong bg-white px-3.5 py-1.5 text-sm font-medium text-ink hover:bg-primary-light"
+        className="min-h-11 whitespace-nowrap rounded-full border border-line-strong bg-white px-3.5 py-1.5 text-sm font-medium text-ink hover:bg-primary-light"
       >
         {prompt ? "Install app" : "Get the app"}
       </button>
